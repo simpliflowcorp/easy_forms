@@ -1,0 +1,120 @@
+.loader-blob-4-dot {
+  width: 80px;
+  aspect-ratio: 1;
+  border: 10px solid var(--primary-bg);
+  box-sizing: border-box;
+  background: radial-gradient(farthest-side, var(--font-color) 98%, transparent)
+      top,
+    radial-gradient(farthest-side, var(--font-color) 98%, transparent) top,
+    radial-gradient(farthest-side, var(--font-color) 98%, transparent) left,
+    radial-gradient(farthest-side, var(--font-color) 98%, transparent) right,
+    radial-gradient(farthest-side, var(--font-color) 98%, transparent) bottom,
+    var(--primary-bg);
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  filter: blur(4px) contrast(15);
+  animation: l19 2s infinite;
+}
+
+.big-tick-svg {
+  width: 100px;
+  display: block;
+}
+
+.big-tick-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+  &.circle {
+    -webkit-animation: dash 0.9s ease-in-out;
+    animation: dash 0.9s ease-in-out;
+  }
+  &.line {
+    stroke-dashoffset: 1000;
+    -webkit-animation: dash 0.9s 0.35s ease-in-out forwards;
+    animation: dash 0.9s 0.35s ease-in-out forwards;
+  }
+  &.check {
+    stroke-dashoffset: -100;
+    -webkit-animation: dash-check 0.9s 0.35s ease-in-out forwards;
+    animation: dash-check 0.9s 0.35s ease-in-out forwards;
+  }
+}
+
+@-webkit-keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@-webkit-keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}
+
+@keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}
+
+@keyframes l19 {
+  0% {
+    background-position: top, top, left, right, bottom;
+  }
+  25% {
+    background-position: right, top, left, right, bottom;
+  }
+  50% {
+    background-position: bottom, top, left, right, bottom;
+  }
+  75% {
+    background-position: left, top, left, right, bottom;
+  }
+  100% {
+    background-position: top, top, left, right, bottom;
+  }
+}
+
+.three-dots-pop-loader {
+  width: 38px;
+  aspect-ratio: 2;
+  --_g: no-repeat
+    radial-gradient(circle closest-side, var(--font-color) 90%, #0000);
+  background: var(--_g) 0% 50%, var(--_g) 50% 50%, var(--_g) 100% 50%;
+  background-size: calc(100% / 3.5) 70%;
+  animation: three-dots-pop 1s infinite linear;
+}
+
+@keyframes three-dots-pop {
+  20% {
+    background-position: 0% 0%, 50% 50%, 100% 50%;
+  }
+  40% {
+    background-position: 0% 100%, 50% 0%, 100% 50%;
+  }
+  60% {
+    background-position: 0% 50%, 50% 100%, 100% 0%;
+  }
+  80% {
+    background-position: 0% 50%, 50% 50%, 100% 100%;
+  }
+}

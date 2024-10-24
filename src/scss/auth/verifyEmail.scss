@@ -1,0 +1,22 @@
+.verify-card-cnt {
+  height: 100vh;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+
+  .verify-card {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px 20px;
+    border: var(--section-border);
+    border-radius: var(--section-border-radius);
+    box-shadow: var(--box-shadow);
+  }
+}

@@ -1,0 +1,67 @@
+@import "signup.scss", "signin.scss", "forgotPassword.scss", "verifyEmail.scss";
+
+.auth-wrapper {
+  padding: 20px;
+  height: 100%;
+  width: 100%;
+  display: flex;
+
+  .img-cnt {
+    height: 100%;
+    width: 40%;
+    flex-grow: 1;
+    border-radius: var(--section-border-radius);
+
+    .auth-poster {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 160px;
+      margin-left: 80px;
+      .logo {
+        .product {
+          display: flex;
+          gap: 5px;
+          margin-left: 70px;
+          span {
+            font-size: 32px;
+            font-weight: 600;
+          }
+          .hash {
+            color: var(--primary);
+          }
+        }
+      }
+
+      .quote {
+        margin-left: 70px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+    }
+  }
+
+  .cred-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 40%;
+
+    .inputs-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 60%;
+      padding: 20px;
+    }
+
+    .link-cnt {
+      display: flex;
+      gap: 8px;
+    }
+  }
+}

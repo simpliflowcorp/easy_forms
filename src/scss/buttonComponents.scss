@@ -1,0 +1,60 @@
+.primary-button {
+  padding: var(--button-padding);
+  background-color: var(--primary);
+  border-radius: var(--button-border-radius);
+  text-align: center;
+  cursor: pointer;
+
+  span {
+    color: var(--font-color);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+}
+
+.primary-action-button {
+  padding: var(--button-padding);
+  background-color: var(--primary);
+  border-radius: var(--button-border-radius);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  p {
+    color: var(--font-color);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+}
+
+.oauth-button {
+  padding: var(--button-padding);
+  border-radius: var(--button-border-radius);
+  border: var(--input-border);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    color: var(--font-color);
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  &:hover {
+    background-color: #c1c1c11b;
+  }
+}

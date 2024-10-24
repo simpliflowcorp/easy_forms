@@ -1,0 +1,14 @@
+.main-header {
+  background-color: var(--secondary-bg);
+  height: 60px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .header-sec {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
