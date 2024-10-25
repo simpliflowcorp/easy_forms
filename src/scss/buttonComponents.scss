@@ -58,3 +58,20 @@
     background-color: #c1c1c11b;
   }
 }
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  border-radius: 50%;
+  cursor: pointer;
+
+  span {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background-color: var(--font-color);
+    color: var(--primary-bg);
+  }
+}

@@ -27,6 +27,12 @@ body {
     color: var(--font-color);
   }
 
+  .body {
+    height: 100%;
+    width: 100%;
+    display: flex;
+  }
+
   .loader-cnt {
     height: 100%;
     width: 100%;

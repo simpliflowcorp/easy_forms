@@ -1,0 +1,33 @@
+.sidebar-main {
+  background-color: var(--secondary-bg);
+  height: 100%;
+  width: 60px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  .header-sec {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 45px;
+
+    .logo {
+      border-radius: 50%;
+    }
+  }
+
+  .footer-sec {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .control-pannel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+}

@@ -1,2 +1,2 @@
-# easy_forms
-Easy forms project
+# easy_form
+Easy form project

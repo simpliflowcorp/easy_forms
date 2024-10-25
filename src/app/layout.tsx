@@ -6,6 +6,7 @@ import LanguageWrapper from "@/wrappers/LanguageWrapper";
 import SessionWrapper from "@/wrappers/SessionWrapper";
 import FaviconWrapper from "@/wrappers/FaviconWrapper";
 import { Toaster } from "react-hot-toast";
+import SidebarMain from "@/components/sidebar/SidebarMain";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,7 +30,9 @@ export default function RootLayout({
           {/* <FaviconWrapper> */}
           <body className={inter.className}>
             <Toaster />
-            <div className="body-wrapper theme-dark">{children}</div>
+            <div className="body-wrapper theme-dark">
+              <div className="body">{children}</div>
+            </div>
           </body>
           {/* </FaviconWrapper> */}
         </LanguageWrapper>

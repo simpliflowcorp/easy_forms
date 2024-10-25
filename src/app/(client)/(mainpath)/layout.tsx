@@ -1,6 +1,7 @@
 "use client";
 import MainHeader from "@/components/header/MainHeader";
 import FullPageLoader from "@/components/Loaders/FullPageLoader";
+import SidebarMain from "@/components/sidebar/SidebarMain";
 
 import axios from "axios";
 import * as React from "react";
@@ -42,7 +43,8 @@ export default function AppLayout({
   else
     return (
       <>
-        <MainHeader data={user} />
+        {/* <MainHeader data={user} /> */}
+        <SidebarMain data={{}} />
         {children}
       </>
     );
