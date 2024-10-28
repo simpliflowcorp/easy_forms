@@ -1,5 +1,7 @@
 "use client";
-import PieChartComp from "@/components/charts/PieChartComp";
+import InfoCard from "@/components/dashboard/cards/InfoCard";
+import PieChartComp from "@/components/dashboard/charts/PieChartComp";
+import RadarChartComp from "@/components/dashboard/charts/RadarChartComp";
 import axios from "axios";
 import * as React from "react";
 
@@ -21,6 +23,8 @@ export default function dashboard(props: IdashboardProps) {
         <div className="dashboard">
           <div className="dashboard-img"></div>
           <PieChartComp />
+          <RadarChartComp />
+          <InfoCard label="active" count="5" />
         </div>
       </div>
     </div>
