@@ -33,6 +33,12 @@ body {
     display: flex;
   }
 
+  .app-wrapper {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+  }
+
   .loader-cnt {
     height: 100%;
     width: 100%;

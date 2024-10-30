@@ -19,6 +19,9 @@
   //Sections
   --section-border-radius: 10px;
 
+  //Element
+  --element-border-radius: 6px;
+
   // Buttons
   --button-border-radius: 5px;
   --button-padding: 10px 15px;
@@ -41,7 +44,7 @@
     --color-scheme: dark;
 
     --input-border: 1px solid #e6e6e6;
-    --section-border: 1px solid #e6e6e6;
+    --common-border: 1px solid #e6e6e6;
   }
 
   .theme-dark {
@@ -50,11 +53,14 @@
 
     --primary-bg: #050505;
     --secondary-bg: #111111;
+    --terinary-bg: #181818;
+    --secondary-bg-gradient: linear-gradient(165deg, #111111, #070707);
+
     --font-color: #fbfbfe;
     --color-scheme: dark;
 
     --input-border: 1px solid #e6e6e6;
-    --section-border: 1px solid #e6e6e6;
+    --common-border: 1px solid #212121;
   }
 
   // STANDARD COLORS

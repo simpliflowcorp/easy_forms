@@ -45,7 +45,7 @@ export default function AppLayout({
       <>
         {/* <MainHeader data={user} /> */}
         <SidebarMain data={{}} />
-        {children}
+        <div className="app-wrapper">{children}</div>
       </>
     );
 }

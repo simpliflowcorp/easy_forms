@@ -1,0 +1,22 @@
+.info-card-cnt {
+  border: var(--common-border);
+  background: var(--secondary-bg-gradient);
+  padding: 10px 15px;
+  width: 100%;
+  border-radius: var(--element-border-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .info-card-text {
+    font-size: 16px;
+    font-weight: 600;
+    text-wrap: wrap;
+    word-break: break-all;
+  }
+
+  .info-card-count {
+    font-size: 18px;
+    font-weight: 600;
+  }
+}

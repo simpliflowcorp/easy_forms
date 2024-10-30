@@ -42,5 +42,15 @@
     "reset_password_link_expired": "Reset password link expired",
     "passwords_do_not_match" : "Password do not match",
     "new_password_and_confirm_password_is_not_same": "New password and confirm password is not same",
-    "password_changed_sucessfully": "Password changed sucessfully"
+    "password_changed_sucessfully": "Password changed sucessfully",
+    "dashboard": "Dashboard",
+    "active_forms": "Active forms",
+    "total_forms": "Total forms",
+    "total_responses": "Total responses",
+    "total_visitors": "Total visitors",
+    "response_this_week": "Response this week",
+    "visitors_this_week": "Visitors this week"
+
+
+
 }
