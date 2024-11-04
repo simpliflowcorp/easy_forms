@@ -91,4 +91,36 @@ body {
     position: absolute;
     right: 8px;
   }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    background-color: #212121;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: #414141;
+  }
+
+  // /* ===== Scrollbar CSS ===== */
+  // /* Firefox */
+  // * {
+  //   scrollbar-width: thin;
+  //   scrollbar-color: #007bff #ededed;
+  // }
+
+  // /* Chrome, Edge, and Safari */
+  // *::-webkit-scrollbar {
+  //   width: 6px;
+  // }
+
+  // *::-webkit-scrollbar-track {
+  //   background: #ededed;
+  // }
+
+  // *::-webkit-scrollbar-thumb {
+  //   background-color: #007bff;
+  //   border-radius: 10px;
+  // }
 }

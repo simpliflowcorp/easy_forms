@@ -49,7 +49,10 @@
     "total_responses": "Total responses",
     "total_visitors": "Total visitors",
     "response_this_week": "Response this week",
-    "visitors_this_week": "Visitors this week"
+    "visitors_this_week": "Visitors this week",
+    "activity_last_three_days": "Activity last three days",
+    "visited_forms_last_three_days": "Visited forms last three days",
+    "responses_recorded_by_forms": "Responses recorded by forms"
 
 
 

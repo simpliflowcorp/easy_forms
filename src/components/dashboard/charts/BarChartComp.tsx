@@ -1,3 +1,5 @@
+import dateConverter from "@/helper/dateConverter";
+import generateColorShades from "@/helper/generateColorShades";
 import React from "react";
 import {
   BarChart,
@@ -8,16 +10,20 @@ import {
   Tooltip,
   Legend,
   Rectangle,
+  ResponsiveContainer,
 } from "recharts";
-
-export default function BarChartComp() {
-  const data = [
+type Props = {
+  data: any;
+};
+export default function BarChartComp(props: Props) {
+  const datas = [
     {
       name: "Page A",
       uv: 4000,
       pv: 2400,
       amt: 2400,
     },
+
     {
       name: "Page B",
       uv: 3000,
@@ -56,32 +62,52 @@ export default function BarChartComp() {
     },
   ];
 
+  const [chartData, setChartData] = React.useState(props.data);
+  const [chartKeys, setChartKeys] = React.useState([] as any);
+  const [barColorArray, setBarColorArray] = React.useState([] as any);
+
+  React.useEffect(() => {
+    console.log(props.data);
+    let workingData = { banana: 0, apple: 0, orange: 0 };
+
+    console.log(Object.keys(workingData));
+
+    let data = Object.keys(props.data).map((key: any) => {
+      return { name: dateConverter(key), ...props.data[key] };
+    });
+
+    let keys = Object.values(props.data).map((val: any) => {
+      return Object.keys(val);
+    });
+
+    setChartData(data);
+    setChartKeys(keys[0]);
+    let colors = generateColorShades("#6439FF", "#7CF5FF", keys[0].length);
+    setBarColorArray(colors);
+    console.log(keys);
+    console.log(data);
+  }, [props.data]);
+
   return (
-    <BarChart
-      width={500}
-      height={300}
-      data={data}
-      margin={{
-        top: 5,
-        right: 30,
-        left: 20,
-        bottom: 5,
-      }}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
-      <Tooltip />
-      <Bar
-        dataKey="uv"
-        fill="#B3CDAD"
-        activeBar={<Rectangle fill="pink" stroke="blue" />}
-      />
-      <Bar
-        dataKey="pv"
-        fill="#FF5F5E"
-        activeBar={<Rectangle fill="gold" stroke="purple" />}
-      />
-    </BarChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        width={1000}
+        height={300}
+        data={chartData}
+        margin={{
+          top: 5,
+          right: 5,
+          left: 5,
+          bottom: 5,
+        }}
+      >
+        <XAxis axisLine={false} tickLine={false} dataKey="name" />
+        <YAxis axisLine={false} tickLine={false} />
+        <Tooltip />
+        {chartKeys.map((key: any, index: any) => {
+          return <Bar key={key} dataKey={key} fill={barColorArray[index]} />;
+        })}
+      </BarChart>
+    </ResponsiveContainer>
   );
 }

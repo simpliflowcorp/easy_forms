@@ -1,4 +1,3 @@
-import "./styles.css";
 import React from "react";
 import {
   LineChart,
@@ -9,8 +8,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-
-export default function LineChartComp() {
+type Props = {
+  data: any;
+};
+export default function LineChartComp(props: Props) {
   const data = [
     {
       name: "Page A",

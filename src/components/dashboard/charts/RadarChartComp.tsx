@@ -5,9 +5,12 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  ResponsiveContainer,
 } from "recharts";
-
-export default function RadarChartComp() {
+type Props = {
+  data: any;
+};
+export default function RadarChartComp(props: Props) {
   const data = [
     {
       subject: "Math",
@@ -42,24 +45,19 @@ export default function RadarChartComp() {
   ];
 
   return (
-    <RadarChart
-      cx={300}
-      cy={250}
-      outerRadius={150}
-      width={500}
-      height={500}
-      data={data}
-    >
-      <PolarGrid />
-      <PolarAngleAxis dataKey="subject" />
-      <PolarRadiusAxis />
-      <Radar
-        name="Mike"
-        dataKey="A"
-        stroke="#8884d8"
-        fill="#8884d8"
-        fillOpacity={0.6}
-      />
-    </RadarChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <RadarChart outerRadius={150} width={500} height={500} data={props.data}>
+        <PolarGrid />
+        <PolarAngleAxis dataKey="name" />
+        <PolarRadiusAxis />
+        <Radar
+          name="Mike"
+          dataKey="value"
+          stroke="#6439FF"
+          fill="#6439FF"
+          fillOpacity={0.6}
+        />
+      </RadarChart>
+    </ResponsiveContainer>
   );
 }

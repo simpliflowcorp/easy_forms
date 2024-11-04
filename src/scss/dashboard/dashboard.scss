@@ -1,5 +1,4 @@
 .dashboard-cnt {
-  height: 100%;
   width: 100%;
   padding: 10px;
 
@@ -21,8 +20,15 @@
     }
   }
 
-  .card-cnt {
+  .cards-cnt {
     display: flex;
     gap: 10px;
+  }
+
+  .charts-cnt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
   }
 }
