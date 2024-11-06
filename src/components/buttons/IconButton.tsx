@@ -20,6 +20,7 @@ export default function IconButton(props: IIconButtonProps) {
       }, 2000);
     }
   }, [isClicked]);
+
   return (
     <div className={"icon-button"} onClick={() => props.action()}>
       <span className={"ic-" + props.icon}></span>

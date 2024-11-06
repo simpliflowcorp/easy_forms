@@ -15,6 +15,8 @@ export default function AppLayout({
 }>) {
   React.useEffect(() => {}, []);
   const [user, setUser] = React.useState({} as any);
+  const [isActive, setIsActive] = React.useState("" as string);
+
   const [gotData, setGotData] = React.useState(false);
 
   const getUserData = async () => {
@@ -26,6 +28,7 @@ export default function AppLayout({
       console.error(error);
     }
   };
+
   // const checkTemplate = async () => {
   //   try {
   //     const template = await fetch("@/emailtemplates/verifyEmail.html");
@@ -36,15 +39,17 @@ export default function AppLayout({
   // };
 
   React.useEffect(() => {
+    let path = window.location.pathname.split("/")[1];
+    setIsActive(path);
     getUserData();
-  }, []);
+  }, [window.location.pathname]);
 
   if (!gotData) return <FullPageLoader />;
   else
     return (
       <>
         {/* <MainHeader data={user} /> */}
-        <SidebarMain data={{}} />
+        <SidebarMain isActive={isActive} data={{}} />
         <div className="app-wrapper">{children}</div>
       </>
     );

@@ -10,6 +10,7 @@ import Image from "next/image";
 import IconButton from "../buttons/IconButton";
 
 type Props = {
+  isActive: string;
   data: any;
 };
 
@@ -36,6 +37,8 @@ const SidebarMain = (props: Props) => {
     router.push(path);
   };
 
+  console.log(props.isActive);
+
   return (
     <div className="sidebar-main">
       <div className="header-sec">
@@ -50,24 +53,42 @@ const SidebarMain = (props: Props) => {
           />
         </div>
         <div className="control-pannel">
-          <IconButton
-            icon="columns-gap"
-            action={() => {
-              routerSwitch("/dashboard");
-            }}
-          />
-          <IconButton
-            icon="journal-text"
-            action={() => {
-              routerSwitch("/forms");
-            }}
-          />
-          <IconButton
-            icon="gear"
-            action={() => {
-              routerSwitch("/settings");
-            }}
-          />
+          <div
+            className={
+              props.isActive === "dashboard" ? "control active" : "control"
+            }
+          >
+            <IconButton
+              icon="columns-gap"
+              action={() => {
+                routerSwitch("/dashboard");
+              }}
+            />
+          </div>
+          <div
+            className={
+              props.isActive === "forms" ? "control active" : "control"
+            }
+          >
+            <IconButton
+              icon="journal-text"
+              action={() => {
+                routerSwitch("/forms");
+              }}
+            />
+          </div>
+          <div
+            className={
+              props.isActive === "settings" ? "control active" : "control"
+            }
+          >
+            <IconButton
+              icon="gear"
+              action={() => {
+                routerSwitch("/settings");
+              }}
+            />
+          </div>
         </div>
       </div>
       <div className="footer-sec">
