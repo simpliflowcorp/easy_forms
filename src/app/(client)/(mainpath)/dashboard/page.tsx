@@ -37,7 +37,6 @@ export default function dashboard(props: IdashboardProps) {
           <InfoCard label={lang.total_responses} count={10} />
           <InfoCard label={lang.total_visitors} count={30} />
         </div>
-        <br />
 
         <div className="charts-cnt">
           <ChartComponetManger

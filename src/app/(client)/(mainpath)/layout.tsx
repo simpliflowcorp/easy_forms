@@ -4,6 +4,7 @@ import FullPageLoader from "@/components/Loaders/FullPageLoader";
 import SidebarMain from "@/components/sidebar/SidebarMain";
 
 import axios from "axios";
+import { useRouter, usePathname } from "next/navigation";
 import * as React from "react";
 
 export default function AppLayout({
@@ -13,7 +14,8 @@ export default function AppLayout({
   children: React.ReactNode;
   header: React.ReactNode;
 }>) {
-  React.useEffect(() => {}, []);
+  const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = React.useState({} as any);
   const [isActive, setIsActive] = React.useState("" as string);
 
@@ -40,9 +42,12 @@ export default function AppLayout({
 
   React.useEffect(() => {
     let path = window.location.pathname.split("/")[1];
+    console.log(path);
+    console.log(pathname);
+
     setIsActive(path);
     getUserData();
-  }, [window.location.pathname]);
+  }, [pathname]);
 
   if (!gotData) return <FullPageLoader />;
   else

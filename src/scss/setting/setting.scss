@@ -1,0 +1,76 @@
+.settings-cnt {
+  width: 100%;
+  padding: 0 10px;
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 16px 0;
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .header-indicator {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--color-accent);
+      }
+
+      .header-text {
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .settings-cards {
+    display: flex;
+    gap: 10px;
+
+    .card-cnt {
+      position: relative;
+      flex-grow: 1;
+      min-width: 250px;
+      height: 150px;
+      background: linear-gradient(
+        135deg,
+        rgba(0, 123, 255, 0.6),
+        rgba(0, 123, 255, 0.1)
+      );
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      cursor: pointer;
+
+      &:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 123, 255, 0.8),
+          rgba(0, 123, 255, 0.3)
+        );
+      }
+
+      .card {
+        position: absolute;
+        z-index: 5;
+        width: 100%;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .card-text {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .card-icon {
+        span {
+          font-size: 36px;
+        }
+      }
+    }
+  }
+}
