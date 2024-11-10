@@ -6,7 +6,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-export interface IsettingdProps {}
+export interface IsettingsProps {}
 
 export default function settings(props: IsettingsProps) {
   const lang = useLanguageStore((state) => state.language);
