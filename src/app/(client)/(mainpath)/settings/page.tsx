@@ -32,16 +32,45 @@ export default function settings(props: IsettingsProps) {
       </div>
       <div className="settings">
         <div className="settings-cards">
-          <div className="account card-cnt">
+          <div
+            className="account card-cnt"
+            onClick={() => {
+              router.push("/settings/profile");
+            }}
+          >
             <div className="card">
-              <div className="card-text">Account & preferences</div>
+              <div className="card-text">Account & Preferences</div>
               <div className="card-icon">
                 <span className="ic-person"></span>
               </div>
             </div>
           </div>
-          <div className="security card-cnt"></div>
-          <div className="notification card-cnt"></div>
+          <div
+            className="security card-cnt"
+            onClick={() => {
+              router.push("/settings/security");
+            }}
+          >
+            <div className="card">
+              <div className="card-text">Sign in & Security</div>
+              <div className="card-icon">
+                <span className="ic-shield-lock"></span>
+              </div>
+            </div>
+          </div>
+          <div
+            className="notification card-cnt"
+            onClick={() => {
+              router.push("/settings/notification");
+            }}
+          >
+            <div className="card">
+              <div className="card-text">Notification</div>
+              <div className="card-icon">
+                <span className="ic-bell"></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

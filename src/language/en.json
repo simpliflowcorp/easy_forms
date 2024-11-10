@@ -56,7 +56,12 @@
     "forms": "Forms",
     "responses": "Responses",
     "create_form": "Create Form",
-    "settings": "Settings"
+    "settings": "Settings",
+    "users": "Users",
+    "user": "User",
+    "name": "Name",
+    "notification": "Notification",
+    "security": "Security"
 
 
 

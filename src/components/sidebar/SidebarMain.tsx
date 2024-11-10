@@ -37,8 +37,6 @@ const SidebarMain = (props: Props) => {
     router.push(path);
   };
 
-  console.log(props.isActive);
-
   return (
     <div className="sidebar-main">
       <div className="header-sec">
