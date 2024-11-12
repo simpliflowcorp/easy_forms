@@ -30,7 +30,18 @@ export default function notification(props: InotificationProps) {
           <span className="header-text">{lang.notification}</span>
         </div>
       </div>
-      <div className="profile"></div>
+      <div className="profile">
+        <div className="profile-cards">
+          <div className="card-cnt">
+            <div className="card-header">
+              <span className="header-text">{lang.notification}</span>
+            </div>
+            <div className="card-body">
+              <span className="body-text">{lang.notification}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
