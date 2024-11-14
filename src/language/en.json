@@ -61,6 +61,12 @@
     "user": "User",
     "name": "Name",
     "notification": "Notification",
+    "popup_notification": "Popup Notification",
+    "email_notification": "Email Notification",
+    "form_expired_notification": "Form Expired Notification",
+    "email_expired_form_data": "Email Expired Form Data",
+    "account_data": "Account Data",
+
     "security": "Security"
 
 

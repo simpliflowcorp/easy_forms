@@ -1,12 +1,15 @@
-.profile-cnt {
+.setting-cnt {
   width: 100%;
+  height: 100%;
   padding: 0 10px;
+  display: flex;
+  flex-direction: column;
 
-  .profile-header {
+  .setting-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 16px 0;
+    padding: 16px 0;
 
     .left {
       display: flex;
@@ -22,6 +25,30 @@
       .header-text {
         font-size: 18px;
         font-weight: 600;
+      }
+    }
+  }
+
+  .setting-body {
+    margin: 20px;
+    flex-grow: 1;
+    background-color: var(--secondary-bg);
+    border-radius: var(--section-border-radius);
+
+    .sub-setting {
+      display: flex;
+      flex-direction: column;
+
+      .sub-setting-header {
+        padding: 20px;
+        border-bottom: var(--common-border);
+      }
+
+      .sub-setting-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
       }
     }
   }

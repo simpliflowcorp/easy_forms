@@ -23,14 +23,14 @@ export default function profile(props: IprofileProps) {
   const barChartData = {};
 
   return (
-    <div className="profile-cnt">
-      <div className="profile-header">
+    <div className="setting-cnt">
+      <div className="setting-header">
         <div className="left">
           <span className="header-indicator">/</span>
           <span className="header-text">{lang.profile}</span>
         </div>
       </div>
-      <div className="profile"></div>
+      <div className="setting"></div>
     </div>
   );
 }
