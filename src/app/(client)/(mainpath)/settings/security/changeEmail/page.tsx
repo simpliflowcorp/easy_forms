@@ -33,30 +33,10 @@ export default function security(props: IsecurityProps) {
       </div>
       <div className="setting-body">
         <div className="sub-setting">
-          <span className="sub-setting-header">{lang.account_data}</span>
-          <div className="sub-setting-body">
-            <div
-              onClick={() => router.push("/settings/security/changePassword")}
-              className="sub-setting-line"
-            >
-              <span>{lang.change_password}</span>
-              <span className="ic-arrow-right-short sub-setting-line-icon"></span>
-            </div>
-            <div
-              onClick={() => router.push("/settings/security/changeEmail")}
-              className="sub-setting-line"
-            >
-              <span>{lang.change_email_address}</span>
-              <span className="ic-arrow-right-short sub-setting-line-icon"></span>
-            </div>
-          </div>
-        </div>
-        <div className="sub-setting">
-          <span className="sub-setting-header">{lang.email_notification}</span>
-          <div className="sub-setting-body">
-            <ToogleSwitch label="form_expired_notification" action={() => {}} />
-            <ToogleSwitch label="email_expired_form_data" action={() => {}} />
-          </div>
+          <span className="sub-setting-header">
+            {lang.change_email_address}
+          </span>
+          <div className="sub-setting-body"></div>
         </div>
       </div>
     </div>

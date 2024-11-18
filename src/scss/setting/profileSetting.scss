@@ -49,6 +49,29 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+
+        .sub-setting-line {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          cursor: pointer;
+
+          .sub-setting-line-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+              background-color: var(--font-color);
+              color: var(--primary-bg);
+              border-radius: 50%;
+            }
+          }
+        }
       }
     }
   }

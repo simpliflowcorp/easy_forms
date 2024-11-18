@@ -66,7 +66,8 @@
     "form_expired_notification": "Form Expired Notification",
     "email_expired_form_data": "Email Expired Form Data",
     "account_data": "Account Data",
-
+    "change_email_address": "Change Email Address",
+    "change_password": "Change Password",
     "security": "Security"
 
 
