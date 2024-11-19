@@ -68,8 +68,6 @@
     "account_data": "Account Data",
     "change_email_address": "Change Email Address",
     "change_password": "Change Password",
+    "current_password": "Current Password",
     "security": "Security"
-
-
-
 }

@@ -36,14 +36,14 @@ export default function security(props: IsecurityProps) {
           <span className="sub-setting-header">{lang.account_data}</span>
           <div className="sub-setting-body">
             <div
-              onClick={() => router.push("/settings/security/changePassword")}
+              onClick={() => router.push("/settings/security/change-password")}
               className="sub-setting-line"
             >
               <span>{lang.change_password}</span>
               <span className="ic-arrow-right-short sub-setting-line-icon"></span>
             </div>
             <div
-              onClick={() => router.push("/settings/security/changeEmail")}
+              onClick={() => router.push("/settings/security/change-email")}
               className="sub-setting-line"
             >
               <span>{lang.change_email_address}</span>

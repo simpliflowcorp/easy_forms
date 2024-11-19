@@ -50,6 +50,19 @@
         flex-direction: column;
         gap: 20px;
 
+        .sub-setting-body-password-cnt {
+          width: 50%;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+
+          .btn-cnt {
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+          }
+        }
+
         .sub-setting-line {
           display: flex;
           justify-content: space-between;
