@@ -42,6 +42,23 @@
       .sub-setting-header {
         padding: 20px;
         border-bottom: var(--common-border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .sub-setting-line-icon {
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          &:hover {
+            background-color: var(--font-color);
+            color: var(--primary-bg);
+            border-radius: 50%;
+          }
+        }
       }
 
       .sub-setting-body {
@@ -52,6 +69,7 @@
 
         .sub-setting-body-password-cnt {
           width: 50%;
+          margin-left: 30px;
           display: flex;
           flex-direction: column;
           gap: 10px;

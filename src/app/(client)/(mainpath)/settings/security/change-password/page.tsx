@@ -3,6 +3,8 @@ import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import ToogleSwitch from "@/components/buttons/toogleSwitch";
 import PasswordInput from "@/components/Inputs/PasswordInput";
+import { errorHandler } from "@/helper/errorHandler";
+import { successHandler } from "@/helper/successHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -26,15 +28,24 @@ export default function security(props: IsecurityProps) {
   });
   const [resetBtn, setResetBtn] = React.useState(0);
 
-  // const testModel = async () => {
-  //   let res = await axios.post("/api/testDb", { test: "T1" });
-  //   console.log(res);
-  // };
-  // React.useEffect(() => {
-  //   testModel();
-  // });
-
-  const barChartData = {};
+  const forgotPassword = async () => {
+    if (
+      dataIsValid.current_password &&
+      dataIsValid.new_password &&
+      dataIsValid.confirm_password
+    ) {
+      try {
+        const res = await axios.post("/api/auth/changePassword", data);
+        successHandler(res, lang);
+        router.push("/auth/signin");
+      } catch (error: any) {
+        setResetBtn((p) => p + 1);
+        errorHandler(error, lang);
+      }
+    } else {
+      setResetBtn((p) => p + 1);
+    }
+  };
 
   return (
     <div className="setting-cnt">
@@ -47,8 +58,11 @@ export default function security(props: IsecurityProps) {
       <div className="setting-body">
         <div className="sub-setting">
           <span className="sub-setting-header">
+            <span
+              onClick={() => router.push("/settings/security")}
+              className="ic-caret-left sub-setting-line-icon"
+            ></span>
             {lang.change_password}
-            <span className="ic-chevron-left sub-setting-line-icon"></span>
           </span>
           <div className="sub-setting-body">
             <div className="sub-setting-body-password-cnt">
