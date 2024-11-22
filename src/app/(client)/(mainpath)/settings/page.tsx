@@ -35,7 +35,7 @@ export default function settings(props: IsettingsProps) {
           <div
             className="account card-cnt"
             onClick={() => {
-              router.push("/settings/profile");
+              router.push("/settings/account");
             }}
           >
             <div className="card">

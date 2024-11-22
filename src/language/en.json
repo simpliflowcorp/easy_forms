@@ -69,5 +69,19 @@
     "change_email_address": "Change Email Address",
     "change_password": "Change Password",
     "current_password": "Current Password",
-    "security": "Security"
+    "security": "Security",
+    "preferences": "Preferences",
+    "account": "Account",
+    "account_and_preferences": "Account and Preferences",
+    "email_address": "Email Address",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "dob": "Date of Birth",
+    "phone_number": "Phone Number",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "country": "Country",
+    "zip_code": "Zip Code",
+    "new_email_address" : "New Email Address"
 }

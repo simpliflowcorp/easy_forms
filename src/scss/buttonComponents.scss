@@ -65,10 +65,13 @@
   justify-content: center;
   padding: 6px 8px;
   border-radius: 50%;
+  width: 34px;
+  height: 34px;
   cursor: pointer;
 
   span {
-    font-size: 18px;
+    display: flex;
+    font-size: 20px;
   }
 
   &:hover {

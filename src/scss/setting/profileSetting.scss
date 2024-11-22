@@ -81,6 +81,13 @@
           }
         }
 
+        .sub-setting-body-profile-cnt {
+          width: 30%;
+          margin-left: 30px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
         .sub-setting-line {
           display: flex;
           justify-content: space-between;
