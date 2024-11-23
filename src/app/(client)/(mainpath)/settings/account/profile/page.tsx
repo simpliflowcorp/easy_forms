@@ -80,7 +80,7 @@ export default function security(props: IsecurityProps) {
             {lang.profile}
           </span>
           <div className="sub-setting-body">
-            <div className="sub-setting-body-profile-cnt">
+            <div className="sub-setting-body-password-cnt">
               <TextFieldInput
                 reset={resetBtn}
                 label={lang.first_name}
@@ -91,7 +91,91 @@ export default function security(props: IsecurityProps) {
                 isRequired={true}
                 isValid={dataIsValid.first_name}
                 updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, username: value }))
+                  setDataIsValid((p) => ({ ...p, first_name: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.last_name}
+                value={data.last_name}
+                updateValue={(value: string) =>
+                  setData({ ...data, last_name: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.last_name}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, last_name: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.phone_number}
+                value={data.phone_number}
+                updateValue={(value: string) =>
+                  setData({ ...data, phone_number: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.phone_number}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, phone_number: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.address}
+                value={data.address}
+                updateValue={(value: string) =>
+                  setData({ ...data, address: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.address}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, address: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.city}
+                value={data.city}
+                updateValue={(value: string) =>
+                  setData({ ...data, city: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.city}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, city: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.state}
+                value={data.state}
+                updateValue={(value: string) =>
+                  setData({ ...data, state: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.state}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, state: value }))
+                }
+              />
+
+              <TextFieldInput
+                reset={resetBtn}
+                label={lang.country}
+                value={data.country}
+                updateValue={(value: string) =>
+                  setData({ ...data, country: value })
+                }
+                isRequired={true}
+                isValid={dataIsValid.country}
+                updateIsValid={(value: boolean) =>
+                  setDataIsValid((p) => ({ ...p, country: value }))
                 }
               />
             </div>
