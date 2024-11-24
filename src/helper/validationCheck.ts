@@ -13,10 +13,20 @@ export const validationCheck = (
     case "password":
       const passwordRegex = /^.{8,}$/; // Minimum 8 characters
       return passwordRegex.test(value) ? 1 : 3;
+
+    case "text":
+      return 1;
+    case "number":
+      const numberRegex = /^[0-9]+?$/gm;
+      return numberRegex.test(value) ? 1 : 3;
+    case "decimal":
+      const decimalNumberRegex = /^[0-9]+(\.[0-9]+)?$/gm;
+      return decimalNumberRegex.test(value) ? 1 : 3;
     default:
       return 1;
   }
 };
+
 export const blurCheck = (
   value: string,
   props: any,

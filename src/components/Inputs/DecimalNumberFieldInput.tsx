@@ -5,8 +5,7 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ITextFieldInputProps {
-  type: string;
+export interface IDecimalNumberFieldInputProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
@@ -16,7 +15,9 @@ export interface ITextFieldInputProps {
   reset: number;
 }
 
-export default function TextFieldInput(props: ITextFieldInputProps) {
+export default function DecimalNumberFieldInput(
+  props: IDecimalNumberFieldInputProps
+) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
   const [value, setValue] = React.useState(props.value as string);
@@ -45,7 +46,7 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
-            blurCheck(value, props, setIsValid, setIsNotEmpty, "text");
+            blurCheck(value, props, setIsValid, setIsNotEmpty, "decimal");
           }}
         />{" "}
         <ErroTextCnt isValid={!isValid} IsNotEmpty={!IsNotEmpty} />

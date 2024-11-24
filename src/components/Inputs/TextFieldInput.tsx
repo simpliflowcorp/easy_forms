@@ -6,7 +6,6 @@ import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
 export interface ITextFieldInputProps {
-  type: string;
   label: string;
   value: string;
   updateValue: (value: string) => void;

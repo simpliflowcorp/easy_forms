@@ -1,5 +1,10 @@
 import React from "react";
 import TextFieldInput from "./TextFieldInput";
+import NumberFieldInput from "./NumberFieldInput";
+import DecimalNumberFieldInput from "./DecimalNumberFieldInput";
+import Email from "next-auth/providers/email";
+import EmailInput from "./EmailInput";
+import PasswordInput from "./PasswordInput";
 
 type Props = {
   type: number;
@@ -29,11 +34,56 @@ const DynamicFieldManger = (props: Props) => {
         );
         break;
       case 2:
-        return <EmailInput />;
+        return (
+          <NumberFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
         break;
       case 3:
-        return <PasswordInput />;
+        return (
+          <DecimalNumberFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
         break;
+      case 4:
+        return (
+          <EmailInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+        break;
+      case 101:
+        return (
+          <PasswordInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
       default:
         return <div></div>;
     }
