@@ -9,7 +9,7 @@ import PasswordInput from "./PasswordInput";
 type Props = {
   type: number;
   label: string;
-  value: string;
+  value: any;
   updateValue: (value: string) => void;
   updateIsValid: (value: boolean) => void;
   isValid: boolean;
@@ -88,5 +88,7 @@ const DynamicFieldManger = (props: Props) => {
         return <div></div>;
     }
   };
-  return <div></div>;
+  return <div>{fieldManager()}</div>;
 };
+
+export default DynamicFieldManger;

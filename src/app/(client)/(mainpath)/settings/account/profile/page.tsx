@@ -2,6 +2,7 @@
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import PasswordInput from "@/components/Inputs/PasswordInput";
 import TextFieldInput from "@/components/Inputs/TextFieldInput";
 import { errorHandler } from "@/helper/errorHandler";
@@ -31,6 +32,7 @@ export default function security(props: IsecurityProps) {
     profile_image: "",
     website: "",
   });
+
   const [dataIsValid, setDataIsValid] = React.useState({
     first_name: false,
     last_name: false,
@@ -45,6 +47,60 @@ export default function security(props: IsecurityProps) {
     profile_image: false,
     website: false,
   });
+
+  const [structureData, setStructureData] = React.useState([
+    {
+      name: "first_name",
+      type: 1,
+    },
+    {
+      name: "last_name",
+      type: 1,
+    },
+    {
+      name: "phone_number",
+      type: 2,
+    },
+    {
+      name: "address",
+      type: 1,
+    },
+    {
+      name: "city",
+      type: 1,
+    },
+    {
+      name: "state",
+      type: 1,
+    },
+    {
+      name: "country",
+      type: 1,
+    },
+    {
+      name: "zip_code",
+      type: 1,
+    },
+    {
+      name: "about",
+      type: 1,
+    },
+    {
+      name: "profile_image",
+      type: 1,
+    },
+    {
+      name: "website",
+      type: 1,
+    },
+    {
+      name: "dob",
+      type: 2,
+    },
+  ]);
+
+  console.log(data);
+
   const [resetBtn, setResetBtn] = React.useState(0);
 
   const forgotPassword = async () => {
@@ -81,103 +137,25 @@ export default function security(props: IsecurityProps) {
           </span>
           <div className="sub-setting-body">
             <div className="sub-setting-body-password-cnt">
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.first_name}
-                value={data.first_name}
-                updateValue={(value: string) =>
-                  setData({ ...data, first_name: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.first_name}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, first_name: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.last_name}
-                value={data.last_name}
-                updateValue={(value: string) =>
-                  setData({ ...data, last_name: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.last_name}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, last_name: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.phone_number}
-                value={data.phone_number}
-                updateValue={(value: string) =>
-                  setData({ ...data, phone_number: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.phone_number}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, phone_number: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.address}
-                value={data.address}
-                updateValue={(value: string) =>
-                  setData({ ...data, address: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.address}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, address: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.city}
-                value={data.city}
-                updateValue={(value: string) =>
-                  setData({ ...data, city: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.city}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, city: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.state}
-                value={data.state}
-                updateValue={(value: string) =>
-                  setData({ ...data, state: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.state}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, state: value }))
-                }
-              />
-
-              <TextFieldInput
-                reset={resetBtn}
-                label={lang.country}
-                value={data.country}
-                updateValue={(value: string) =>
-                  setData({ ...data, country: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.country}
-                updateIsValid={(value: boolean) =>
-                  setDataIsValid((p) => ({ ...p, country: value }))
-                }
-              />
+              {structureData.map((item, index) => (
+                <DynamicFieldManger
+                  key={index}
+                  reset={resetBtn}
+                  label={lang[item.name]}
+                  // value={data[item.name]}
+                  value={data[item.name as keyof typeof data]}
+                  updateValue={(value: string) =>
+                    setData({ ...data, [item.name]: value })
+                  }
+                  isRequired={item.name === "first_name"}
+                  // isValid={dataIsValid[item.name]}
+                  isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
+                  updateIsValid={(value: boolean) =>
+                    setDataIsValid((p) => ({ ...p, [item.name]: value }))
+                  }
+                  type={item.type}
+                />
+              ))}
             </div>
           </div>
         </div>
