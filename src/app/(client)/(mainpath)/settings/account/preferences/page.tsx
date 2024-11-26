@@ -2,7 +2,10 @@
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import PasswordInput from "@/components/Inputs/PasswordInput";
+import SelectFieldInput from "@/components/Inputs/SelectFieldInput";
+import TextFieldInput from "@/components/Inputs/TextFieldInput";
 import { errorHandler } from "@/helper/errorHandler";
 import { successHandler } from "@/helper/successHandler";
 import { useLanguageStore } from "@/store/store";
@@ -17,25 +20,86 @@ export default function security(props: IsecurityProps) {
   const router = useRouter();
 
   const [data, setData] = React.useState({
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
+    first_name: "",
+    last_name: "",
+    dob: "",
+    phone_number: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    zip_code: "",
+    about: "",
+    profile_image: "",
+    website: "",
   });
+
   const [dataIsValid, setDataIsValid] = React.useState({
-    current_password: false,
-    new_password: false,
-    confirm_password: false,
+    first_name: false,
+    last_name: false,
+    dob: false,
+    phone_number: false,
+    address: false,
+    city: false,
+    state: false,
+    country: false,
+    zip_code: false,
+    about: false,
+    profile_image: false,
+    website: false,
   });
+
+  const [structureData, setStructureData] = React.useState([
+    {
+      name: "first_name",
+      type: 1,
+    },
+    {
+      name: "last_name",
+      type: 1,
+    },
+    {
+      name: "phone_number",
+      type: 2,
+    },
+    {
+      name: "address",
+      type: 1,
+    },
+    {
+      name: "city",
+      type: 1,
+    },
+    {
+      name: "state",
+      type: 1,
+    },
+    {
+      name: "country",
+      type: 1,
+    },
+    {
+      name: "zip_code",
+      type: 1,
+    },
+    {
+      name: "website",
+      type: 1,
+    },
+    {
+      name: "dob",
+      type: 2,
+    },
+  ]);
+
+  console.log(data);
+
   const [resetBtn, setResetBtn] = React.useState(0);
 
   const forgotPassword = async () => {
-    if (
-      dataIsValid.current_password &&
-      dataIsValid.new_password &&
-      dataIsValid.confirm_password
-    ) {
+    if (dataIsValid.first_name) {
       try {
-        const res = await axios.post("/api/auth/changePassword", data);
+        const res = await axios.post("/api/auth/updateProfile", data);
         successHandler(res, lang);
         router.push("/auth/signin");
       } catch (error: any) {
@@ -52,74 +116,57 @@ export default function security(props: IsecurityProps) {
       <div className="setting-header">
         <div className="left">
           <span className="header-indicator">/</span>
-          <span className="header-text">{lang.security}</span>
+          <span className="header-text">{lang.account}</span>
         </div>
       </div>
       <div className="setting-body">
         <div className="sub-setting">
           <span className="sub-setting-header">
             <span
-              onClick={() => router.push("/settings/security")}
+              onClick={() => router.push("/settings/account")}
               className="ic-caret-left sub-setting-line-icon"
             ></span>
-            {lang.change_password}
+            {lang.profile}
           </span>
           <div className="sub-setting-body">
-            <div className="sub-setting-body-password-cnt">
-              <PasswordInput
-                reset={resetBtn}
-                label={lang.current_password}
-                value={data.current_password}
-                updateValue={(value) =>
-                  setData({ ...data, current_password: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.current_password}
-                updateIsValid={(value) =>
-                  setDataIsValid((p) => ({ ...p, current_password: value }))
-                }
-              />
-
-              <PasswordInput
-                reset={resetBtn}
-                label={lang.new_password}
-                value={data.new_password}
-                updateValue={(value) =>
-                  setData({ ...data, new_password: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.new_password}
-                updateIsValid={(value) =>
-                  setDataIsValid((p) => ({ ...p, new_password: value }))
-                }
-              />
-
-              <PasswordInput
-                reset={resetBtn}
-                label={lang.confirm_password}
-                value={data.confirm_password}
-                updateValue={(value) =>
-                  setData({ ...data, confirm_password: value })
-                }
-                isRequired={true}
-                isValid={dataIsValid.confirm_password}
-                updateIsValid={(value) =>
-                  setDataIsValid((p) => ({ ...p, confirm_password: value }))
-                }
-              />
-              <div className="btn-cnt">
-                <PrimaryActionButton
-                  label="change_password"
-                  action={() => {}}
-                  resetBtn={resetBtn}
-                />
-
-                <PrimaryActionButton
-                  label="forgot_password"
-                  action={() => {
-                    router.push("/auth/forgotPassword");
-                  }}
-                  resetBtn={resetBtn}
+            <div className="sub-setting-body-profile-cnt">
+              {structureData.map((item, index) => (
+                <div key={index} className="sub-setting-body-profile-line">
+                  <DynamicFieldManger
+                    reset={resetBtn}
+                    label={lang[item.name]}
+                    // value={data[item.name]}
+                    value={data[item.name as keyof typeof data]}
+                    updateValue={(value: string) =>
+                      setData({ ...data, [item.name]: value })
+                    }
+                    isRequired={item.name === "first_name"}
+                    // isValid={dataIsValid[item.name]}
+                    isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
+                    updateIsValid={(value: boolean) =>
+                      setDataIsValid((p) => ({ ...p, [item.name]: value }))
+                    }
+                    type={item.type}
+                  />
+                </div>
+              ))}
+              <div className="sub-setting-body-profile-line">
+                <SelectFieldInput
+                  isRequired={false}
+                  reset={resetBtn}
+                  label={lang.country}
+                  value={data.country}
+                  updateValue={(value: string) =>
+                    setData({ ...data, country: value })
+                  }
+                  isValid={dataIsValid.country}
+                  updateIsValid={(value: boolean) =>
+                    setDataIsValid((p) => ({ ...p, country: value }))
+                  }
+                  options={[
+                    { value: "india", label: "India" },
+                    { value: "us", label: "United States" },
+                  ]}
                 />
               </div>
             </div>

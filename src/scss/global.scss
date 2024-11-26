@@ -124,6 +124,10 @@ body {
   //   border-radius: 10px;
   // }
 }
+.required-asterisk {
+  color: var(--error-color);
+  font-size: 12px;
+}
 
 .toogle-switch {
   display: flex;

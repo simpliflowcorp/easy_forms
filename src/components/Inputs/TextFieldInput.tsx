@@ -36,7 +36,12 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor="text">{props.label}</label>
+        <label htmlFor="text">
+          {props.label}{" "}
+          <span className="required-asterisk">
+            {props.isRequired ? "*" : ""}
+          </span>
+        </label>
         <input
           type="text"
           id="text"

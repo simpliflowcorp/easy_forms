@@ -83,5 +83,6 @@
     "state": "State",
     "country": "Country",
     "zip_code": "Zip Code",
+    "website": "Website",
     "new_email_address" : "New Email Address"
 }

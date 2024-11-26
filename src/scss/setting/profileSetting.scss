@@ -82,11 +82,15 @@
         }
 
         .sub-setting-body-profile-cnt {
-          width: 30%;
+          width: 100%;
           margin-left: 30px;
           display: flex;
-          flex-direction: column;
+          flex-wrap: wrap;
           gap: 10px;
+
+          .sub-setting-body-profile-line {
+            width: 45%;
+          }
         }
         .sub-setting-line {
           display: flex;

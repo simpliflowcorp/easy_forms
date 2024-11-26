@@ -72,6 +72,19 @@ const DynamicFieldManger = (props: Props) => {
           />
         );
         break;
+      case 11:
+        return (
+          <EmailInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+        break;
       case 101:
         return (
           <PasswordInput

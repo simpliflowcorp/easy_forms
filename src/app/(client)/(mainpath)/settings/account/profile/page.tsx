@@ -82,14 +82,6 @@ export default function security(props: IsecurityProps) {
       type: 1,
     },
     {
-      name: "about",
-      type: 1,
-    },
-    {
-      name: "profile_image",
-      type: 1,
-    },
-    {
       name: "website",
       type: 1,
     },
@@ -136,25 +128,26 @@ export default function security(props: IsecurityProps) {
             {lang.profile}
           </span>
           <div className="sub-setting-body">
-            <div className="sub-setting-body-password-cnt">
+            <div className="sub-setting-body-profile-cnt">
               {structureData.map((item, index) => (
-                <DynamicFieldManger
-                  key={index}
-                  reset={resetBtn}
-                  label={lang[item.name]}
-                  // value={data[item.name]}
-                  value={data[item.name as keyof typeof data]}
-                  updateValue={(value: string) =>
-                    setData({ ...data, [item.name]: value })
-                  }
-                  isRequired={item.name === "first_name"}
-                  // isValid={dataIsValid[item.name]}
-                  isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
-                  updateIsValid={(value: boolean) =>
-                    setDataIsValid((p) => ({ ...p, [item.name]: value }))
-                  }
-                  type={item.type}
-                />
+                <div key={index} className="sub-setting-body-profile-line">
+                  <DynamicFieldManger
+                    reset={resetBtn}
+                    label={lang[item.name]}
+                    // value={data[item.name]}
+                    value={data[item.name as keyof typeof data]}
+                    updateValue={(value: string) =>
+                      setData({ ...data, [item.name]: value })
+                    }
+                    isRequired={item.name === "first_name"}
+                    // isValid={dataIsValid[item.name]}
+                    isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
+                    updateIsValid={(value: boolean) =>
+                      setDataIsValid((p) => ({ ...p, [item.name]: value }))
+                    }
+                    type={item.type}
+                  />
+                </div>
               ))}
             </div>
           </div>
