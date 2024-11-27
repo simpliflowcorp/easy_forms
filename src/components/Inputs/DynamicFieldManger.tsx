@@ -5,6 +5,7 @@ import DecimalNumberFieldInput from "./DecimalNumberFieldInput";
 import Email from "next-auth/providers/email";
 import EmailInput from "./EmailInput";
 import PasswordInput from "./PasswordInput";
+import SelectFieldInput from "./SelectFieldInput";
 
 type Props = {
   type: number;
@@ -15,6 +16,7 @@ type Props = {
   isValid: boolean;
   reset: number;
   isRequired: boolean;
+  options: { label: string; value: string }[];
 };
 
 const DynamicFieldManger = (props: Props) => {
@@ -74,7 +76,8 @@ const DynamicFieldManger = (props: Props) => {
         break;
       case 11:
         return (
-          <EmailInput
+          <SelectFieldInput
+            options={props.options}
             label={props.label}
             value={props.value}
             updateValue={props.updateValue}

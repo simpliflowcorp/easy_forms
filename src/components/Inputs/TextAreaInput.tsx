@@ -20,6 +20,7 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
   const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
+  const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
     if (props.reset) {
@@ -34,9 +35,9 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor="text">{props.label}</label>
+        <label htmlFor={"textArea" + uid}>{props.label}</label>
         <textarea
-          id="text"
+          id={"textArea" + uid}
           className={isValid || !IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => setValue(e.target.value)}

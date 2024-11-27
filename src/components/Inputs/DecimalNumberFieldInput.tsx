@@ -22,6 +22,7 @@ export default function DecimalNumberFieldInput(
   const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
+  const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
     if (props.reset) {
@@ -38,10 +39,10 @@ export default function DecimalNumberFieldInput(
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor="text">{props.label}</label>
+        <label htmlFor={"text" + uid}>{props.label}</label>
         <input
           type="text"
-          id="text"
+          id={"text" + uid}
           className={!isValid || !IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => setValue(e.target.value)}

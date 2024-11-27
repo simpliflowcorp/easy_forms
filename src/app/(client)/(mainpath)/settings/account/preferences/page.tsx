@@ -20,75 +20,34 @@ export default function security(props: IsecurityProps) {
   const router = useRouter();
 
   const [data, setData] = React.useState({
-    first_name: "",
-    last_name: "",
-    dob: "",
-    phone_number: "",
-    address: "",
-    city: "",
-    state: "",
+    date_format: "",
     country: "",
-    zip_code: "",
-    about: "",
-    profile_image: "",
-    website: "",
+    time_format: "",
   });
 
   const [dataIsValid, setDataIsValid] = React.useState({
-    first_name: false,
-    last_name: false,
-    dob: false,
-    phone_number: false,
-    address: false,
-    city: false,
-    state: false,
+    date_format: false,
+    time_format: false,
     country: false,
-    zip_code: false,
-    about: false,
-    profile_image: false,
-    website: false,
   });
 
   const [structureData, setStructureData] = React.useState([
     {
-      name: "first_name",
-      type: 1,
-    },
-    {
-      name: "last_name",
-      type: 1,
-    },
-    {
-      name: "phone_number",
-      type: 2,
-    },
-    {
-      name: "address",
-      type: 1,
-    },
-    {
-      name: "city",
-      type: 1,
-    },
-    {
-      name: "state",
-      type: 1,
+      name: "date_format",
+      type: 11,
+      options: [
+        { label: "dd-mm-yyyy", value: "dd-mm-yyyy" },
+        { label: "mm-dd-yyyy", value: "mm-dd-yyyy" },
+        { label: "yyyy-mm-dd", value: "yyyy-mm-dd" },
+      ],
     },
     {
       name: "country",
-      type: 1,
-    },
-    {
-      name: "zip_code",
-      type: 1,
-    },
-    {
-      name: "website",
-      type: 1,
-    },
-    {
-      name: "dob",
-      type: 2,
+      type: 11,
+      options: [
+        { value: "india", label: "India" },
+        { value: "us", label: "United States" },
+      ],
     },
   ]);
 
@@ -97,7 +56,11 @@ export default function security(props: IsecurityProps) {
   const [resetBtn, setResetBtn] = React.useState(0);
 
   const forgotPassword = async () => {
-    if (dataIsValid.first_name) {
+    if (
+      dataIsValid.date_format &&
+      dataIsValid.time_format &&
+      dataIsValid.country
+    ) {
       try {
         const res = await axios.post("/api/auth/updateProfile", data);
         successHandler(res, lang);
@@ -135,12 +98,13 @@ export default function security(props: IsecurityProps) {
                   <DynamicFieldManger
                     reset={resetBtn}
                     label={lang[item.name]}
+                    options={item.options ? item.options : []}
                     // value={data[item.name]}
                     value={data[item.name as keyof typeof data]}
                     updateValue={(value: string) =>
                       setData({ ...data, [item.name]: value })
                     }
-                    isRequired={item.name === "first_name"}
+                    isRequired={false}
                     // isValid={dataIsValid[item.name]}
                     isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
                     updateIsValid={(value: boolean) =>
@@ -150,25 +114,6 @@ export default function security(props: IsecurityProps) {
                   />
                 </div>
               ))}
-              <div className="sub-setting-body-profile-line">
-                <SelectFieldInput
-                  isRequired={false}
-                  reset={resetBtn}
-                  label={lang.country}
-                  value={data.country}
-                  updateValue={(value: string) =>
-                    setData({ ...data, country: value })
-                  }
-                  isValid={dataIsValid.country}
-                  updateIsValid={(value: boolean) =>
-                    setDataIsValid((p) => ({ ...p, country: value }))
-                  }
-                  options={[
-                    { value: "india", label: "India" },
-                    { value: "us", label: "United States" },
-                  ]}
-                />
-              </div>
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
   const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
+  const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
     if (props.reset) {
@@ -31,12 +32,12 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(isValid, IsNotEmpty);
+  console.log(props);
 
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor="text">
+        <label htmlFor={"text" + uid}>
           {props.label}{" "}
           <span className="required-asterisk">
             {props.isRequired ? "*" : ""}
@@ -44,7 +45,7 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
         </label>
         <input
           type="text"
-          id="text"
+          id={"text" + uid}
           className={!isValid || !IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => setValue(e.target.value)}

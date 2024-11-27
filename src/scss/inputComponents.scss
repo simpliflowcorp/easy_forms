@@ -5,6 +5,32 @@
   width: 100%;
 
   input {
+    height: 38px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-border-radius);
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border: var(--input-border-focus);
+    }
+  }
+
+  .password-inp-cnt {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.select-cnt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+
+  input {
     padding: var(--input-padding);
     border: var(--input-border);
     border-radius: var(--input-border-radius);

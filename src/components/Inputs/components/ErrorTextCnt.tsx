@@ -4,16 +4,26 @@ import * as React from "react";
 export interface IErroTextCntProps {
   IsNotEmpty: boolean;
   isValid: boolean;
+  isRequired: boolean;
 }
 
 export default function ErroTextCnt(props: IErroTextCntProps) {
   const lang = useLanguageStore((state) => state.language);
 
+  console.log(props);
+
   return (
     <div className="input-err-cnt">
       {props.IsNotEmpty && <span className="err-text">{lang.required}</span>}
-      {props.isValid && !props.IsNotEmpty && (
+      {props.isRequired ? (
+        props.isValid &&
+        !props.IsNotEmpty && (
+          <span className="err-text">{lang.invalid_format}</span>
+        )
+      ) : props.isValid ? (
         <span className="err-text">{lang.invalid_format}</span>
+      ) : (
+        ""
       )}
     </div>
   );

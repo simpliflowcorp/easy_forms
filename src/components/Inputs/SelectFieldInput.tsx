@@ -19,12 +19,17 @@ export interface ISelectFieldInputProps {
 
 export default function SelectFieldInput(props: ISelectFieldInputProps) {
   const [isValid, setIsValid] = React.useState(props.isValid);
-  const [isNotEmpty, setIsNotEmpty] = React.useState(Boolean(props.value));
+  const [isNotEmpty, setIsNotEmpty] = React.useState(
+    props.isRequired ? Boolean(props.value) : true
+  );
   const lang = useLanguageStore((state) => state.language);
+  const [uid, setUid] = React.useState(Math.random());
+
+  console.log(props);
 
   React.useEffect(() => {
     if (props.reset) {
-      setIsNotEmpty(Boolean(props.value));
+      if (props.isRequired) setIsNotEmpty(Boolean(props.value));
       setIsValid(props.isValid);
     }
   }, [props.reset, props.value, props.isValid]);
@@ -95,14 +100,16 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
     }),
   };
 
+  console.log({ props, isNotEmpty });
+
   return (
-    <div className="input-cnt">
-      <label htmlFor="select">
+    <div className="select-cnt">
+      <label htmlFor={"select" + uid}>
         {props.label}{" "}
         <span className="required-asterisk">{props.isRequired ? "*" : ""}</span>
       </label>
       <Select
-        id="select"
+        id={"select" + uid}
         className={!isValid || !isNotEmpty ? "error-input" : ""}
         value={props.options.find((opt) => opt.value === props.value) || null}
         options={props.options || []}
@@ -118,7 +125,11 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
         styles={darkThemeStyles}
         classNamePrefix="custom-select"
       />
-      <ErroTextCnt isValid={!isValid} IsNotEmpty={!isNotEmpty} />
+      <ErroTextCnt
+        isRequired={props.isRequired}
+        isValid={isValid}
+        IsNotEmpty={!isNotEmpty}
+      />
     </div>
   );
 }

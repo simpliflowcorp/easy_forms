@@ -20,6 +20,7 @@ export default function EmailInput(props: IEmailInputProps) {
   const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
+  const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
     if (props.reset) {
@@ -34,10 +35,10 @@ export default function EmailInput(props: IEmailInputProps) {
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor="email">{props.label}</label>
+        <label htmlFor={"email" + uid}>{props.label}</label>
         <input
           type="email"
-          id="email"
+          id={"email" + uid}
           value={value}
           className={!isValid || !IsNotEmpty ? "error-input" : ""}
           onChange={(e) => setValue(e.target.value)}
