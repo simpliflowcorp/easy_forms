@@ -46,7 +46,11 @@ export default function EmailInput(props: IEmailInputProps) {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "email");
           }}
         />
-        <ErroTextCnt isValid={!isValid} IsNotEmpty={!IsNotEmpty} />
+        <ErroTextCnt
+          isRequired={props.isRequired}
+          isValid={!isValid}
+          IsNotEmpty={!IsNotEmpty}
+        />
       </div>
     </>
   );

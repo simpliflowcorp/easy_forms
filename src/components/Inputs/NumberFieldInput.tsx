@@ -48,7 +48,11 @@ export default function NumberFieldInput(props: INumberFieldInputProps) {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "number");
           }}
         />{" "}
-        <ErroTextCnt isValid={!isValid} IsNotEmpty={!IsNotEmpty} />
+        <ErroTextCnt
+          isRequired={props.isRequired}
+          isValid={!isValid}
+          IsNotEmpty={!IsNotEmpty}
+        />
       </div>
     </>
   );

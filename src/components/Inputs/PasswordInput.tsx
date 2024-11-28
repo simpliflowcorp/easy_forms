@@ -64,7 +64,11 @@ export default function PasswordInput(props: IPasswordInputProps) {
             ></i>
           )}
         </div>
-        <ErroTextCnt isValid={!isValid} IsNotEmpty={!IsNotEmpty} />
+        <ErroTextCnt
+          isRequired={props.isRequired}
+          isValid={!isValid}
+          IsNotEmpty={!IsNotEmpty}
+        />
       </div>
     </>
   );

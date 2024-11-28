@@ -132,6 +132,8 @@ export default function security(props: IsecurityProps) {
               {structureData.map((item, index) => (
                 <div key={index} className="sub-setting-body-profile-line">
                   <DynamicFieldManger
+                    // options={item?.options ? item?.options : []}
+                    options={item?.options ?? []}
                     reset={resetBtn}
                     label={lang[item.name]}
                     // value={data[item.name]}

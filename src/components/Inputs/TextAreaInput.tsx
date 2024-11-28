@@ -45,7 +45,11 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "text");
           }}
         />{" "}
-        <ErroTextCnt isValid={isValid} IsNotEmpty={!IsNotEmpty} />
+        <ErroTextCnt
+          isRequired={props.isRequired}
+          isValid={isValid}
+          IsNotEmpty={!IsNotEmpty}
+        />
       </div>
     </>
   );

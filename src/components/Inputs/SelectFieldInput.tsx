@@ -100,7 +100,7 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
     }),
   };
 
-  console.log({ props, isNotEmpty });
+  console.log({ props, isValid });
 
   return (
     <div className="select-cnt">
@@ -120,14 +120,14 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
         }}
         placeholder={props.label}
         onBlur={() =>
-          blurCheck(props.value, props, setIsValid, setIsNotEmpty, "select")
+          blurCheck(props.value, props, setIsValid, setIsNotEmpty, "text")
         }
         styles={darkThemeStyles}
         classNamePrefix="custom-select"
       />
       <ErroTextCnt
         isRequired={props.isRequired}
-        isValid={isValid}
+        isValid={!isValid}
         IsNotEmpty={!isNotEmpty}
       />
     </div>

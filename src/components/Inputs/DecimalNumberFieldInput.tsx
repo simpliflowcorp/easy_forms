@@ -50,7 +50,11 @@ export default function DecimalNumberFieldInput(
             blurCheck(value, props, setIsValid, setIsNotEmpty, "decimal");
           }}
         />{" "}
-        <ErroTextCnt isValid={!isValid} IsNotEmpty={!IsNotEmpty} />
+        <ErroTextCnt
+          isRequired={props.isRequired}
+          isValid={!isValid}
+          IsNotEmpty={!IsNotEmpty}
+        />
       </div>
     </>
   );
