@@ -18,7 +18,7 @@ export interface ISelectFieldInputProps {
 }
 
 export default function SelectFieldInput(props: ISelectFieldInputProps) {
-  const [isValid, setIsValid] = React.useState(props.isValid);
+  const [isValid, setIsValid] = React.useState(true);
   const [isNotEmpty, setIsNotEmpty] = React.useState(
     props.isRequired ? Boolean(props.value) : true
   );

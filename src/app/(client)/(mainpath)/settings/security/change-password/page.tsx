@@ -28,7 +28,7 @@ export default function security(props: IsecurityProps) {
   });
   const [resetBtn, setResetBtn] = React.useState(0);
 
-  const forgotPassword = async () => {
+  const changePassword = async () => {
     if (
       dataIsValid.current_password &&
       dataIsValid.new_password &&
@@ -37,7 +37,6 @@ export default function security(props: IsecurityProps) {
       try {
         const res = await axios.post("/api/auth/changePassword", data);
         successHandler(res, lang);
-        router.push("/auth/signin");
       } catch (error: any) {
         setResetBtn((p) => p + 1);
         errorHandler(error, lang);
@@ -46,6 +45,8 @@ export default function security(props: IsecurityProps) {
       setResetBtn((p) => p + 1);
     }
   };
+
+  console.log({ resetBtn });
 
   return (
     <div className="setting-cnt">
@@ -110,7 +111,9 @@ export default function security(props: IsecurityProps) {
               <div className="btn-cnt">
                 <PrimaryActionButton
                   label="change_password"
-                  action={() => {}}
+                  action={() => {
+                    changePassword();
+                  }}
                   resetBtn={resetBtn}
                 />
 
