@@ -35,7 +35,12 @@ export default function EmailInput(props: IEmailInputProps) {
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor={"email" + uid}>{props.label}</label>
+        <label htmlFor={"email" + uid}>
+          {props.label}{" "}
+          <span className="required-asterisk">
+            {props.isRequired ? "*" : ""}
+          </span>
+        </label>
         <input
           type="email"
           id={"email" + uid}

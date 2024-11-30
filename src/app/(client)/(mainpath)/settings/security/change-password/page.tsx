@@ -37,6 +37,7 @@ export default function security(props: IsecurityProps) {
       try {
         const res = await axios.post("/api/auth/changePassword", data);
         successHandler(res, lang);
+        setResetBtn((p) => p + 1);
       } catch (error: any) {
         setResetBtn((p) => p + 1);
         errorHandler(error, lang);
@@ -45,8 +46,6 @@ export default function security(props: IsecurityProps) {
       setResetBtn((p) => p + 1);
     }
   };
-
-  console.log({ resetBtn });
 
   return (
     <div className="setting-cnt">
