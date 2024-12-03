@@ -1,0 +1,35 @@
+.verification-code-model {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .model-cnt {
+    padding: 20px 30px;
+    border: var(--common-border);
+    border-radius: var(--section-border-radius);
+    background-color: var(--primary-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+
+    .model-header {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .model-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      .body-text {
+        font-weight: 500;
+      }
+    }
+  }
+}

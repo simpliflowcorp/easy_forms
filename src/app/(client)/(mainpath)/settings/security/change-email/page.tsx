@@ -4,6 +4,7 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import ToogleSwitch from "@/components/buttons/toogleSwitch";
 import EmailInput from "@/components/Inputs/EmailInput";
 import PasswordInput from "@/components/Inputs/PasswordInput";
+import VerificationCodeModel from "@/components/models/VerificationCodeModel";
 import { errorHandler } from "@/helper/errorHandler";
 import { successHandler } from "@/helper/successHandler";
 import { useLanguageStore } from "@/store/store";
@@ -88,6 +89,20 @@ export default function security(props: IsecurityProps) {
                   resetBtn={resetBtn}
                 />
               </div>
+              <VerificationCodeModel
+                action={() => {}}
+                label="verification_code"
+                value={data.new_password}
+                updateValue={(value) =>
+                  setData({ ...data, new_password: value })
+                }
+                updateIsValid={(value) =>
+                  setDataIsValid((p) => ({ ...p, new_password: value }))
+                }
+                isValid={dataIsValid.new_password}
+                isRequired={true}
+                reset={resetBtn}
+              />
             </div>
           </div>
         </div>

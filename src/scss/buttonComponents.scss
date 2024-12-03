@@ -79,3 +79,20 @@
     color: var(--primary-bg);
   }
 }
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+
+  span {
+    display: flex;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--font-color);
+    cursor: pointer;
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+}
