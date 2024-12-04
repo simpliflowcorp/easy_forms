@@ -86,5 +86,7 @@
     "website": "Website",
     "new_email_address" : "New Email Address",
     "date_format": "Date Format",
-    "time_format": "Time Format"
+    "time_format": "Time Format",
+    "verify" : "Verify",
+    "verify_email" : "Verify Email"
 }

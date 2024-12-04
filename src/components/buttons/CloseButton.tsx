@@ -1,11 +1,13 @@
 import React from "react";
 
-type Props = {};
+type Props = {
+  close: () => void;
+};
 
 const CloseButton = (props: Props) => {
   return (
     <div className="close-button">
-      <span className={"ic-x-lg"}></span>
+      <span onClick={() => props.close()} className={"ic-x-lg"}></span>
     </div>
   );
 };

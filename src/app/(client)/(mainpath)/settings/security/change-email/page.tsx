@@ -30,6 +30,7 @@ export default function security(props: IsecurityProps) {
     confirm_password: false,
   });
   const [resetBtn, setResetBtn] = React.useState(0);
+  const [modelState, setModelState] = React.useState(true);
 
   const forgotPassword = async () => {
     if (
@@ -89,20 +90,25 @@ export default function security(props: IsecurityProps) {
                   resetBtn={resetBtn}
                 />
               </div>
-              <VerificationCodeModel
-                action={() => {}}
-                label="verification_code"
-                value={data.new_password}
-                updateValue={(value) =>
-                  setData({ ...data, new_password: value })
-                }
-                updateIsValid={(value) =>
-                  setDataIsValid((p) => ({ ...p, new_password: value }))
-                }
-                isValid={dataIsValid.new_password}
-                isRequired={true}
-                reset={resetBtn}
-              />
+              {modelState ? (
+                <VerificationCodeModel
+                  closeAction={() => {
+                    setModelState(false);
+                  }}
+                  action={() => {}}
+                  label="verification_code"
+                  value={data.new_password}
+                  updateValue={(value) =>
+                    setData({ ...data, new_password: value })
+                  }
+                  updateIsValid={(value) =>
+                    setDataIsValid((p) => ({ ...p, new_password: value }))
+                  }
+                  isValid={dataIsValid.new_password}
+                  isRequired={true}
+                  reset={resetBtn}
+                />
+              ) : null}
             </div>
           </div>
         </div>
