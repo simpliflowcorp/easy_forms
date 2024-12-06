@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html data-editor-version="2" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  </head>
+  <style>
+    /* -------------------------------------
+        GLOBAL RESETS
+    ------------------------------------- */
+    img {
+      border: none;
+      -ms-interpolation-mode: bicubic;
+      max-width: 100%; }
+
+    body {
+      background-color: #f6f6f6;
+      font-family: sans-serif;
+      -webkit-font-smoothing: antialiased;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%; }
+
+    table {
+      border-collapse: separate;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      width: 100%; }
+      table td {
+        font-family: sans-serif;
+        font-size: 14px;
+        vertical-align: top; }
+
+    /* -------------------------------------
+        BODY & CONTAINER
+    ------------------------------------- */
+
+    .body {
+      background-color: #f6f6f6;
+      width: 100%; }
+
+    /* Set a max-width, and make it display as block so it will automatically stretch to that width, but will also shrink down on a phone or something */
+    .container {
+      display: block;
+      margin: 0 auto !important;
+      /* makes it centered */
+      max-width: 580px;
+      padding: 10px;
+      width: 580px; }
+
+    /* This should also be a block element, so that it will fill 100% of the .container */
+    .content {
+      box-sizing: border-box;
+      display: block;
+      margin: 0 auto;
+      max-width: 580px;
+      padding: 10px; }
+
+    /* -------------------------------------
+        HEADER, FOOTER, MAIN
+    ------------------------------------- */
+    .main {
+      background: #ffffff;
+      border-radius: 3px;
+      width: 100%; }
+
+    .wrapper {
+      box-sizing: border-box;
+      padding: 20px; }
+
+    .content-block {
+      padding-bottom: 10px;
+      padding-top: 10px;
+    }
+
+    .footer {
+      clear: both;
+      margin-top: 10px;
+      text-align: center;
+      width: 100%; }
+      .footer td,
+      .footer p,
+      .footer span,
+      .footer a {
+        color: #999999;
+        font-size: 12px;
+        text-align: center; }
+
+    /* -------------------------------------
+        TYPOGRAPHY
+    ------------------------------------- */
+    h1,
+    h2,
+    h3,
+    h4 {
+      color: #000000;
+      font-family: sans-serif;
+      font-weight: 400;
+      line-height: 1.4;
+      margin: 0;
+      margin-bottom: 30px; }
+
+    h1 {
+      font-size: 35px;
+      font-weight: 300;
+      text-align: center;
+      text-transform: capitalize; }
+
+    p,
+    ul,
+    ol {
+      font-family: sans-serif;
+      font-size: 14px;
+      font-weight: normal;
+      margin: 0;
+      margin-bottom: 15px; }
+      p li,
+      ul li,
+      ol li {
+        list-style-position: inside;
+        margin-left: 5px; }
+
+    a {
+      color: #1e6cff;
+      text-decoration: underline; }
+
+    /* -------------------------------------
+        BUTTONS
+    ------------------------------------- */
+    .btn {
+      box-sizing: border-box;
+      width: 100%; }
+      .btn > tbody > tr > td {
+        padding-bottom: 15px; }
+      .btn table {
+        width: auto; }
+      .btn table td {
+        background-color: #ffffff;
+        border-radius: 5px;
+        text-align: center; }
+      .btn a {
+        background-color: #ffffff;
+        border: solid 1px #050505;
+        border-radius: 5px;
+        box-sizing: border-box;
+        color: #1e6cff;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 0;
+        padding: 12px 25px;
+        text-decoration: none;
+        text-transform: capitalize; }
+
+
+
+    .btn-primary a {
+      background-color: #1e6cff;
+      border-color: #050505;
+      color: #ffffff; }
+
+    /* -------------------------------------
+        OTHER STYLES THAT MIGHT BE USEFUL
+    ------------------------------------- */
+    .last {
+      margin-bottom: 0; }
+
+    .first {
+      margin-top: 0; }
+
+    .align-center {
+      text-align: center; }
+
+    .align-right {
+      text-align: right; }
+
+    .align-left {
+      text-align: left; }
+
+    .clear {
+      clear: both; }
+
+    .mt0 {
+      margin-top: 0; }
+
+    .mb0 {
+      margin-bottom: 0; }
+
+    .preheader {
+      color: transparent;
+      display: none;
+      height: 0;
+      max-height: 0;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      mso-hide: all;
+      visibility: hidden;
+      width: 0; }
+
+    .powered-by a {
+      text-decoration: none; }
+
+    hr {
+      border: 0;
+      border-bottom: 1px solid #f6f6f6;
+      Margin: 20px 0; }
+
+    /* -------------------------------------
+        RESPONSIVE AND MOBILE FRIENDLY STYLES
+    ------------------------------------- */
+    @media only screen and (max-width: 620px) {
+      table[class=body] h1 {
+        font-size: 28px !important;
+        margin-bottom: 10px !important; }
+      table[class=body] p,
+      table[class=body] ul,
+      table[class=body] ol,
+      table[class=body] td,
+      table[class=body] span,
+      table[class=body] a {
+        font-size: 16px !important; }
+      table[class=body] .wrapper,
+      table[class=body] .article {
+        padding: 10px !important; }
+      table[class=body] .content {
+        padding: 0 !important; }
+      table[class=body] .container {
+        padding: 0 !important;
+        width: 100% !important; }
+      table[class=body] .main {
+        border-left-width: 0 !important;
+        border-radius: 0 !important;
+        border-right-width: 0 !important; }
+      table[class=body] .btn table {
+        width: 100% !important; }
+      table[class=body] .btn a {
+        width: 100% !important; }
+      table[class=body] .img-responsive {
+        height: auto !important;
+        max-width: 100% !important;
+        width: auto !important; }}
+
+    /* -------------------------------------
+        PRESERVE THESE STYLES IN THE HEAD
+    ------------------------------------- */
+    @media all {
+      .ExternalClass {
+        width: 100%; }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 100%; }
+      .apple-link a {
+        color: inherit !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+        text-decoration: none !important; }
+      .btn-primary table td:hover {
+        background-color: #34495e !important; }
+      .btn-primary a:hover {
+        background-color: #34495e !important;
+        border-color: #34495e !important; } }
+  </style>
+
+  <body class="">
+    <table border="0" cellpadding="0" cellspacing="0" class="body">
+      <tbody>
+        <tr>
+          <td>&nbsp;</td>
+          <td class="container">
+            <div class="content">
+              <!-- START CENTERED WHITE CONTAINER -->
+              <table class="main">
+                <!-- START MAIN CONTENT AREA -->
+                <tbody>
+                  <tr>
+                    <td class="wrapper">
+                      <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                          <tr>
+                            <td>
+                              <!-- Company Logo -->
+                              <svg xmlns="http://www.w3.org/2000/svg" width="228" height="60" viewBox="0 0 2840 750" fill="none">
+                                <path d="M927.45 312.609C926.191 300.824 920.883 291.648 911.527 285.081C902.261 278.514 890.206 275.23 875.362 275.23C864.927 275.23 855.975 276.804 848.509 279.953C841.042 283.102 835.329 287.375 831.371 292.773C827.412 298.17 825.388 304.333 825.298 311.26C825.298 317.018 826.603 322.01 829.212 326.239C831.911 330.467 835.554 334.065 840.142 337.034C844.73 339.913 849.813 342.342 855.391 344.321C860.968 346.3 866.591 347.964 872.259 349.314L898.168 355.791C908.603 358.22 918.634 361.504 928.26 365.642C937.976 369.78 946.657 374.998 954.304 381.295C962.041 387.593 968.158 395.195 972.656 404.101C977.154 413.007 979.403 423.443 979.403 435.408C979.403 451.601 975.265 465.86 966.989 478.185C958.712 490.42 946.747 500 931.094 506.928C915.53 513.765 896.683 517.183 874.553 517.183C853.052 517.183 834.384 513.855 818.551 507.197C802.808 500.54 790.483 490.824 781.577 478.05C772.76 465.275 767.992 449.712 767.273 431.359H816.527C817.247 440.985 820.215 448.992 825.433 455.379C830.651 461.767 837.443 466.535 845.81 469.683C854.266 472.832 863.712 474.406 874.148 474.406C885.033 474.406 894.569 472.787 902.756 469.548C911.032 466.22 917.509 461.632 922.188 455.784C926.866 449.847 929.25 442.92 929.339 435.003C929.25 427.806 927.135 421.868 922.997 417.19C918.859 412.422 913.056 408.464 905.589 405.315C898.213 402.077 889.576 399.198 879.68 396.679L848.239 388.582C825.478 382.735 807.486 373.874 794.261 361.999C781.127 350.034 774.56 334.155 774.56 314.364C774.56 298.08 778.968 283.821 787.784 271.587C796.69 259.352 808.79 249.861 824.084 243.114C839.377 236.277 856.695 232.858 876.037 232.858C895.649 232.858 912.831 236.277 927.585 243.114C942.429 249.861 954.079 259.262 962.536 271.317C970.992 283.282 975.355 297.046 975.625 312.609H927.45ZM1021.88 513V305.727H1070.73V513H1021.88ZM1046.44 276.31C1038.7 276.31 1032.04 273.746 1026.46 268.618C1020.89 263.4 1018.1 257.148 1018.1 249.861C1018.1 242.484 1020.89 236.232 1026.46 231.104C1032.04 225.886 1038.7 223.277 1046.44 223.277C1054.26 223.277 1060.92 225.886 1066.41 231.104C1071.99 236.232 1074.77 242.484 1074.77 249.861C1074.77 257.148 1071.99 263.4 1066.41 268.618C1060.92 273.746 1054.26 276.31 1046.44 276.31ZM1120.96 513V305.727H1167.65V340.947H1170.08C1174.4 329.072 1181.55 319.806 1191.53 313.149C1201.52 306.402 1213.44 303.028 1227.29 303.028C1241.33 303.028 1253.16 306.447 1262.78 313.284C1272.5 320.031 1279.34 329.252 1283.3 340.947H1285.45C1290.04 329.432 1297.78 320.256 1308.66 313.419C1319.64 306.492 1332.64 303.028 1347.66 303.028C1366.74 303.028 1382.3 309.056 1394.35 321.111C1406.41 333.166 1412.44 350.753 1412.44 373.874V513H1363.45V381.43C1363.45 368.566 1360.03 359.165 1353.2 353.227C1346.36 347.2 1337.99 344.186 1328.1 344.186C1316.31 344.186 1307.09 347.875 1300.43 355.251C1293.87 362.538 1290.58 372.029 1290.58 383.724V513H1242.68V379.406C1242.68 368.701 1239.44 360.154 1232.96 353.767C1226.57 347.38 1218.21 344.186 1207.86 344.186C1200.85 344.186 1194.46 345.985 1188.7 349.584C1182.94 353.092 1178.35 358.085 1174.94 364.562C1171.52 370.95 1169.81 378.417 1169.81 386.963V513H1120.96ZM1461.99 590.727V305.727H1510.03V340.003H1512.87C1515.39 334.965 1518.94 329.612 1523.53 323.945C1528.12 318.187 1534.32 313.284 1542.15 309.236C1549.98 305.098 1559.96 303.028 1572.11 303.028C1588.12 303.028 1602.56 307.122 1615.42 315.308C1628.38 323.405 1638.63 335.415 1646.19 351.338C1653.84 367.171 1657.66 386.603 1657.66 409.634C1657.66 432.394 1653.93 451.736 1646.46 467.659C1638.99 483.582 1628.83 495.727 1615.96 504.094C1603.1 512.46 1588.53 516.643 1572.24 516.643C1560.37 516.643 1550.52 514.664 1542.69 510.706C1534.86 506.748 1528.57 501.98 1523.8 496.402C1519.12 490.734 1515.48 485.382 1512.87 480.344H1510.84V590.727H1461.99ZM1509.9 409.364C1509.9 422.768 1511.79 434.508 1515.57 444.584C1519.43 454.66 1524.97 462.531 1532.16 468.199C1539.45 473.777 1548.27 476.565 1558.61 476.565C1569.41 476.565 1578.45 473.687 1585.74 467.929C1593.02 462.081 1598.51 454.12 1602.2 444.044C1605.98 433.878 1607.87 422.318 1607.87 409.364C1607.87 396.499 1606.02 385.074 1602.33 375.088C1598.65 365.102 1593.16 357.276 1585.87 351.608C1578.58 345.94 1569.5 343.107 1558.61 343.107C1548.18 343.107 1539.32 345.85 1532.03 351.338C1524.74 356.826 1519.21 364.518 1515.43 374.413C1511.74 384.309 1509.9 395.959 1509.9 409.364ZM1748.34 236.636V513H1699.49V236.636H1748.34ZM1798.58 513V305.727H1847.43V513H1798.58ZM1823.14 276.31C1815.4 276.31 1808.74 273.746 1803.16 268.618C1797.59 263.4 1794.8 257.148 1794.8 249.861C1794.8 242.484 1797.59 236.232 1803.16 231.104C1808.74 225.886 1815.4 223.277 1823.14 223.277C1830.96 223.277 1837.62 225.886 1843.11 231.104C1848.68 236.232 1851.47 242.484 1851.47 249.861C1851.47 257.148 1848.68 263.4 1843.11 268.618C1837.62 273.746 1830.96 276.31 1823.14 276.31ZM1899.82 513V236.636H2076.86V278.604H1949.88V353.632H2064.72V395.599H1949.88V513H1899.82ZM2169.16 236.636V513H2120.31V236.636H2169.16ZM2309.81 517.048C2289.57 517.048 2272.02 512.595 2257.18 503.689C2242.34 494.783 2230.82 482.323 2222.63 466.31C2214.54 450.296 2210.49 431.584 2210.49 410.173C2210.49 388.762 2214.54 370.005 2222.63 353.902C2230.82 337.799 2242.34 325.294 2257.18 316.388C2272.02 307.482 2289.57 303.028 2309.81 303.028C2330.05 303.028 2347.59 307.482 2362.44 316.388C2377.28 325.294 2388.75 337.799 2396.85 353.902C2405.03 370.005 2409.13 388.762 2409.13 410.173C2409.13 431.584 2405.03 450.296 2396.85 466.31C2388.75 482.323 2377.28 494.783 2362.44 503.689C2347.59 512.595 2330.05 517.048 2309.81 517.048ZM2310.08 477.915C2321.05 477.915 2330.23 474.901 2337.61 468.874C2344.98 462.756 2350.47 454.57 2354.07 444.314C2357.76 434.058 2359.6 422.633 2359.6 410.038C2359.6 397.354 2357.76 385.884 2354.07 375.628C2350.47 365.282 2344.98 357.051 2337.61 350.933C2330.23 344.816 2321.05 341.757 2310.08 341.757C2298.83 341.757 2289.48 344.816 2282.01 350.933C2274.63 357.051 2269.1 365.282 2265.41 375.628C2261.81 385.884 2260.01 397.354 2260.01 410.038C2260.01 422.633 2261.81 434.058 2265.41 444.314C2269.1 454.57 2274.63 462.756 2282.01 468.874C2289.48 474.901 2298.83 477.915 2310.08 477.915ZM2487.43 513L2428.86 305.727H2478.66L2515.09 451.466H2516.98L2554.22 305.727H2603.48L2640.72 450.656H2642.75L2678.64 305.727H2728.57L2669.87 513H2619L2580.13 372.929H2577.3L2538.44 513H2487.43Z" fill="#050505"/>
+                                <path d="M475 550C475 605.229 430.228 650 375 650C319.772 650 275 605.229 275 550C275 494.772 319.772 450 375 450C430.228 450 475 494.772 475 550Z" fill="#050505"/>
+                                <path d="M475 200C475 255.228 430.228 300 375 300C319.772 300 275 255.228 275 200C275 144.771 319.772 99.9999 375 99.9999C430.228 99.9999 475 144.771 475 200Z" fill="#050505"/>
+                                <path d="M650 375C650 430.229 605.228 475 550 475C494.772 475 450 430.229 450 375C450 319.772 494.772 275 550 275C605.228 275 650 319.772 650 375Z" fill="#050505"/>
+                                <path d="M300 375C300 430.229 255.229 475 200 475C144.772 475 100 430.229 100 375C100 319.772 144.772 275 200 275C255.229 275 300 319.772 300 375Z" fill="#050505"/>
+                                </svg>
+                                <!-- Your logo's SVG content -->
+                              </svg>
+                              <br>
+                              <br>
+                              <p>Hi {{username}},</p>
+                              <p>It seems like you requested to change your email. </p>
+                              <p>Enter the code below to change your email:</p>
+                              <table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
+                                <tbody>
+                                  <tr>
+                                    <td align="center">
+                                      <p style=" padding: 10px 20px; text-decoration: none; font-size: 20px; font-weight: 800; border-radius: 5px;">{{verify_code}}</p>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              <p>If you didn't request this, Report to the SimpliFlow team.</p>
+                              <p>Thank you,</p>
+                              <p>The SimpliFlow Team</p>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- END MAIN CONTENT AREA -->
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

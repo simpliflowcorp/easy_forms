@@ -47,7 +47,6 @@ const VerificationCodeModel = (props: Props) => {
               reset={resetBtn}
             />
           </div>
-
           <div className="btn-cnt">
             <PrimaryActionButton
               resetBtn={resetBtn}
