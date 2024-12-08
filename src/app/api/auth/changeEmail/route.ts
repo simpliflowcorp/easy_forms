@@ -3,60 +3,69 @@ import User from "@/models/userModel";
 import { NextResponse, NextRequest } from "next/server";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { sendMail } from "@/helper/mailer";
+import { getServerSession } from "next-auth";
+import { verify } from "crypto";
+import { generateVerificationCode } from "@/helper/generateVerificationCode";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from url payload
     const reqBody = await request.json();
-    const { verifyToken } = reqBody;
+    const { email } = reqBody;
 
-    //Check user exists
-    const userData = await User.findOne({ verifyToken });
-
-    if (!userData) {
-      return NextResponse.json({ message: "invalid_link" }, { status: 400 });
-    }
-
-    // check if user is already verified
-    if (userData.isVerified) {
+    // check email exists
+    const newEmail = await User.findOne({ email });
+    if (newEmail)
       return NextResponse.json(
-        { message: "user_already_verified" },
+        { message: "email_already_exists" },
         { status: 400 }
       );
+
+    // Get session and cookies
+    const cookies = request.cookies as any;
+    const token = cookies.get("token");
+
+    if (!token) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    // check valid token
 
-    const isValidToken = verifyToken === userData.verifyToken; // true or false;
+    const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
+    // Find the user
 
-    if (!isValidToken || new Date(userData.verifyTokenExpiry) < new Date()) {
-      return NextResponse.json({ message: "link_expired" }, { status: 400 });
+    const CurrentUser = await User.findOne({ _id: tokenData._id });
+
+    if (!CurrentUser) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // update user
+    // verify code
+    const verifyCode = generateVerificationCode();
+
     const updatedUser = await User.updateOne(
-      { _id: userData._id },
-      { $set: { isVerified: true } }
+      { _id: CurrentUser._id },
+      {
+        $set: {
+          secondaryEmail: email,
+          secondaryEmailVerifyCode: verifyCode,
+          secondaryVerifyCodeExpiry: new Date(Date.now() + 60 * 60 * 24 * 1000),
+        },
+      }
     );
 
-    let data = {
-      username: userData?.username,
-      email: userData?.email,
-      isAdmin: userData?.isAdmin,
-      isVerified: true,
-    };
+    await sendMail(
+      CurrentUser.email,
+      CurrentUser.username,
+      verifyCode,
+      "changeEmail"
+    );
 
-    let response = NextResponse.json(
-      { message: "User verified" },
+    const response = NextResponse.json(
+      {
+        message: "verification_code_sent_to_your_email",
+        success: true,
+      },
       { status: 200 }
     );
-    const token = await jwt.sign(data, process.env.TOKEN_SECRET!);
-
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days,
-    });
-
     return response;
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 500 });

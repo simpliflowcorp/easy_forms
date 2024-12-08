@@ -88,5 +88,9 @@
     "date_format": "Date Format",
     "time_format": "Time Format",
     "verify" : "Verify",
-    "verify_email" : "Verify Email"
+    "verify_email" : "Verify Email",
+    "email_already_exists" : "Email already exists",
+    "verification_code_sent_to_your_email" : "Verification code sent to your email",
+    "i_got_a_verification_code" : "I got a verification code"
+
 }

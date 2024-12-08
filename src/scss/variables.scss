@@ -6,7 +6,8 @@
   --primary: #007bff;
   --primary-hover: #006fe6;
 
-  --secondary: #6c757d;
+  --secondary: #161616;
+
   --success: #28a745;
   --danger: #dc3545;
   --warning: #ffc107;
@@ -53,6 +54,9 @@
 
     --primary-bg: #050505;
     --secondary-bg: #111111;
+
+    --secondary-bg-hover: #111111;
+
     --terinary-bg: #181818;
     --secondary-bg-gradient: linear-gradient(165deg, #111111, #070707);
 
@@ -63,6 +67,7 @@
     --input-border-focus: 1px solid #555;
 
     --common-border: 1px solid #212121;
+    --model-bg: #111111c9;
   }
 
   // STANDARD COLORS

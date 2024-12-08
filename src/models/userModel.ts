@@ -35,6 +35,15 @@ const userSchema = new mongoose.Schema({
   verifyToken: String,
 
   verifyTokenExpiry: Date,
+
+  secondaryEmail: {
+    type: String,
+    unique: false,
+  },
+
+  secondaryVerifyCode: String,
+
+  secondaryVerifyCodeExpiry: Date,
 });
 
 const User = mongoose.models.users || mongoose.model("users", userSchema);

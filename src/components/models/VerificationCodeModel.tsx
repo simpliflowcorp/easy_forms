@@ -18,9 +18,11 @@ type Props = {
 
 const VerificationCodeModel = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
-  const [verifyCode, setVerifyCode] = useState("");
-  const [verifyCodeValid, setVerifyCodeValid] = useState(false);
-  const [resetBtn, setResetBtn] = useState(0);
+  const [resetBtn, setResetBtn] = useState(props.reset);
+
+  React.useEffect(() => {
+    setResetBtn(props.reset);
+  }, [props.reset]);
 
   return (
     <div className="verification-code-model">
@@ -35,14 +37,14 @@ const VerificationCodeModel = (props: Props) => {
           <div className="input-cnt">
             <TextFieldInput
               label="Verification Code"
-              value={verifyCode}
+              value={props.value}
               updateValue={(e) => {
-                setVerifyCode(e);
+                props.updateValue(e);
               }}
               updateIsValid={(e) => {
-                setVerifyCodeValid(e);
+                props.updateIsValid(e);
               }}
-              isValid={verifyCodeValid}
+              isValid={props.isValid}
               isRequired={true}
               reset={resetBtn}
             />
@@ -51,7 +53,9 @@ const VerificationCodeModel = (props: Props) => {
             <PrimaryActionButton
               resetBtn={resetBtn}
               label={"verify"}
-              action={() => {}}
+              action={() => {
+                props.action();
+              }}
             />
           </div>
         </div>

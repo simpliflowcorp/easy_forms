@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
 
     // Get session and cookies
     const session = await getServerSession(); // Ensure authOptions is configured
-    console.log({ session });
 
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
