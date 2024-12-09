@@ -13,22 +13,24 @@ export async function POST(request: NextRequest) {
     const reqBody = await request.json();
     const { verify_code } = reqBody;
 
-    // Find the user
-    const session = await getServerSession(); // Ensure authOptions is configured
-
     // Get session and cookies
+    const cookies = request.cookies as any;
+    const token = cookies.get("token");
 
-    if (!session) {
+    if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
     // Find the user
-    const userEmail = await User.findOne({ email: session?.user?.email });
-    const CurrentUser = await User.findOne({ email: userEmail?.email });
+
+    const CurrentUser = await User.findOne({ _id: tokenData._id });
 
     if (!CurrentUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
+
+    console.log(CurrentUser);
 
     // verify code
 
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // token data
-    const tokenData = {
+    const tokensData = {
       _id: CurrentUser._id,
       username: CurrentUser.username,
       email: CurrentUser.secondaryEmail,
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
     const salt = await bcryptjs.genSalt(10);
     const verifyToken = await bcryptjs.hash(CurrentUser.secondaryEmail, salt);
     // create token
-    const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
+    const tokens = await jwt.sign(tokensData, process.env.TOKEN_SECRET!);
 
     await sendMail(
       CurrentUser.secondaryEmail,
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    response.cookies.set("token", token, {
+    response.cookies.set("token", tokens, {
       httpOnly: true,
       expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
     });

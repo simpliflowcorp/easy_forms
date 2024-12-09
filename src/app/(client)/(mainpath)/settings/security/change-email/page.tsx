@@ -25,12 +25,12 @@ export default function security(props: IsecurityProps) {
   const router = useRouter();
 
   const [data, setData] = React.useState({
-    new_email_address: "",
+    new_email: "",
     verify_code: "",
   });
 
   const [dataIsValid, setDataIsValid] = React.useState({
-    new_email_address: false,
+    new_email: false,
     verify_code: false,
   });
 
@@ -40,7 +40,7 @@ export default function security(props: IsecurityProps) {
   const [modelState, setModelState] = React.useState(false);
 
   const changeEmail = async () => {
-    if (dataIsValid.new_email_address) {
+    if (dataIsValid.new_email) {
       try {
         const res = await axios.post("/api/auth/changeEmail", data);
         successHandler(res, lang);
@@ -96,15 +96,13 @@ export default function security(props: IsecurityProps) {
             <div className="sub-setting-body-password-cnt">
               <EmailInput
                 reset={resetBtn}
-                label={lang.new_email_address}
-                value={data.new_email_address}
-                updateValue={(value) =>
-                  setData({ ...data, new_email_address: value })
-                }
+                label={lang.new_email}
+                value={data.new_email}
+                updateValue={(value) => setData({ ...data, new_email: value })}
                 isRequired={true}
-                isValid={dataIsValid.new_email_address}
+                isValid={dataIsValid.new_email}
                 updateIsValid={(value) =>
-                  setDataIsValid((p) => ({ ...p, new_email_address: value }))
+                  setDataIsValid((p) => ({ ...p, new_email: value }))
                 }
               />
               <div className="btn-cnt">

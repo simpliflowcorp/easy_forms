@@ -31,19 +31,11 @@ const userSchema = new mongoose.Schema({
   forgetPasswordToken: String,
 
   forgetPasswordExpiry: Date,
-
   verifyToken: String,
-
   verifyTokenExpiry: Date,
-
-  secondaryEmail: {
-    type: String,
-    unique: false,
-  },
-
-  secondaryVerifyCode: String,
-
-  secondaryVerifyCodeExpiry: Date,
+  secondaryEmail: { type: String, required: false },
+  secondaryEmailVerifyCode: { type: String, required: false },
+  secondaryVerifyCodeExpiry: { type: Date, required: false },
 });
 
 const User = mongoose.models.users || mongoose.model("users", userSchema);

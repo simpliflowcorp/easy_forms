@@ -11,10 +11,11 @@ import { generateVerificationCode } from "@/helper/generateVerificationCode";
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { email } = reqBody;
+
+    const { new_email } = reqBody;
 
     // check email exists
-    const newEmail = await User.findOne({ email });
+    const newEmail = await User.findOne({ email: new_email });
     if (newEmail)
       return NextResponse.json(
         { message: "email_already_exists" },
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       { _id: CurrentUser._id },
       {
         $set: {
-          secondaryEmail: email,
+          secondaryEmail: new_email,
           secondaryEmailVerifyCode: verifyCode,
           secondaryVerifyCodeExpiry: new Date(Date.now() + 60 * 60 * 24 * 1000),
         },
