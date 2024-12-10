@@ -45,6 +45,7 @@ export default function security(props: IsecurityProps) {
         const res = await axios.post("/api/auth/changeEmail", data);
         successHandler(res, lang);
         setResetBtn((p) => p + 1);
+        setData({ new_email: "", verify_code: "" });
         setModelState(true);
       } catch (error: any) {
         setResetBtn((p) => p + 1);
@@ -56,16 +57,15 @@ export default function security(props: IsecurityProps) {
   };
 
   const changeEmailVerify = async () => {
-    console.log({ data, dataIsValid });
-
     if (dataIsValid.verify_code) {
       try {
         const res = await axios.post("/api/auth/changeEmailVerify", data);
         successHandler(res, lang);
-        setResetBtn((p) => p + 1);
+        setData({ new_email: "", verify_code: "" });
+        setResetVerifyBtn((p) => p + 1);
         setModelState(false);
       } catch (error: any) {
-        setResetBtn((p) => p + 1);
+        setResetVerifyBtn((p) => p + 1);
         errorHandler(error, lang);
       }
     } else {
