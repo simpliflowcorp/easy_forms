@@ -8,8 +8,18 @@
 
   --secondary: #161616;
 
-  --success: #28a745;
-  --danger: #dc3545;
+  --green-bg: #d2fadf;
+  --green-font: #2c6143;
+
+  --red-bg: #fee4e3;
+  --red-font: #824b44;
+  // 2c6143
+
+  --success: #4bb543;
+  --success-bg: #aeb6ad;
+  --error: #dc3545;
+  --error-bg: #df4656;
+
   --warning: #ffc107;
   --info: #17a2b8;
   --light: #f8f9fa;
@@ -34,6 +44,9 @@
   --input-focus-box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
   --input-padding: 8px;
   --input-border-radius: 4px;
+
+  // Transitions
+  --universal-transition: all 0.4s ease-in-out;
 
   // Themes
 

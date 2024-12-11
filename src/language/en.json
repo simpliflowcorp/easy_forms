@@ -91,6 +91,13 @@
     "verify_email" : "Verify Email",
     "email_already_exists" : "Email already exists",
     "verification_code_sent_to_your_email" : "Verification code sent to your email",
-    "i_got_a_verification_code" : "I got a verification code"
+    "i_got_a_verification_code" : "I got a verification code",
+    "verification_code" : "Verification Code",
+    "invalid_verification_code" : "Invalid verification code",
+    "verification_code_is_expired" : "Verification code is expired",
+    "verification_code_is_invalid" : "Verification code is invalid",
+    "active" : "Active",
+    "expired" : "Expired",
+    "goto_form" : "Go to form"
 
 }
