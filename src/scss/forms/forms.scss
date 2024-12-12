@@ -86,7 +86,6 @@
           .forms-sec-item {
             background-color: var(--terinary-bg);
             min-width: calc(20% - 8px);
-            cursor: pointer;
             border-radius: var(--section-border-radius);
             border: var(--common-border);
             transition: all 0.3s ease-in-out;
@@ -137,18 +136,59 @@
                   background-color: var(--red-bg);
                   color: var(--red-font);
                 }
-                .forms-sec-item-status-expired {
-                  font-size: 12px;
-                  font-weight: 600;
-                  padding: 5px 10px;
-                  border-radius: var(--button-border-radius);
-                  background-color: var(--green-bg);
-                  color: var(--green-font);
+
+                .forms-sec-items-options {
+                  cursor: pointer;
                 }
               }
             }
 
+            .forms-sec-item-expiry {
+              padding: 5px 15px;
+              border-bottom: var(--common-border);
+              font-size: 14px;
+              font-weight: 500;
+              color: var(--font-color);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .forms-sec-item-body-cnt {
+              .forms-sec-item-body-header {
+                padding: 5px 15px 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .forms-sec-item-body {
+                padding: 15px;
+                width: 100%;
+                display: flex;
+                gap: 15px;
+                .forms-sec-item-body-split {
+                  border: var(--common-border);
+                }
+
+                .forms-sec-item-body-counter {
+                  width: 100%;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: center;
+                  align-items: center;
+                  gap: 8px;
+
+                  .counter-text {
+                    font-size: 16px;
+                  }
+                  .counter-value {
+                    font-size: 18px;
+                    font-weight: 600;
+                  }
+                }
+              }
+            }
             .form-sec-footer {
+              cursor: pointer;
               height: 50px;
               padding: 15px;
               border-top: var(--common-border);
@@ -166,6 +206,7 @@
 
                 .form-sec-footer-icon {
                   font-size: 18px;
+                  font-weight: 1000;
                 }
               }
 

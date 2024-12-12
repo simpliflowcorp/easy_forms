@@ -98,6 +98,11 @@
     "verification_code_is_invalid" : "Verification code is invalid",
     "active" : "Active",
     "expired" : "Expired",
+    "form_expiring_in" : "Form expiring in",
+    "form_expired_on" : "Form expired on",
+    "total" : "Total",
+    "today" : "Today",
+    "responses_received" : "Responses received",
     "goto_form" : "Go to form"
 
 }

@@ -33,7 +33,7 @@ export default function forms(props: IformsProps) {
     {
       id: 1,
       name: "form1",
-      status: 0,
+      status: 1,
       expiry: new Date().valueOf() + 24 * 60 * 60 * 1000,
       total_responses: 1,
       today_responses: 1,
@@ -49,7 +49,7 @@ export default function forms(props: IformsProps) {
     {
       id: 3,
       name: "form3",
-      status: 0,
+      status: 1,
       expiry: new Date().valueOf() + 72 * 60 * 60 * 1000,
       total_responses: 3,
       today_responses: 0,
@@ -79,6 +79,30 @@ export default function forms(props: IformsProps) {
       today_responses: 0,
     },
   ] as any);
+
+  function countDown(expiringDate: number) {
+    const now = Date.now();
+    const timeRemaining = expiringDate - now;
+
+    // const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+    // const hours = Math.floor(
+    //   (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    // );
+    // const minutes = Math.floor(
+    //   (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
+    // );
+    // const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+    // return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+    const totalHours = Math.floor(timeRemaining / (1000 * 60 * 60));
+    const minutes = Math.floor(
+      (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
+    );
+    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+    return `${totalHours}h ${minutes}m ${seconds}s`;
+  }
 
   return (
     <div className="forms-cnt">
@@ -135,12 +159,7 @@ export default function forms(props: IformsProps) {
                   return false;
                 })
                 .map((form: any) => (
-                  <div
-                    onClick={() => {
-                      router.push("/forms/" + form.id);
-                    }}
-                    className="forms-sec-item"
-                  >
+                  <div className="forms-sec-item">
                     <div className="form-sec-header">
                       <div className="form-sec-header-left">
                         <div className="form-sec-header-indicator">/</div>
@@ -156,15 +175,48 @@ export default function forms(props: IformsProps) {
                         >
                           {form.status === 1 ? lang.active : lang.expired}
                         </div>
-                        <div className="forms-sec-items-options">
+                        {/* <div className="forms-sec-items-options">
                           <i className="ic-three-dots-vertical"></i>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                     <div className="forms-sec-item-expiry">
-                      {new Date(form.expiry).toLocaleDateString()}
+                      {form.status === 1
+                        ? lang.form_expiring_in + "  " + countDown(form.expiry)
+                        : lang.form_expired_on +
+                          " " +
+                          new Date(form.expiry).toLocaleDateString()}
                     </div>
-                    <div className="form-sec-footer">
+                    <div className="forms-sec-item-body-cnt">
+                      <div className="forms-sec-item-body-header">
+                        {lang.responses_received}
+                      </div>
+                      <div className="forms-sec-item-body">
+                        <div className="forms-sec-item-body-counter">
+                          <div className="counter-text">{lang.total}</div>
+                          <div className="counter-value">
+                            {form.total_responses > 9999
+                              ? "9999+"
+                              : form.total_responses}
+                          </div>
+                        </div>
+                        <div className="forms-sec-item-body-split"></div>
+                        <div className="forms-sec-item-body-counter">
+                          <div className="counter-text">{lang.today}</div>
+                          <div className="counter-value">
+                            {form.today_responses > 9999
+                              ? "9999+"
+                              : form.today_responses}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      onClick={() => {
+                        router.push("/forms/" + form.id);
+                      }}
+                      className="form-sec-footer"
+                    >
                       <span className="form-sec-footer-text">
                         {lang.goto_form}
                       </span>
