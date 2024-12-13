@@ -32,10 +32,10 @@ export default function dashboard(props: IdashboardProps) {
       </div>
       <div className="dashboard">
         <div className="cards-cnt">
-          <InfoCard label={lang.active_forms} count={3} />
-          <InfoCard label={lang.total_forms} count={3} />
           <InfoCard label={lang.total_responses} count={10} />
           <InfoCard label={lang.total_visitors} count={30} />
+          <InfoCard label={lang.today_responses} count={3} />
+          <InfoCard label={lang.today_visitors} count={3} />
         </div>
 
         <div className="charts-cnt">
@@ -60,6 +60,24 @@ export default function dashboard(props: IdashboardProps) {
           <ChartComponetManger
             label={lang.responses_recorded_by_forms}
             type="radar"
+            data={[
+              { name: "Form A", value: 6 },
+              { name: "Form B", value: 1 },
+              { name: "Form C", value: 3 },
+            ]}
+          />
+          <ChartComponetManger
+            label={lang.responses_recorded_by_forms}
+            type="line"
+            data={[
+              { name: "Form A", value: 6 },
+              { name: "Form B", value: 1 },
+              { name: "Form C", value: 3 },
+            ]}
+          />
+          <ChartComponetManger
+            label={lang.responses_recorded_by_forms}
+            type="area"
             data={[
               { name: "Form A", value: 6 },
               { name: "Form B", value: 1 },

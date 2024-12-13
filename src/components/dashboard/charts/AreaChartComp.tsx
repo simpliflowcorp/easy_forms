@@ -1,18 +1,18 @@
 import React from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   Legend,
 } from "recharts";
+
 type Props = {
   data: any;
 };
-export default function LineChartComp(props: Props) {
+export default function AreaChartComp(Props: Props) {
   const data = [
     {
       name: "Page A",
@@ -50,7 +50,6 @@ export default function LineChartComp(props: Props) {
       pv: 3800,
       amt: 2500,
     },
-
     {
       name: "Page G",
       uv: 3490,
@@ -61,7 +60,27 @@ export default function LineChartComp(props: Props) {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart width={500} height={300} data={data}>
+      <AreaChart
+        width={500}
+        height={400}
+        data={data}
+        margin={{
+          top: 10,
+          right: 30,
+          left: 0,
+          bottom: 0,
+        }}
+      >
+        <defs>
+          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <XAxis
           dataKey="name"
           padding={{ left: 15, right: 15 }}
@@ -71,14 +90,21 @@ export default function LineChartComp(props: Props) {
         <YAxis axisLine={false} tickLine={false} />
         <Tooltip />
         <Legend />
-        <Line
+        <Area
+          type="monotone"
+          dataKey="uv"
+          stroke="#8884d8"
+          fillOpacity={1}
+          fill="url(#colorUv)"
+        />
+        <Area
           type="monotone"
           dataKey="pv"
-          stroke="#8884d8"
-          activeDot={{ r: 8 }}
+          stroke="#82ca9d"
+          fillOpacity={1}
+          fill="url(#colorPv)"
         />
-        <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

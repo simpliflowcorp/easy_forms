@@ -3,6 +3,7 @@ import LineChartComp from "./LineChartComp";
 import BarChartComp from "./BarChartComp";
 import RadarChartComp from "./RadarChartComp";
 import PieChartComp from "./PieChartComp";
+import AreaChartComp from "./AreaChartComp";
 
 type Props = {
   label: string;
@@ -29,6 +30,9 @@ export const ChartComponetManger = (props: Props) => {
         return <PieChartComp data={props.data} />;
         break;
 
+      case "area":
+        return <AreaChartComp data={props.data} />;
+        break;
       default:
         return <div></div>;
     }

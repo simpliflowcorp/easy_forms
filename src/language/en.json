@@ -102,6 +102,8 @@
     "form_expired_on" : "Form expired on",
     "total" : "Total",
     "today" : "Today",
+    "today_visitors" : "Today visitors",
+    "today_responses" : "Today responses",
     "responses_received" : "Responses received",
     "goto_form" : "Go to form"
 
