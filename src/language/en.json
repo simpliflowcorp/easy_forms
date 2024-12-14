@@ -105,6 +105,13 @@
     "today_visitors" : "Today visitors",
     "today_responses" : "Today responses",
     "responses_received" : "Responses received",
+    "save" : "Save",
+    "cancel" : "Cancel",
+    "close" : "Close",
+    "form_created" : "Form created successfully",
+    "form_updated" : "Form updated successfully",
+    "form_deleted" : "Form deleted successfully",
+    "form_name" : "Form name",
     "goto_form" : "Go to form"
 
 }

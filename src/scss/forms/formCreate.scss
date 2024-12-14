@@ -1,0 +1,53 @@
+.form-cnt {
+  width: 100%;
+  height: 100%;
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  .form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .header-indicator {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--color-accent);
+      }
+
+      .header-text {
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .form-sec-cnt {
+    height: 100%;
+
+    .form-sec {
+      height: 100%;
+      display: flex;
+      .components-sec-cnt {
+        width: 30%;
+      }
+
+      .form-workbench {
+        padding: 20px;
+        width: 100%;
+      }
+    }
+  }
+
+  .forms {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
