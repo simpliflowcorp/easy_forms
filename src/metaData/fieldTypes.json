@@ -1,0 +1,75 @@
+[
+    {
+      "label": "text",
+      "type": 1
+    },
+    {
+      "label": "number",
+      "type": 2
+    },
+    {
+      "label": "decimal",
+      "type": 3
+    },
+    {
+      "label": "email",
+      "type": 4
+    },
+    {
+      "label": "link",
+      "type": 5
+    },
+    {
+      "label": "select",
+      "type": 11
+    },
+    {
+      "label": "multi_select",
+      "type": 12
+    },
+    {
+      "label": "checkbox",
+      "type": 13
+    },
+    {
+      "label": "radio",
+      "type": 14
+    },
+    {
+      "label": "color_picker",
+      "type": 15
+    },
+    {
+      "label": "range",
+      "type": 16
+    },
+    {
+      "label": "date",
+      "type": 21
+    },
+    {
+      "label": "date_time",
+      "type": 22
+    },
+    {
+      "label": "time",
+      "type": 23
+    },
+    {
+      "label": "image",
+      "type": 31
+    },
+    {
+      "label": "file",
+      "type": 32
+    },
+    {
+      "label": "signature",
+      "type": 33
+    },
+    {
+      "label": "textarea",
+      "type": 41
+    }
+  ]
+  
