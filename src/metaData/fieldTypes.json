@@ -1,74 +1,92 @@
 [
     {
       "label": "text",
+      "icon" : "fonts",
       "type": 1
     },
     {
       "label": "number",
+      "icon" : "123",
       "type": 2
     },
     {
       "label": "decimal",
+      "icon" : "123",
       "type": 3
     },
     {
       "label": "email",
+      "icon" : "envelope",
       "type": 4
     },
     {
       "label": "link",
+      "icon" : "link-45deg",
       "type": 5
     },
     {
       "label": "select",
+      "icon" : "check-lg",
       "type": 11
     },
     {
       "label": "multi_select",
+      "icon" : "check2-all",
       "type": 12
     },
     {
       "label": "checkbox",
+      "icon" : "ui-checks-grid",
       "type": 13
     },
     {
       "label": "radio",
+      "icon" : "ui-radios",
       "type": 14
     },
     {
       "label": "color_picker",
+      "icon" : "palette",
       "type": 15
     },
     {
       "label": "range",
+      "icon" : "sliders",
       "type": 16
     },
     {
       "label": "date",
+      "icon" : "calendar4-event",
       "type": 21
     },
     {
       "label": "date_time",
+      "icon" : "calendar4-range",
       "type": 22
     },
     {
       "label": "time",
+      "icon" : "stopwatch",
       "type": 23
     },
     {
       "label": "image",
+      "icon" : "image",
       "type": 31
     },
     {
       "label": "file",
+      "icon" : "files",
       "type": 32
     },
     {
       "label": "signature",
+      "icon" : "pen",
       "type": 33
     },
     {
       "label": "textarea",
+      "icon" : "textarea-resize",
       "type": 41
     }
   ]
