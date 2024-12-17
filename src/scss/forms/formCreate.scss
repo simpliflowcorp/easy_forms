@@ -36,12 +36,15 @@
       display: flex;
       .components-sec-cnt {
         width: 30%;
+        height: calc(100% - 80px);
 
         .components-sec {
           display: flex;
           flex-direction: column;
           gap: 10px;
           height: 100%;
+          overflow: auto;
+
           .components-sec-header {
             display: flex;
             align-items: center;
@@ -68,20 +71,23 @@
       .form-workbench {
         padding: 10px;
         width: 100%;
+        height: calc(100% - 80px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         .workbench-cnt {
-          width: 100%;
+          width: 650px;
           height: 100%;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          border: var(--common-border);
+          border-radius: var(--border-radius);
+          overflow: auto;
 
           .workbench {
-            width: 650px;
+            width: 325px;
             height: 100%;
             padding: 20px;
-            border: var(--common-border);
-            border-radius: var(--border-radius);
           }
         }
       }
@@ -106,6 +112,51 @@
 
     .components-sec-list-item-icon {
       font-size: 22px;
+    }
+  }
+
+  .form-field-element-cnt {
+    .form-field-element {
+      .form-field-element-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+
+        .form-field-element-options {
+          cursor: pointer;
+        }
+      }
+
+      .form-field-text-element-input {
+        border: var(--common-border);
+        border-radius: var(--input-border-radius);
+        height: 40px;
+        width: 100%;
+        display: block;
+      }
+
+      .form-field-select-element-input {
+        border: var(--common-border);
+        border-radius: var(--input-border-radius);
+        height: 40px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+
+        .select-element-input-icon {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: end;
+          padding: 0 10px;
+          position: absolute;
+          top: 0;
+        }
+      }
     }
   }
 }

@@ -1,25 +1,38 @@
 import { useLanguageStore } from "@/store/store";
 import { useDroppable } from "@dnd-kit/core";
 import React from "react";
+import DynamicElement from "./builderComponents/dynamicElement";
 
-type Props = {};
+type Props = {
+  form: any;
+  id: string;
+};
 
 const FormWorkbench = (props: Props) => {
   const { setNodeRef } = useDroppable({
-    id: "workbench",
+    id: props.id + "_" + "workbench",
     data: {
-      type: "workbench",
+      type: props.id + "_" + "workbench",
     },
   });
+
   const lang = useLanguageStore((state) => state.language);
 
-  React.useEffect(() => {}, []);
+  React.useEffect(() => {
+    console.log(lang);
+  }, []);
 
   return (
-    <div ref={setNodeRef} className="form-workbench">
-      <div className="workbench-cnt">
-        <div className="workbench"></div>
-      </div>
+    <div ref={setNodeRef} className="workbench">
+      {props.form
+        .filter(
+          (element: any) =>
+            (element.column === 1 && props.id === "left") ||
+            (props.id === "right" && element.column === 2)
+        )
+        .map((element: any, index: number) => {
+          return <DynamicElement key={index} data={element} />;
+        })}
     </div>
   );
 };

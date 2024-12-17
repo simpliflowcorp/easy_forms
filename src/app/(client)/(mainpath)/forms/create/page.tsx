@@ -20,6 +20,7 @@ import ComponentsContainer from "@/components/builderWorkbench/ComponentsContain
 import { set } from "mongoose";
 import ComponentsElements from "@/components/builderWorkbench/ComponentsElements";
 import FormWorkbench from "@/components/builderWorkbench/FormWorkbench";
+import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -31,6 +32,88 @@ export default function forms(props: IformsProps) {
   const [data, setData] = React.useState({} as any);
 
   const [components, setComponents] = React.useState([] as any);
+  const [form, setForm] = React.useState([
+    {
+      id: 1,
+      label: "First Name",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+    {
+      id: 2,
+      label: "Last Name",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 2,
+    },
+    {
+      id: 3,
+      label: "Email",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+    {
+      id: 4,
+      label: "Phone",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 2,
+    },
+    {
+      id: 5,
+      label: "Address",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+    {
+      id: 6,
+      label: "City",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 2,
+    },
+    {
+      id: 7,
+      label: "State",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+    {
+      id: 8,
+      label: "Country",
+      type: 11,
+      required: 1,
+      unique: 0,
+      column: 2,
+    },
+    {
+      id: 9,
+      label: "Zip Code",
+      type: 1,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+    {
+      id: 10,
+      label: "Zip Code",
+      type: 11,
+      required: 1,
+      unique: 0,
+      column: 1,
+    },
+  ] as any);
 
   const [activeElement, setActiveElement] = React.useState({} as any);
 
@@ -77,7 +160,7 @@ export default function forms(props: IformsProps) {
         <div className="form-sec-cnt">
           <div className="form-sec">
             <ComponentsContainer />
-            <FormWorkbench />
+            <FormWorkbenchCnt form={form} />
           </div>
         </div>
         <DragOverlay dropAnimation={null} className="drag-overlay">
