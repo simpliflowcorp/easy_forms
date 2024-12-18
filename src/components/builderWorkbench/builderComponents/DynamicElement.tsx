@@ -2,6 +2,7 @@
 import React from "react";
 import TextFieldElement from "./textFieldElement";
 import SelectFieldElement from "./SelectFieldElement";
+import CheckboxFieldElement from "./checkboxFieldElement";
 
 type Props = {
   data: any;
@@ -21,6 +22,8 @@ const DynamicElement = (props: Props) => {
       case 11:
       case 12:
         return <SelectFieldElement data={props.data} />;
+      case 13:
+        return <CheckboxFieldElement data={props.data} />;
       default:
         return <div></div>;
     }

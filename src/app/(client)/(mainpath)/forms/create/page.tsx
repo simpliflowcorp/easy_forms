@@ -107,11 +107,24 @@ export default function forms(props: IformsProps) {
     },
     {
       id: 10,
-      label: "Zip Code",
+      label: "select Code",
       type: 11,
       required: 1,
       unique: 0,
+      column: 2,
+    },
+    {
+      id: 11,
+      label: "Check",
+      type: 13,
+      required: 1,
+      unique: 0,
       column: 1,
+      options: [
+        { label: "Option 1", value: 0 },
+        { label: "Option 2", value: 0 },
+        { label: "Option 3", value: 0 },
+      ],
     },
   ] as any);
 
