@@ -131,6 +131,7 @@
     "signature" : "Signature",
     "textarea" : "Text Area",
     "base_components" : "Base Components",
+    "pre_defined_components" : "Pre Defined Components",
     "goto_form" : "Go to form"
 
 }

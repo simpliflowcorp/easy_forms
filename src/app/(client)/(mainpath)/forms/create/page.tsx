@@ -132,7 +132,7 @@ export default function forms(props: IformsProps) {
       type: 14,
       required: 1,
       unique: 0,
-      column: 1,
+      column: 2,
       options: [
         { label: "Option 1", value: 0 },
         { label: "Option 2", value: 0 },
@@ -153,7 +153,7 @@ export default function forms(props: IformsProps) {
       type: 16,
       required: 1,
       unique: 0,
-      column: 1,
+      column: 2,
     },
     {
       id: 15,
@@ -169,7 +169,7 @@ export default function forms(props: IformsProps) {
       type: 23,
       required: 1,
       unique: 0,
-      column: 1,
+      column: 2,
     },
     {
       id: 17,
@@ -185,7 +185,7 @@ export default function forms(props: IformsProps) {
       type: 32,
       required: 1,
       unique: 0,
-      column: 1,
+      column: 2,
     },
     {
       id: 19,
@@ -201,7 +201,7 @@ export default function forms(props: IformsProps) {
       type: 33,
       required: 1,
       unique: 0,
-      column: 1,
+      column: 2,
     },
     {
       id: 21,

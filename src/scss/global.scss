@@ -125,6 +125,14 @@ body {
   //   border-radius: 10px;
   // }
 }
+
+input[type="color"] {
+  cursor: pointer;
+  border: var(--common-border);
+  outline: none;
+  background-color: transparent;
+}
+
 .required-asterisk {
   color: var(--error-color);
   font-size: 12px;
@@ -179,10 +187,16 @@ body {
   }
 }
 
+.checkbox-switch-options-cnt {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .checkbox-switch {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
 
   input[type="checkbox"] + label {
@@ -224,5 +238,21 @@ body {
     transform: scale(1);
     background-color: #f7c28f;
     border-color: #f7c28f;
+  }
+}
+
+.radio-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .color-picker-input {
+    flex-grow: 1;
   }
 }

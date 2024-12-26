@@ -4,7 +4,7 @@ type Props = {
   data: any;
 };
 
-const CheckboxFieldElement = (props: Props) => {
+const RadioFieldElement = (props: Props) => {
   console.log(props.data);
 
   return (
@@ -17,10 +17,10 @@ const CheckboxFieldElement = (props: Props) => {
         <div className="checkbox-switch-options-cnt">
           {props.data.options.map((option: any, index: number) => {
             return (
-              <div className="checkbox-switch" key={index}>
+              <div className="radio-switch" key={index}>
                 <input
-                  type="checkbox"
                   disabled
+                  type="radio"
                   id={"weekday-" + index}
                   name={"weekday-" + index}
                   value={option.value}
@@ -35,4 +35,4 @@ const CheckboxFieldElement = (props: Props) => {
   );
 };
 
-export default CheckboxFieldElement;
+export default RadioFieldElement;

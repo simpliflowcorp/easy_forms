@@ -29,26 +29,30 @@
   }
 
   .form-sec-cnt {
-    height: 100%;
-
+    flex-grow: 1;
+    overflow: auto;
     .form-sec {
-      height: 100%;
+      height: calc(100%);
       display: flex;
+
       .components-sec-cnt {
+        height: 100%;
         width: 30%;
-        height: calc(100% - 80px);
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
 
         .components-sec {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          height: 100%;
-          overflow: auto;
 
           .components-sec-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
+            padding: 10px 0;
 
             .header-indicator {
               font-size: 22px;
@@ -56,22 +60,21 @@
               color: var(--color-accent);
             }
           }
-
-          .components-sec-body {
-            .components-sec-list {
-              display: flex;
-              flex-wrap: wrap;
-              flex-grow: 1;
-              gap: 5px;
-            }
-          }
+        }
+        .components-sec-list {
+          overflow: auto;
+          display: flex;
+          flex-wrap: wrap;
+          flex-grow: 1;
+          gap: 5px;
+          margin-bottom: 10px;
         }
       }
 
       .form-workbench {
         padding: 10px;
         width: 100%;
-        height: calc(100% - 80px);
+        height: calc(100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -102,7 +105,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    min-width: 45%;
+    min-width: 48%;
     border: var(--common-border);
     border-radius: var(--border-radius);
 
