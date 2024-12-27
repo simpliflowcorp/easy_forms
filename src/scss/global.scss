@@ -256,3 +256,12 @@ input[type="color"] {
     flex-grow: 1;
   }
 }
+.date-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .date-picker-input {
+    flex-grow: 1;
+  }
+}

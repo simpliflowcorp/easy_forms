@@ -166,7 +166,7 @@ export default function forms(props: IformsProps) {
     {
       id: 16,
       label: "time",
-      type: 23,
+      type: 22,
       required: 1,
       unique: 0,
       column: 2,
@@ -174,7 +174,7 @@ export default function forms(props: IformsProps) {
     {
       id: 17,
       label: "datetime",
-      type: 22,
+      type: 23,
       required: 1,
       unique: 0,
       column: 1,

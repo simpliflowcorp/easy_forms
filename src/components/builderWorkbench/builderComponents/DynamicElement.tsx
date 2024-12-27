@@ -6,6 +6,9 @@ import CheckboxFieldElement from "./CheckboxFieldElement";
 import RadioFieldElement from "./RadioFieldElement";
 import ColorPickerElement from "./ColorPickerElement";
 import RangePickerElement from "./RangePickerElement";
+import DatePickerElement from "./DatePickerElement";
+import DateTimePickerElement from "./DateTimePickerElement";
+import TimePickerElement from "./TimePickerElement";
 
 type Props = {
   data: any;
@@ -33,12 +36,12 @@ const DynamicElement = (props: Props) => {
         return <ColorPickerElement data={props.data} />;
       case 16:
         return <RangePickerElement data={props.data} />;
-      case 17:
-        return <RangePickerElement data={props.data} />;
-      case 18:
-        return <RangePickerElement data={props.data} />;
-      case 19:
-        return <RangePickerElement data={props.data} />;
+      case 21:
+        return <DatePickerElement data={props.data} />;
+      case 22:
+        return <TimePickerElement data={props.data} />;
+      case 23:
+        return <DateTimePickerElement data={props.data} />;
       default:
         return <TextFieldElement data={props.data} />;
     }

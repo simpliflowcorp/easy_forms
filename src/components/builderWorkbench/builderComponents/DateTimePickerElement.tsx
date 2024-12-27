@@ -13,7 +13,11 @@ const DateTimePickerElement = (props: Props) => {
           <i className=" form-field-element-options ic-three-dots-vertical"></i>
         </div>
         <label className="date-picker">
-          <input disabled type="date" className=" date-picker-input" />
+          <input
+            disabled
+            type="datetime-local"
+            className=" date-picker-input"
+          />
         </label>
       </div>
     </div>

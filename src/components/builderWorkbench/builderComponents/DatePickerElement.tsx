@@ -13,7 +13,10 @@ const DatePickerElement = (props: Props) => {
           <i className=" form-field-element-options ic-three-dots-vertical"></i>
         </div>
         <label className="date-picker">
-          <input disabled type="date" className=" date-picker-input" />
+          <input
+            type="date"
+            className=" date-picker-input form-field-color-element-input"
+          />
         </label>
       </div>
     </div>
