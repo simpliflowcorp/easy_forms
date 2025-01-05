@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import META_DATAS from "@/metaData/fieldTypes.json";
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
@@ -17,9 +16,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import ComponentsContainer from "@/components/builderWorkbench/ComponentsContainer";
-import { set } from "mongoose";
 import ComponentsElements from "@/components/builderWorkbench/ComponentsElements";
-import FormWorkbench from "@/components/builderWorkbench/FormWorkbench";
 import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
 export interface IformsProps {}
 
@@ -215,9 +212,7 @@ export default function forms(props: IformsProps) {
 
   const [activeElement, setActiveElement] = React.useState({} as any);
 
-  React.useEffect(() => {
-    console.log(META_DATAS);
-  }, []);
+  React.useEffect(() => {}, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -244,15 +239,12 @@ export default function forms(props: IformsProps) {
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={(e: any) => {
-          console.log(e);
           if (e) {
             setActiveElement(e.active.data.current.comp);
           }
         }}
         onDragEnd={(e: any) => {
           const { active, over } = e;
-
-          console.log({ active, over });
         }}
       >
         <div className="form-sec-cnt">

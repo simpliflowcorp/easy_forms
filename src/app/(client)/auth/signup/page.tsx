@@ -36,8 +36,6 @@ export default function SignUp(props: IsignUpProps) {
   const lang = useLanguageStore((state) => state.language);
 
   const signUp = async () => {
-    console.log({ dataIsValid });
-
     if (dataIsValid.username && dataIsValid.email && dataIsValid.password) {
       try {
         const res = await axios.post("/api/auth/signup", data);
@@ -58,7 +56,6 @@ export default function SignUp(props: IsignUpProps) {
 
   const dbtest = async () => {
     const res = await axios.get("/api/testDb");
-    console.log({ res });
   };
   React.useEffect(() => {
     dbtest();

@@ -22,14 +22,13 @@ export default function Verify(props: IverifyProps) {
     const verify = async () => {
       try {
         let res = await axios.post("/api/auth/verifyEmail", { verifyToken });
-        console.log({ res });
+
         setGotData(true);
         if (res.status === 200) {
           setIsVerfied(true);
         } else {
         }
       } catch (error: any) {
-        console.log(error);
         setGotData(true);
         setErrorText(error.response.data.message as string);
         setIsVerfied(false);

@@ -74,7 +74,6 @@
       .form-workbench {
         padding: 10px;
         width: 100%;
-        height: calc(100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -89,8 +88,8 @@
 
           .workbench {
             width: 325px;
-            height: 100%;
             padding: 20px;
+            height: max-content;
           }
         }
       }
@@ -134,7 +133,7 @@
       .form-field-text-element-input {
         border: var(--common-border);
         border-radius: var(--input-border-radius);
-        height: 40px;
+        height: 32px;
         width: 100%;
         display: block;
       }
@@ -142,7 +141,7 @@
       .form-field-select-element-input {
         border: var(--common-border);
         border-radius: var(--input-border-radius);
-        height: 40px;
+        height: 32px;
         width: 100%;
         display: flex;
         align-items: center;

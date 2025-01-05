@@ -32,8 +32,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log({ props, isValid, IsNotEmpty });
-
   return (
     <>
       <div className="input-cnt">

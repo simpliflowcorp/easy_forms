@@ -10,8 +10,6 @@ export interface IErroTextCntProps {
 export default function ErroTextCnt(props: IErroTextCntProps) {
   const lang = useLanguageStore((state) => state.language);
 
-  console.log(props);
-
   return (
     <div className="input-err-cnt">
       {props.IsNotEmpty && <span className="err-text">{lang.required}</span>}

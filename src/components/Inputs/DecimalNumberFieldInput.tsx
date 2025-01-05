@@ -34,8 +34,6 @@ export default function DecimalNumberFieldInput(
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(isValid, IsNotEmpty);
-
   return (
     <>
       <div className="input-cnt">

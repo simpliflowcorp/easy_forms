@@ -91,8 +91,6 @@ export default function security(props: IsecurityProps) {
     },
   ]);
 
-  console.log(data);
-
   const [resetBtn, setResetBtn] = React.useState(0);
 
   const forgotPassword = async () => {

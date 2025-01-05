@@ -1,7 +1,7 @@
 import { useLanguageStore } from "@/store/store";
 import { useDroppable } from "@dnd-kit/core";
 import React from "react";
-import DynamicElement from "./builderComponents/dynamicElement";
+import DynamicElement from "./builderComponents/DynamicElement";
 
 type Props = {
   form: any;
@@ -18,9 +18,7 @@ const FormWorkbench = (props: Props) => {
 
   const lang = useLanguageStore((state) => state.language);
 
-  React.useEffect(() => {
-    console.log(lang);
-  }, []);
+  React.useEffect(() => {}, []);
 
   return (
     <div ref={setNodeRef} className="workbench">

@@ -21,8 +21,6 @@ const SidebarMain = (props: Props) => {
   const router = useRouter();
   const session = useSession();
 
-  console.log(session);
-
   const onLogout = async () => {
     try {
       signOut();

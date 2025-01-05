@@ -23,7 +23,6 @@ export default function PieChartComp(props: Props) {
       newData.push({ ...props.data[i], fill: colors[i] });
     }
     setChartData(newData);
-    console.log(colors);
   }, [props.data]);
 
   const renderActiveShape = (props: any) => {

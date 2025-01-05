@@ -31,20 +31,8 @@ export default function AppLayout({
     }
   };
 
-  // const checkTemplate = async () => {
-  //   try {
-  //     const template = await fetch("@/emailtemplates/verifyEmail.html");
-  //     console.log(template);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
   React.useEffect(() => {
     let path = window.location.pathname.split("/")[1];
-    console.log(path);
-    console.log(pathname);
-
     setIsActive(path);
     getUserData();
   }, [pathname]);

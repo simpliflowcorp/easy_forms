@@ -12,8 +12,6 @@ export default function ToogleSwitch(props: IToogleSwitchProps) {
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
-  console.log(uid);
-
   return (
     <div className="toogle-switch" onClick={() => props.action()}>
       <span>{lang[props.label]}</span>

@@ -30,8 +30,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    console.log(CurrentUser);
-
     // verify code
 
     const isValidCode = verify_code === CurrentUser.secondaryEmailVerifyCode; // true or false;

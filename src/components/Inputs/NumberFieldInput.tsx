@@ -32,8 +32,6 @@ export default function NumberFieldInput(props: INumberFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(isValid, IsNotEmpty);
-
   return (
     <>
       <div className="input-cnt">

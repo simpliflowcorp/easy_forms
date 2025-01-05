@@ -5,8 +5,6 @@ type Props = {
 };
 
 const RadioFieldElement = (props: Props) => {
-  console.log(props.data);
-
   return (
     <div className="form-field-element-cnt">
       <div className="form-field-element">

@@ -33,11 +33,7 @@ export default function SignIn(props: ISignInProps) {
   const lang = useLanguageStore((state) => state.language);
   const session = useSession();
 
-  console.log(session);
-
   const SignIn = async () => {
-    console.log({ dataIsValid });
-
     if (dataIsValid.email && dataIsValid.password) {
       try {
         const res = await axios.post("/api/auth/signin", data);

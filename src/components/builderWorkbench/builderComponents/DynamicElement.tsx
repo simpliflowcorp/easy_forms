@@ -9,15 +9,18 @@ import RangePickerElement from "./RangePickerElement";
 import DatePickerElement from "./DatePickerElement";
 import DateTimePickerElement from "./DateTimePickerElement";
 import TimePickerElement from "./TimePickerElement";
+import { useSortable } from "@dnd-kit/sortable";
 
 type Props = {
   data: any;
 };
 
 const DynamicElement = (props: Props) => {
-  const dynamicElement = () => {
-    console.log(props.data);
+  const { listeners, setNodeRef, attributes } = useSortable({
+    id: props.data.id,
+  });
 
+  const dynamicElement = () => {
     switch (props.data.type) {
       case 1:
       case 2:
@@ -46,7 +49,11 @@ const DynamicElement = (props: Props) => {
         return <TextFieldElement data={props.data} />;
     }
   };
-  return <>{dynamicElement()}</>;
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners}>
+      {dynamicElement()}
+    </div>
+  );
 };
 
 export default DynamicElement;

@@ -16,7 +16,7 @@ export default function dashboard(props: IdashboardProps) {
 
   // const testModel = async () => {
   //   let res = await axios.post("/api/testDb", { test: "T1" });
-  //   console.log(res);
+
   // };
   // React.useEffect(() => {
   //   testModel();

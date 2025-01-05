@@ -67,10 +67,7 @@ export default function BarChartComp(props: Props) {
   const [barColorArray, setBarColorArray] = React.useState([] as any);
 
   React.useEffect(() => {
-    console.log(props.data);
     let workingData = { banana: 0, apple: 0, orange: 0 };
-
-    console.log(Object.keys(workingData));
 
     let data = Object.keys(props.data).map((key: any) => {
       return { name: dateConverter(key), ...props.data[key] };
@@ -84,8 +81,6 @@ export default function BarChartComp(props: Props) {
     setChartKeys(keys[0]);
     let colors = generateColorShades("#6439FF", "#7CF5FF", keys[0].length);
     setBarColorArray(colors);
-    console.log(keys);
-    console.log(data);
   }, [props.data]);
 
   return (

@@ -25,8 +25,6 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
-  console.log(props);
-
   React.useEffect(() => {
     if (props.reset) {
       if (props.isRequired) setIsNotEmpty(Boolean(props.value));
@@ -99,8 +97,6 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
       },
     }),
   };
-
-  console.log({ props, isValid });
 
   return (
     <div className="select-cnt">

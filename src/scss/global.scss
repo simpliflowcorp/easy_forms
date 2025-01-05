@@ -254,8 +254,10 @@ input[type="color"] {
 
   .color-picker-input {
     flex-grow: 1;
+    height: 32px;
   }
 }
+
 .date-picker {
   display: flex;
   align-items: center;
@@ -263,5 +265,6 @@ input[type="color"] {
 
   .date-picker-input {
     flex-grow: 1;
+    height: 32px;
   }
 }

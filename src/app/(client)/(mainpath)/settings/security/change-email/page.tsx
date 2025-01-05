@@ -73,8 +73,6 @@ export default function security(props: IsecurityProps) {
     }
   };
 
-  console.log({ resetVerifyBtn });
-
   return (
     <div className="setting-cnt">
       <div className="setting-header">
