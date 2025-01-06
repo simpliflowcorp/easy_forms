@@ -10,15 +10,26 @@ import DatePickerElement from "./DatePickerElement";
 import DateTimePickerElement from "./DateTimePickerElement";
 import TimePickerElement from "./TimePickerElement";
 import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Props = {
   data: any;
 };
 
 const DynamicElement = (props: Props) => {
-  const { listeners, setNodeRef, attributes } = useSortable({
-    id: props.data.id,
-  });
+  const { listeners, setNodeRef, attributes, transform, transition } =
+    useSortable({
+      id: props.data.id,
+      data: {
+        type: "element",
+        comp: props.data,
+      },
+    });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const dynamicElement = () => {
     switch (props.data.type) {
@@ -50,7 +61,7 @@ const DynamicElement = (props: Props) => {
     }
   };
   return (
-    <div ref={setNodeRef} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       {dynamicElement()}
     </div>
   );

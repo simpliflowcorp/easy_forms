@@ -90,6 +90,7 @@
             width: 325px;
             padding: 20px;
             height: max-content;
+            min-height: 100%;
           }
         }
       }
@@ -118,6 +119,7 @@
   }
 
   .form-field-element-cnt {
+    background-color: var(--primary-bg);
     .form-field-element {
       .form-field-element-label {
         display: flex;

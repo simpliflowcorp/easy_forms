@@ -13,8 +13,22 @@ const FormWorkbenchCnt = (props: Props) => {
   return (
     <div className="form-workbench">
       <div className="workbench-cnt">
-        <FormWorkbench id="left" form={props.form} />
-        <FormWorkbench id="right" form={props.form} />
+        <SortableContext
+          items={props.form
+            .filter((element: any) => element.column === 1)
+            .map((element: any) => element.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <FormWorkbench id="left" form={props.form} />
+        </SortableContext>
+        <SortableContext
+          items={props.form
+            .filter((element: any) => element.column === 2)
+            .map((element: any) => element.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <FormWorkbench id="right" form={props.form} />
+        </SortableContext>
       </div>
     </div>
   );

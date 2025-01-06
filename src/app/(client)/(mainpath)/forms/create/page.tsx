@@ -18,6 +18,7 @@ import {
 import ComponentsContainer from "@/components/builderWorkbench/ComponentsContainer";
 import ComponentsElements from "@/components/builderWorkbench/ComponentsElements";
 import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
+import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -211,6 +212,9 @@ export default function forms(props: IformsProps) {
   ] as any);
 
   const [activeElement, setActiveElement] = React.useState({} as any);
+  const [activeElementType, setActiveElementType] = React.useState(
+    "" as string
+  );
 
   React.useEffect(() => {}, []);
 
@@ -219,6 +223,44 @@ export default function forms(props: IformsProps) {
       activationConstraint: { distance: 10 },
     })
   );
+
+  const dynamicOverlay = () => {
+    if (activeElement) {
+      if (activeElementType === "element") {
+        return (
+          <div className="drag-overlay-item">
+            <DynamicElement data={activeElement} />
+          </div>
+        );
+      } else if (activeElementType === "component") {
+        return (
+          <div className="drag-overlay-item">
+            <ComponentsElements id="active" data={activeElement} />
+          </div>
+        );
+      }
+    }
+  };
+
+  const updateFormElement = (element: any) => {
+    const newForm = form.map((el: any) => {
+      if (el.id === element.id) {
+        return element;
+      }
+      return el;
+    });
+    setForm(newForm);
+  };
+
+  const changeElementColumn = (element: any, column: number) => {
+    const newForm = form.map((el: any) => {
+      if (el.id === element.id) {
+        return { ...element, column };
+      }
+      return el;
+    });
+    setForm(newForm);
+  };
 
   return (
     <div className="form-cnt">
@@ -235,12 +277,34 @@ export default function forms(props: IformsProps) {
           />
         </div>
       </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={(e: any) => {
           if (e) {
             setActiveElement(e.active.data.current.comp);
+            setActiveElementType(e.active.data.current.type);
+          }
+          console.log({ e });
+        }}
+        onDragOver={(e: any) => {
+          const { active, over } = e;
+
+          if (!active || !over) return;
+
+          console.log({ active, over });
+
+          if (over.data.current?.comp) {
+            console.log({ active, over });
+            if (
+              active.data.current.comp.column !== over.data.current.comp.column
+            ) {
+              changeElementColumn(
+                active.data.current.comp,
+                over.data.current.comp.column
+              );
+            }
           }
         }}
         onDragEnd={(e: any) => {
@@ -254,11 +318,7 @@ export default function forms(props: IformsProps) {
           </div>
         </div>
         <DragOverlay dropAnimation={null} className="drag-overlay">
-          {activeElement && (
-            <div className="drag-overlay-item">
-              <ComponentsElements id="active" data={activeElement} />
-            </div>
-          )}
+          {activeElement && dynamicOverlay()}
         </DragOverlay>
       </DndContext>
     </div>

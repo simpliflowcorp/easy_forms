@@ -13,6 +13,9 @@ const FormWorkbench = (props: Props) => {
     id: props.id + "_" + "workbench",
     data: {
       type: props.id + "_" + "workbench",
+      comp: {
+        column: props.id === "left" ? 1 : 2,
+      },
     },
   });
 
