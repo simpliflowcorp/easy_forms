@@ -17,14 +17,20 @@ type Props = {
 };
 
 const DynamicElement = (props: Props) => {
-  const { listeners, setNodeRef, attributes, transform, transition } =
-    useSortable({
-      id: props.data.id,
-      data: {
-        type: "element",
-        comp: props.data,
-      },
-    });
+  const {
+    listeners,
+    setNodeRef,
+    attributes,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: props.data.id,
+    data: {
+      type: "element",
+      comp: props.data,
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -61,7 +67,17 @@ const DynamicElement = (props: Props) => {
     }
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={
+        isDragging
+          ? "form-field-element-cnt dragging-element-placeholder"
+          : "form-field-element-cnt"
+      }
+      {...attributes}
+      {...listeners}
+    >
       {dynamicElement()}
     </div>
   );

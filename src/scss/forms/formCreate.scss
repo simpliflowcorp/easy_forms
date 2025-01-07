@@ -88,7 +88,7 @@
 
           .workbench {
             width: 325px;
-            padding: 20px;
+            padding: 15px;
             height: max-content;
             min-height: 100%;
           }
@@ -120,12 +120,20 @@
 
   .form-field-element-cnt {
     background-color: var(--primary-bg);
+    border-radius: var(--input-border-radius);
+    border: var(--common-border);
+    border-color: transparent;
+    padding: 10px;
+
     .form-field-element {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
       .form-field-element-label {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 0;
 
         .form-field-element-options {
           cursor: pointer;
@@ -161,6 +169,18 @@
           top: 0;
         }
       }
+    }
+  }
+
+  .dragging-element-placeholder {
+    border: var(--common-border);
+    background-color: var(--primary-placeholder);
+    border-radius: var(--input-border-radius);
+    border-color: var(--primary-hover);
+    padding: 10px;
+
+    > * {
+      visibility: hidden !important;
     }
   }
 }
