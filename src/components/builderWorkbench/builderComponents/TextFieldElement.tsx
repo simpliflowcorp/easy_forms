@@ -5,15 +5,7 @@ type Props = {
 };
 
 const TextFieldElement = (props: Props) => {
-  return (
-    <div className="form-field-element">
-      <div className="form-field-element-label">
-        {props.data.label}
-        <i className="form-field-element-options ic-three-dots-vertical"></i>
-      </div>
-      <span className="form-field-text-element-input"></span>
-    </div>
-  );
+  return <span className="form-field-text-element-input"></span>;
 };
 
 export default TextFieldElement;

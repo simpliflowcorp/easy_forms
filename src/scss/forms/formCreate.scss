@@ -124,6 +124,38 @@
     border: var(--common-border);
     border-color: transparent;
     padding: 10px;
+    position: relative;
+
+    .opts-popup-cnt {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 100;
+      background-color: var(--primary-bg);
+      border: var(--common-border);
+      border-radius: var(--input-border-radius);
+      gap: 5px;
+
+      .opts-popup-item {
+        cursor: pointer;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        &:hover {
+          background-color: var(--primary-hover);
+        }
+      }
+    }
+
+    .displayNone {
+      display: none;
+    }
+
+    .displayBlock {
+      display: block;
+    }
 
     .form-field-element {
       display: flex;

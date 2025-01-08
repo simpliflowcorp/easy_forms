@@ -11,6 +11,7 @@ import DateTimePickerElement from "./DateTimePickerElement";
 import TimePickerElement from "./TimePickerElement";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import ElementOptionPopup from "./ElementOptionPopup";
 
 type Props = {
   data: any;
@@ -35,6 +36,12 @@ const DynamicElement = (props: Props) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  const [isOptionsOpen, setIsOptionsOpen] = React.useState(false as boolean);
+
+  const closePopup = () => {
+    setIsOptionsOpen(false);
   };
 
   const dynamicElement = () => {
@@ -78,7 +85,21 @@ const DynamicElement = (props: Props) => {
       {...attributes}
       {...listeners}
     >
-      {dynamicElement()}
+      <div className="form-field-element">
+        <div className="form-field-element-label">
+          {props.data.label}
+          <i
+            onClick={() => {
+              setIsOptionsOpen(!isOptionsOpen);
+            }}
+            className=" form-field-element-options ic-three-dots-vertical"
+          ></i>
+        </div>
+        {dynamicElement()}
+        {isOptionsOpen ? (
+          <ElementOptionPopup isOptionsOpen closePopup={closePopup} />
+        ) : null}
+      </div>
     </div>
   );
 };
