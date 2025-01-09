@@ -15,6 +15,7 @@ import ElementOptionPopup from "./ElementOptionPopup";
 
 type Props = {
   data: any;
+  openElementProps: any;
 };
 
 const DynamicElement = (props: Props) => {
@@ -97,7 +98,12 @@ const DynamicElement = (props: Props) => {
         </div>
         {dynamicElement()}
         {isOptionsOpen ? (
-          <ElementOptionPopup isOptionsOpen closePopup={closePopup} />
+          <ElementOptionPopup
+            data={props.data}
+            openElementProps={props.openElementProps}
+            isOptionsOpen
+            closePopup={closePopup}
+          />
         ) : null}
       </div>
     </div>

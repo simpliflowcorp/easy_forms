@@ -7,6 +7,7 @@ import {
 
 type Props = {
   form: any;
+  openElementProps: any;
 };
 
 const FormWorkbenchCnt = (props: Props) => {
@@ -19,7 +20,11 @@ const FormWorkbenchCnt = (props: Props) => {
             .map((element: any) => element.id)}
           strategy={verticalListSortingStrategy}
         >
-          <FormWorkbench id="left" form={props.form} />
+          <FormWorkbench
+            openElementProps={props.openElementProps}
+            id="left"
+            form={props.form}
+          />
         </SortableContext>
         <SortableContext
           items={props.form
@@ -27,7 +32,11 @@ const FormWorkbenchCnt = (props: Props) => {
             .map((element: any) => element.id)}
           strategy={verticalListSortingStrategy}
         >
-          <FormWorkbench id="right" form={props.form} />
+          <FormWorkbench
+            openElementProps={props.openElementProps}
+            id="right"
+            form={props.form}
+          />
         </SortableContext>
       </div>
     </div>

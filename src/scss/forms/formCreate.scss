@@ -142,6 +142,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        border-radius: var(--input-border-radius);
 
         &:hover {
           background-color: var(--primary-hover);

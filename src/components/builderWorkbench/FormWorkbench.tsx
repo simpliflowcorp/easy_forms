@@ -6,6 +6,7 @@ import DynamicElement from "./builderComponents/DynamicElement";
 type Props = {
   form: any;
   id: string;
+  openElementProps: any;
 };
 
 const FormWorkbench = (props: Props) => {
@@ -32,7 +33,13 @@ const FormWorkbench = (props: Props) => {
             (props.id === "right" && element.column === 2)
         )
         .map((element: any, index: number) => {
-          return <DynamicElement key={index} data={element} />;
+          return (
+            <DynamicElement
+              openElementProps={props.openElementProps}
+              key={index}
+              data={element}
+            />
+          );
         })}
     </div>
   );

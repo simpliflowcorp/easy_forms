@@ -4,10 +4,12 @@
   border-radius: var(--button-border-radius);
   text-align: center;
   cursor: pointer;
-
+  display: flex;
+  align-items: center;
+  justify-content: center;
   span {
     color: var(--font-color);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
   }
 
@@ -26,9 +28,10 @@
   align-items: center;
   justify-content: center;
 
-  p {
+  p,
+  span {
     color: var(--font-color);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
   }
 

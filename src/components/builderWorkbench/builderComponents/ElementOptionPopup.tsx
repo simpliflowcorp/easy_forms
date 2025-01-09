@@ -3,6 +3,8 @@ import * as React from "react";
 export interface IElementOptionPopupProps {
   isOptionsOpen: boolean;
   closePopup: () => void;
+  openElementProps: any;
+  data: any;
 }
 
 export default function ElementOptionPopup(props: IElementOptionPopupProps) {
@@ -34,7 +36,15 @@ export default function ElementOptionPopup(props: IElementOptionPopupProps) {
       }
     >
       <div className="opts-popup">
-        <div className="opts-popup-item">Edit</div>
+        <div
+          onClick={() => {
+            props.openElementProps(props.data);
+            props.closePopup();
+          }}
+          className="opts-popup-item"
+        >
+          Edit
+        </div>
         <div className="opts-popup-item">Delete</div>
       </div>
     </div>

@@ -132,6 +132,8 @@
     "textarea" : "Text Area",
     "base_components" : "Base Components",
     "pre_defined_components" : "Pre Defined Components",
+    "is_unique" : "Is Unique",
+    "is_required" : "Is Required",
+    "element_propertise": "Element Propertise",
     "goto_form" : "Go to form"
-
 }

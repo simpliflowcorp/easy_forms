@@ -21,6 +21,8 @@ import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 import { arrayMove } from "@dnd-kit/sortable";
 import { log } from "console";
+import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
+import { set } from "mongoose";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -241,6 +243,10 @@ export default function forms(props: IformsProps) {
   const newElementCountRef = React.useRef(101);
   const addedElementCountRef = React.useRef(101);
 
+  const [elementPropertise, setElementPropertise] = React.useState({} as any);
+  const [openElementPropertise, setOpenElementPropertise] =
+    React.useState(false);
+
   React.useEffect(() => {}, []);
 
   const sensors = useSensors(
@@ -254,7 +260,7 @@ export default function forms(props: IformsProps) {
       if (activeElementType === "element") {
         return (
           <div className="drag-overlay-item">
-            <DynamicElement data={activeElement} />
+            <DynamicElement openElementProps={() => {}} data={activeElement} />
           </div>
         );
       } else if (activeElementType === "component") {
@@ -393,7 +399,10 @@ export default function forms(props: IformsProps) {
     }
   };
 
-  console.log(form);
+  const openElementProps = (element: any) => {
+    setElementPropertise(element);
+    setOpenElementPropertise(true);
+  };
 
   return (
     <div className="form-cnt">
@@ -431,7 +440,14 @@ export default function forms(props: IformsProps) {
         <div className="form-sec-cnt">
           <div className="form-sec">
             <ComponentsContainer />
-            <FormWorkbenchCnt form={form} />
+            <FormWorkbenchCnt form={form} openElementProps={openElementProps} />
+            {openElementPropertise && (
+              <ElementPropertise
+                elementPropertise={elementPropertise}
+                close={() => setOpenElementPropertise(false)}
+                updateFormElement={updateFormElement}
+              />
+            )}
           </div>
         </div>
         <DragOverlay

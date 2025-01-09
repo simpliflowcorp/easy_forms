@@ -138,6 +138,14 @@ input[type="color"] {
   font-size: 12px;
 }
 
+.window-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--window-overlay-bg);
+}
 .toogle-switch {
   display: flex;
   align-items: center;
@@ -267,4 +275,9 @@ input[type="color"] {
     flex-grow: 1;
     height: 32px;
   }
+}
+
+.btn-cnt {
+  display: flex;
+  gap: 10px;
 }
