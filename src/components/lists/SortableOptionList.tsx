@@ -1,5 +1,6 @@
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   pointerWithin,
   useSensor,
@@ -43,22 +44,36 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
             Add Option
           </button>
         </div>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={pointerWithin}
-          onDragStart={(e: any) => {
-            if (e) {
-              setActiveElement(e.active.data.current.comp);
-            }
-          }}
-        >
-          <SortableContext items={props.options}>
-            {props.options.map((option, index) => {
-              return <SortableOption key={index} data={option} />;
-            })}
-            ;
-          </SortableContext>
-        </DndContext>
+        <div className="sortable-list-body">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={pointerWithin}
+            onDragStart={(e: any) => {
+              if (e) {
+                setActiveElement(e.active.data.current.comp);
+              }
+            }}
+          >
+            <SortableContext items={props.options}>
+              {props.options.map((option, index) => {
+                return <SortableOption key={index} data={option} />;
+              })}
+              ;
+            </SortableContext>
+            <DragOverlay>
+              {activeElement && (
+                <div className="option-field-element-cnt">
+                  <div className="option-field-element">
+                    <div className="option-field-element-label">
+                      {activeElement.label}
+                      <i className=" option-field-element-options ic-three-dots-vertical"></i>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
+        </div>
       </div>
     </div>
   );

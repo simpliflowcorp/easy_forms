@@ -1,0 +1,31 @@
+.sortable-list-cnt {
+  width: 100%;
+  display: flex;
+
+  .sortable-list {
+    width: 100%;
+    .sortable-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+
+      .left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .header-indicator {
+          font-size: 22px;
+          font-weight: 800;
+          color: var(--color-accent);
+        }
+
+        .header-text {
+          font-size: 18px;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}

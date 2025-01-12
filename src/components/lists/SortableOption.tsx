@@ -16,7 +16,7 @@ export default function SortableOption(props: ISortableOptionProps) {
   } = useSortable({
     id: props.data.id,
     data: {
-      type: "element",
+      type: "options",
       comp: props.data,
     },
   });
@@ -31,17 +31,15 @@ export default function SortableOption(props: ISortableOptionProps) {
       ref={setNodeRef}
       style={style}
       className={
-        isDragging
-          ? "form-field-element-cnt dragging-element-placeholder"
-          : "form-field-element-cnt"
+        isDragging ? "option-field-element-cnt" : "option-field-element-cnt"
       }
       {...attributes}
       {...listeners}
     >
-      <div className="form-field-element">
-        <div className="form-field-element-label">
+      <div className="option-field-element">
+        <div className="option-field-element-label">
           {props.data.label}
-          <i className=" form-field-element-options ic-three-dots-vertical"></i>
+          <i className=" option-field-element-options ic-three-dots-vertical"></i>
         </div>
       </div>
     </div>
