@@ -27,5 +27,19 @@
         }
       }
     }
+
+    .sortable-list-body {
+      width: 100%;
+      .option-field-element-cnt {
+        padding: 5px;
+        width: 100%;
+
+        .option-field-element {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+        }
+      }
+    }
   }
 }

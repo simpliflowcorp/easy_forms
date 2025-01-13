@@ -58,7 +58,6 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
               {props.options.map((option, index) => {
                 return <SortableOption key={index} data={option} />;
               })}
-              ;
             </SortableContext>
             <DragOverlay>
               {activeElement && (
@@ -66,8 +65,8 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
                   <div className="option-field-element">
                     <div className="option-field-element-label">
                       {activeElement.label}
-                      <i className=" option-field-element-options ic-three-dots-vertical"></i>
                     </div>
+                    <i className=" option-field-element-options ic-three-dots-vertical"></i>
                   </div>
                 </div>
               )}

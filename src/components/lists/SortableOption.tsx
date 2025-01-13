@@ -37,10 +37,8 @@ export default function SortableOption(props: ISortableOptionProps) {
       {...listeners}
     >
       <div className="option-field-element">
-        <div className="option-field-element-label">
-          {props.data.label}
-          <i className=" option-field-element-options ic-three-dots-vertical"></i>
-        </div>
+        <div className="option-field-element-label">{props.data.label}</div>
+        <i className=" option-field-element-options ic-three-dots-vertical"></i>
       </div>
     </div>
   );
