@@ -29,12 +29,12 @@ export default function SortableOption(props: ISortableOptionProps) {
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={style}
       className={
         isDragging ? "option-field-element-cnt" : "option-field-element-cnt"
       }
-      {...attributes}
-      {...listeners}
     >
       <div className="option-field-element">
         <div className="option-field-element-label">{props.data.label}</div>

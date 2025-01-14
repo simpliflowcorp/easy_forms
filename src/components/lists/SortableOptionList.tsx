@@ -6,7 +6,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import React from "react";
 import SortableOption from "./SortableOption";
 
@@ -50,11 +53,16 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
             collisionDetection={pointerWithin}
             onDragStart={(e: any) => {
               if (e) {
+                console.log(e.active.data.current.comp);
+
                 setActiveElement(e.active.data.current.comp);
               }
             }}
           >
-            <SortableContext items={props.options}>
+            <SortableContext
+              strategy={verticalListSortingStrategy}
+              items={props.options}
+            >
               {props.options.map((option, index) => {
                 return <SortableOption key={index} data={option} />;
               })}
