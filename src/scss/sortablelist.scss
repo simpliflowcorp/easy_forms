@@ -31,6 +31,7 @@
     .sortable-list-body {
       width: 100%;
       .option-field-element-cnt {
+        cursor: pointer;
         padding: 5px;
         width: 100%;
 
@@ -38,8 +39,21 @@
           width: 100%;
           display: flex;
           justify-content: space-between;
+          align-items: center;
+          gap: 20px;
         }
       }
+    }
+  }
+
+  .dragging-element-placeholder {
+    border: var(--common-border);
+    background-color: var(--primary-placeholder);
+    border-radius: var(--input-border-radius);
+    border-color: var(--primary-hover);
+
+    > * {
+      visibility: hidden !important;
     }
   }
 }

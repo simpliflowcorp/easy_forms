@@ -3,6 +3,7 @@ import React from "react";
 import { CSS } from "@dnd-kit/utilities";
 export interface ISortableOptionProps {
   data: any;
+  updateOptionsValue: (options: any[]) => void;
 }
 
 export default function SortableOption(props: ISortableOptionProps) {
@@ -26,6 +27,8 @@ export default function SortableOption(props: ISortableOptionProps) {
     transition,
   };
 
+  const [data, setData] = React.useState(props.data);
+
   return (
     <div
       ref={setNodeRef}
@@ -33,12 +36,28 @@ export default function SortableOption(props: ISortableOptionProps) {
       {...listeners}
       style={style}
       className={
-        isDragging ? "option-field-element-cnt" : "option-field-element-cnt"
+        isDragging
+          ? "option-field-element-cnt  dragging-element-placeholder"
+          : "option-field-element-cnt"
       }
     >
       <div className="option-field-element">
-        <div className="option-field-element-label">{props.data.label}</div>
-        <i className=" option-field-element-options ic-three-dots-vertical"></i>
+        <div className="input-cnt">
+          <input
+            className="input"
+            type="text"
+            onChange={(e) => {
+              setData({ ...data, label: e.target.value });
+            }}
+            value={data.label}
+            onBlur={() => {
+              props.updateOptionsValue(data);
+            }}
+          />
+        </div>
+        <div className="option-field-element-options">
+          <i className=" ic-trash"></i>
+        </div>
       </div>
     </div>
   );

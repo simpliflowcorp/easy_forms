@@ -20,9 +20,7 @@ import ComponentsElements from "@/components/builderWorkbench/ComponentsElements
 import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 import { arrayMove } from "@dnd-kit/sortable";
-import { log } from "console";
 import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
-import { set } from "mongoose";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -133,9 +131,9 @@ export default function forms(props: IformsProps) {
       unique: 0,
       column: 1,
       options: [
-        { label: "Option 1", value: 0 },
-        { label: "Option 2", value: 0 },
-        { label: "Option 3", value: 0 },
+        { id: 1, label: "Option 1", value: 0 },
+        { id: 2, label: "Option 2", value: 0 },
+        { id: 3, label: "Option 3", value: 0 },
       ],
       position: 6,
     },
@@ -147,9 +145,9 @@ export default function forms(props: IformsProps) {
       unique: 0,
       column: 2,
       options: [
-        { label: "Option 1", value: 0 },
-        { label: "Option 2", value: 0 },
-        { label: "Option 3", value: 0 },
+        { id: 1, label: "Option 1", value: 0 },
+        { id: 2, label: "Option 2", value: 0 },
+        { id: 3, label: "Option 3", value: 0 },
       ],
       position: 6,
     },

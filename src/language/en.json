@@ -135,5 +135,6 @@
     "is_unique" : "Is Unique",
     "is_required" : "Is Required",
     "element_propertise": "Element Propertise",
+    "add" : "Add",
     "goto_form" : "Go to form"
 }
