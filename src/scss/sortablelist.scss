@@ -41,6 +41,8 @@
           justify-content: space-between;
           align-items: center;
           gap: 20px;
+          background-color: var(--terinary-bg);
+          border-radius: var(--input-border-radius);
         }
       }
     }

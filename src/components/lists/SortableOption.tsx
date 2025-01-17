@@ -1,5 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
-import React from "react";
+import React, { useEffect } from "react";
 import { CSS } from "@dnd-kit/utilities";
 export interface ISortableOptionProps {
   data: any;
@@ -28,6 +28,10 @@ export default function SortableOption(props: ISortableOptionProps) {
   };
 
   const [data, setData] = React.useState(props.data);
+
+  useEffect(() => {
+    setData(props.data);
+  }, [props.data]);
 
   return (
     <div

@@ -101,10 +101,14 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
               {activeElement && (
                 <div className="option-field-element-cnt">
                   <div className="option-field-element">
-                    <div className="option-field-element-label">
-                      {activeElement.label}
+                    <div className="input-cnt">
+                      <input
+                        className="input"
+                        type="text"
+                        value={activeElement.label}
+                      />
                     </div>
-                    <i className=" option-field-element-options ic-three-dots-vertical"></i>
+                    <i className=" option-field-element-options "></i>
                   </div>
                 </div>
               )}
