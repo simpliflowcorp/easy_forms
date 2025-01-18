@@ -88,7 +88,9 @@ const DynamicElement = (props: Props) => {
     >
       <div className="form-field-element">
         <div className="form-field-element-label">
-          {props.data.label}
+          <span className="form-field-element-label-text">
+            {props.data.label}
+          </span>
           <i
             onClick={() => {
               setIsOptionsOpen(!isOptionsOpen);

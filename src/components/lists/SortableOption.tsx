@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 export interface ISortableOptionProps {
   data: any;
   updateOptionsValue: (options: any[]) => void;
+  deleteOptionsValue: (options: any[]) => void;
 }
 
 export default function SortableOption(props: ISortableOptionProps) {
@@ -60,7 +61,12 @@ export default function SortableOption(props: ISortableOptionProps) {
           />
         </div>
         <div className="option-field-element-options">
-          <i className=" ic-trash"></i>
+          <i
+            onClick={() => {
+              props.deleteOptionsValue(data);
+            }}
+            className=" ic-trash"
+          ></i>
         </div>
       </div>
     </div>

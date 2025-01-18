@@ -104,6 +104,11 @@ export default function forms(props: IformsProps) {
       unique: 0,
       column: 2,
       position: 4,
+      options: [
+        { id: 1, label: "Option 1", value: 0 },
+        { id: 2, label: "Option 2", value: 0 },
+        { id: 3, label: "Option 3", value: 0 },
+      ],
     },
     {
       id: 9,
@@ -122,6 +127,11 @@ export default function forms(props: IformsProps) {
       unique: 0,
       column: 2,
       position: 5,
+      options: [
+        { id: 1, label: "Option 1", value: 0 },
+        { id: 2, label: "Option 2", value: 0 },
+        { id: 3, label: "Option 3", value: 0 },
+      ],
     },
     {
       id: 11,
@@ -357,13 +367,18 @@ export default function forms(props: IformsProps) {
           position: 0,
         };
 
-        if (activeElement.type === 13 || activeElement.type === 14) {
+        if (
+          activeElement.type === 11 ||
+          activeElement.type === 12 ||
+          activeElement.type === 13 ||
+          activeElement.type === 14
+        ) {
           newElement = {
             ...newElement,
             options: [
-              { label: "Option 1", value: 0 },
-              { label: "Option 2", value: 0 },
-              { label: "Option 3", value: 0 },
+              { id: 1, label: "Option 1", value: 0 },
+              { id: 2, label: "Option 2", value: 0 },
+              { id: 3, label: "Option 3", value: 0 },
             ],
           };
         }

@@ -168,6 +168,14 @@
         align-items: center;
         justify-content: space-between;
 
+        .form-field-element-label-text {
+          flex-grow: 1;
+          word-wrap: none;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
         .form-field-element-options {
           cursor: pointer;
         }

@@ -12,7 +12,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import React from "react";
+import React, { use } from "react";
 import SortableOption from "./SortableOption";
 import { useLanguageStore } from "@/store/store";
 import SecondaryButton from "../buttons/SecondaryButton";
@@ -27,6 +27,12 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
   const lang = useLanguageStore((state) => state.language);
   const [activeElement, setActiveElement] = React.useState({} as any);
 
+  const isCap = React.useRef(Option.length);
+
+  React.useEffect(() => {
+    isCap.current = props.options.length;
+  }, [props.options]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 10 },
@@ -40,21 +46,43 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
     props.updateOptions(newOptions);
   };
 
+  const deleteOptionsValue = (data: any) => {
+    let newOptions = [
+      ...props.options.filter((option) => option.id !== data.id),
+    ];
+    props.updateOptions(newOptions);
+  };
+
+  console.log(process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT);
+
   return (
     <div className="sortable-list-cnt">
       <div className="sortable-list">
         <div className="sortable-list-header">
           <span>Options List</span>
           <SecondaryButton
+            isDisabled={
+              isCap.current >=
+              parseInt(process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT || "0", 10)
+            }
             label="add"
             action={() => {
-              const newOptions = [...props.options];
-              newOptions.push({
-                id: new Date().getTime(),
-                label: "New Option",
-                value: "new_option",
-              });
-              props.updateOptions(newOptions);
+              const limit = parseInt(
+                process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT || "0",
+                10
+              );
+              console.log(isCap.current);
+
+              if (isCap.current <= limit) {
+                isCap.current++;
+                const newOptions = [...props.options];
+                newOptions.push({
+                  id: new Date().getTime(),
+                  label: "New Option" + " " + isCap.current,
+                  value: "new_option" + " " + isCap.current,
+                });
+                props.updateOptions(newOptions);
+              }
             }}
           />
         </div>
@@ -91,6 +119,7 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
                 return (
                   <SortableOption
                     updateOptionsValue={updateOptionsValue}
+                    deleteOptionsValue={deleteOptionsValue}
                     key={index}
                     data={option}
                   />

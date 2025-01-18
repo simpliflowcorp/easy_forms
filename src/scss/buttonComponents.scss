@@ -44,6 +44,12 @@
     }
   }
 }
+.disabled-btn {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .primary-action-button {
   padding: var(--button-padding);
   background-color: var(--primary);

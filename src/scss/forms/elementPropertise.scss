@@ -9,6 +9,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+
     .element-propertise-header {
       padding: 10px;
       display: flex;
@@ -22,14 +23,46 @@
     }
 
     .element-propertise-body {
-      padding: 15px;
       flex-grow: 1;
-      overflow-y: auto;
 
-      .body-section-content {
+      .element-propertise-body-section {
+        height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+
+        .body-section-content {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+        }
+
+        .option-section-content {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          overflow: auto;
+          flex-grow: 1;
+
+          .sortable-list-cnt {
+            height: 100%;
+
+            .sortable-list {
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+
+              .sortable-list-header {
+                padding: 0 15px;
+              }
+              .sortable-list-body {
+                padding: 0 15px;
+                overflow: auto;
+                flex-grow: 1;
+              }
+            }
+          }
+        }
       }
     }
 

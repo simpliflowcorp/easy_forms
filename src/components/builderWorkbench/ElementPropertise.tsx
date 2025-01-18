@@ -90,6 +90,8 @@ export default function ElementPropertise(props: IElementPropertiseProps) {
                     setData({ ...data, unique: !data.unique ? 1 : 0 });
                   }}
                 />
+              </div>
+              <div className="option-section-content">
                 {data.options?.length > 0 ? (
                   <SortableOptionList
                     options={data.options}
