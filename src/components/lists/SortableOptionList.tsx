@@ -27,11 +27,12 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
   const lang = useLanguageStore((state) => state.language);
   const [activeElement, setActiveElement] = React.useState({} as any);
 
-  const isCap = React.useRef(Option.length);
+  const isCap = React.useRef(props.options.length);
+  const isCount = React.useRef(props.options.length);
 
   React.useEffect(() => {
     isCap.current = props.options.length;
-  }, [props.options]);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -51,6 +52,7 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
       ...props.options.filter((option) => option.id !== data.id),
     ];
     props.updateOptions(newOptions);
+    isCap.current--;
   };
 
   console.log(process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT);
@@ -75,11 +77,12 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
 
               if (isCap.current <= limit) {
                 isCap.current++;
+                isCount.current++;
                 const newOptions = [...props.options];
                 newOptions.push({
                   id: new Date().getTime(),
-                  label: "New Option" + " " + isCap.current,
-                  value: "new_option" + " " + isCap.current,
+                  label: "New Option" + " " + isCount.current,
+                  value: "new_option" + " " + isCount.current,
                 });
                 props.updateOptions(newOptions);
               }
@@ -118,6 +121,7 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
               {props.options.map((option, index) => {
                 return (
                   <SortableOption
+                    isCap={isCap.current}
                     updateOptionsValue={updateOptionsValue}
                     deleteOptionsValue={deleteOptionsValue}
                     key={index}

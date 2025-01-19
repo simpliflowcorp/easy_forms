@@ -24,43 +24,38 @@
 
     .element-propertise-body {
       flex-grow: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
 
-      .element-propertise-body-section {
-        height: 100%;
+      .body-section-content {
         display: flex;
         flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+        height: 170px;
+      }
 
-        .body-section-content {
+      .sortable-list-cnt {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: auto;
+        flex-grow: 1;
+
+        .sortable-list {
+          height: 100%;
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          padding: 15px;
-        }
 
-        .option-section-content {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          overflow: auto;
-          flex-grow: 1;
+          .sortable-list-header {
+            padding: 10px 15px;
+          }
 
-          .sortable-list-cnt {
-            height: 100%;
-
-            .sortable-list {
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-
-              .sortable-list-header {
-                padding: 0 15px;
-              }
-              .sortable-list-body {
-                padding: 0 15px;
-                overflow: auto;
-                flex-grow: 1;
-              }
-            }
+          .sortable-list-body {
+            padding: 0 15px 60px;
+            overflow: auto;
+            flex-grow: 1;
           }
         }
       }

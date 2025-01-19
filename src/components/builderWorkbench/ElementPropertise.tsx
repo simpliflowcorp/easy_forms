@@ -62,46 +62,42 @@ export default function ElementPropertise(props: IElementPropertiseProps) {
             </div>
           </div>
           <div className="element-propertise-body">
-            <div className="element-propertise-body-section">
-              <div className="body-section-content">
-                <TextFieldInput
-                  label="Name"
-                  updateValue={(e: string) => {
-                    setData({ ...data, label: e });
-                  }}
-                  value={data.label}
-                  updateIsValid={setIsValid}
-                  isValid={isValid}
-                  isRequired={true}
-                  reset={1}
-                />
+            <div className="body-section-content">
+              <TextFieldInput
+                label="Name"
+                updateValue={(e: string) => {
+                  setData({ ...data, label: e });
+                }}
+                value={data.label}
+                updateIsValid={setIsValid}
+                isValid={isValid}
+                isRequired={true}
+                reset={1}
+              />
 
-                <ToogleSwitch
-                  value={data.required}
-                  label="is_required"
-                  action={() => {
-                    setData({ ...data, required: !data.required ? 1 : 0 });
-                  }}
-                />
-                <ToogleSwitch
-                  value={data.unique}
-                  label="is_unique"
-                  action={() => {
-                    setData({ ...data, unique: !data.unique ? 1 : 0 });
-                  }}
-                />
-              </div>
-              <div className="option-section-content">
-                {data.options?.length > 0 ? (
-                  <SortableOptionList
-                    options={data.options}
-                    updateOptions={(options: any[]) => {
-                      setData({ ...data, options });
-                    }}
-                  />
-                ) : null}
-              </div>
+              <ToogleSwitch
+                value={data.required}
+                label="is_required"
+                action={() => {
+                  setData({ ...data, required: !data.required ? 1 : 0 });
+                }}
+              />
+              <ToogleSwitch
+                value={data.unique}
+                label="is_unique"
+                action={() => {
+                  setData({ ...data, unique: !data.unique ? 1 : 0 });
+                }}
+              />
             </div>
+            {data.options?.length > 0 ? (
+              <SortableOptionList
+                options={data.options}
+                updateOptions={(options: any[]) => {
+                  setData({ ...data, options });
+                }}
+              />
+            ) : null}
           </div>
         </div>
       </div>

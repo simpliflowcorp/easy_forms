@@ -5,6 +5,7 @@ export interface ISortableOptionProps {
   data: any;
   updateOptionsValue: (options: any[]) => void;
   deleteOptionsValue: (options: any[]) => void;
+  isCap: any;
 }
 
 export default function SortableOption(props: ISortableOptionProps) {
@@ -65,7 +66,7 @@ export default function SortableOption(props: ISortableOptionProps) {
             onClick={() => {
               props.deleteOptionsValue(data);
             }}
-            className=" ic-trash"
+            className={props.isCap < 3 ? "ic-trash inactive" : " ic-trash"}
           ></i>
         </div>
       </div>
