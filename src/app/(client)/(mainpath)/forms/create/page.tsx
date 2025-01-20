@@ -21,6 +21,9 @@ import FormWorkbenchCnt from "@/components/builderWorkbench/FormWorkbenchCnt";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 import { arrayMove } from "@dnd-kit/sortable";
 import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
+import SecondaryButton from "@/components/buttons/SecondaryButton";
+import IconButton from "@/components/buttons/IconButton";
+import FormPropertise from "@/components/builderWorkbench/FormPropertise";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -31,8 +34,13 @@ export default function forms(props: IformsProps) {
   const [gotData, setGotData] = React.useState(false);
   const [data, setData] = React.useState({} as any);
 
-  const [components, setComponents] = React.useState([] as any);
-  const [form, setForm] = React.useState([
+  const [form, setForm] = React.useState({
+    name: "Form Name",
+    description: "Form Description",
+    expiry: new Date().toISOString().split("T")[0],
+  } as any);
+
+  const [forms, setForms] = React.useState([
     {
       id: 1,
       label: "First Name",
@@ -254,7 +262,7 @@ export default function forms(props: IformsProps) {
   const [elementPropertise, setElementPropertise] = React.useState({} as any);
   const [openElementPropertise, setOpenElementPropertise] =
     React.useState(false);
-
+  const [openFormPropertise, setOpenFormPropertise] = React.useState(false);
   React.useEffect(() => {}, []);
 
   const sensors = useSensors(
@@ -310,7 +318,7 @@ export default function forms(props: IformsProps) {
     const overId = over.id;
     const overType = over.data.current.type;
     if (activeId === overId) return;
-    setForm((items: any) => {
+    setForms((items: any) => {
       const oldIndex = items.indexOf(active.data.current.comp);
       const newIndex = items.indexOf(over.data.current.comp);
       console.log({ oldIndex, newIndex });
@@ -320,7 +328,7 @@ export default function forms(props: IformsProps) {
 
     if (activeElementType === "component") {
       let id = active.id;
-      setForm((item: any) => {
+      setForms((item: any) => {
         let newform = [
           ...item.map((e: any) => {
             if (e.id === id) {
@@ -339,21 +347,8 @@ export default function forms(props: IformsProps) {
 
   const dragOverHandeler = (e: any) => {
     const { active, over } = e;
-
     if (!active || !over) return;
-
     console.log({ active, over, activeElementType });
-
-    let ex = {
-      id: 21,
-      label: "textarea",
-      type: 41,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 11,
-    };
-
     if (over.data.current?.comp) {
       console.log({ active, over });
       if (activeElementType === "component") {
@@ -383,10 +378,10 @@ export default function forms(props: IformsProps) {
           };
         }
 
-        console.log(form);
+        console.log(forms);
 
         if (addedElementCountRef.current === newElementCountRef.current) {
-          setForm((items: any) => {
+          setForms((items: any) => {
             let arryMoveVar = [...items, newElement];
             return arryMoveVar;
           });
@@ -417,6 +412,18 @@ export default function forms(props: IformsProps) {
     setOpenElementPropertise(true);
   };
 
+  const createForm = () => {
+    let form = {
+      name: "form name",
+      description: "form description",
+      elements: [],
+    };
+
+    console.log({ form });
+  };
+
+  console.log(form);
+
   return (
     <div className="form-cnt">
       <div className="form-header">
@@ -426,10 +433,22 @@ export default function forms(props: IformsProps) {
         </div>
 
         <div className="right">
-          <PrimaryButton
-            label={"save"}
-            action={() => router.push("/forms/create")}
-          />
+          <div className="btn-cnt">
+            <IconButton
+              icon="gear"
+              action={() => setOpenFormPropertise(true)}
+            />
+
+            <SecondaryButton
+              label={"cancel"}
+              action={() => router.push("/forms")}
+            />
+
+            <PrimaryButton
+              label={"save"}
+              action={() => router.push("/forms/create")}
+            />
+          </div>
         </div>
       </div>
 
@@ -453,11 +472,23 @@ export default function forms(props: IformsProps) {
         <div className="form-sec-cnt">
           <div className="form-sec">
             <ComponentsContainer />
-            <FormWorkbenchCnt form={form} openElementProps={openElementProps} />
+
+            <FormWorkbenchCnt
+              form={forms}
+              openElementProps={openElementProps}
+            />
             {openElementPropertise && (
               <ElementPropertise
                 elementPropertise={elementPropertise}
                 close={() => setOpenElementPropertise(false)}
+                updateFormElement={updateFormElement}
+              />
+            )}
+
+            {openFormPropertise && (
+              <FormPropertise
+                formPropertise={form}
+                close={() => setOpenFormPropertise(false)}
                 updateFormElement={updateFormElement}
               />
             )}
