@@ -47,7 +47,6 @@ export default function DateFieldInput(props: IDateFieldProps) {
           className={!isValid || !IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => {
-            console.log(e.target.value);
             setValue(e.target.value);
           }}
           onBlur={() => {

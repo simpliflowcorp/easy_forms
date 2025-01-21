@@ -290,7 +290,7 @@ export default function forms(props: IformsProps) {
   };
 
   const updateFormElement = (element: any) => {
-    const newForm = form.map((el: any) => {
+    const newForm = forms.map((el: any) => {
       if (el.id === element.id) {
         return element;
       }
@@ -300,7 +300,7 @@ export default function forms(props: IformsProps) {
   };
 
   const changeElementColumn = (element: any, column: number) => {
-    const newForm = form.map((el: any) => {
+    const newForm = forms.map((el: any) => {
       if (el.id === element.id) {
         return { ...element, column };
       }
@@ -310,7 +310,6 @@ export default function forms(props: IformsProps) {
   };
 
   const dragEndHandeler = (e: any) => {
-    console.log({ e });
     const { active, over } = e;
     const activeId = active.id;
 
@@ -321,7 +320,7 @@ export default function forms(props: IformsProps) {
     setForms((items: any) => {
       const oldIndex = items.indexOf(active.data.current.comp);
       const newIndex = items.indexOf(over.data.current.comp);
-      console.log({ oldIndex, newIndex });
+
       let arryMoveVar = arrayMove(items, oldIndex, newIndex);
       return arryMoveVar;
     });
@@ -332,7 +331,6 @@ export default function forms(props: IformsProps) {
         let newform = [
           ...item.map((e: any) => {
             if (e.id === id) {
-              console.log({ e });
               return { ...e, id: newElementCountRef.current };
             } else {
               return e;
@@ -348,9 +346,8 @@ export default function forms(props: IformsProps) {
   const dragOverHandeler = (e: any) => {
     const { active, over } = e;
     if (!active || !over) return;
-    console.log({ active, over, activeElementType });
+
     if (over.data.current?.comp) {
-      console.log({ active, over });
       if (activeElementType === "component") {
         let newElement = {
           id: active.id,
@@ -377,8 +374,6 @@ export default function forms(props: IformsProps) {
             ],
           };
         }
-
-        console.log(forms);
 
         if (addedElementCountRef.current === newElementCountRef.current) {
           setForms((items: any) => {
@@ -412,17 +407,17 @@ export default function forms(props: IformsProps) {
     setOpenElementPropertise(true);
   };
 
+  const updateFormData = (data: any) => {
+    setForm(data);
+  };
+
   const createForm = () => {
     let form = {
       name: "form name",
       description: "form description",
       elements: [],
     };
-
-    console.log({ form });
   };
-
-  console.log(form);
 
   return (
     <div className="form-cnt">
@@ -460,7 +455,6 @@ export default function forms(props: IformsProps) {
             setActiveElement(e.active.data.current.comp);
             setActiveElementType(e.active.data.current.type);
           }
-          console.log({ e });
         }}
         onDragOver={(e: any) => {
           dragOverHandeler(e);
@@ -489,7 +483,7 @@ export default function forms(props: IformsProps) {
               <FormPropertise
                 formPropertise={form}
                 close={() => setOpenFormPropertise(false)}
-                updateFormElement={updateFormElement}
+                updateFormElement={updateFormData}
               />
             )}
           </div>

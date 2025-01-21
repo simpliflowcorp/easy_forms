@@ -55,8 +55,6 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
     isCap.current--;
   };
 
-  console.log(process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT);
-
   return (
     <div className="sortable-list-cnt">
       <div className="sortable-list">
@@ -73,7 +71,6 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
                 process.env.NEXT_PUBLIC_ELEMENT_OPTIONS_LIMIT || "0",
                 10
               );
-              console.log(isCap.current);
 
               if (isCap.current <= limit) {
                 isCap.current++;
@@ -96,7 +93,6 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
             modifiers={[restrictToVerticalAxis]}
             onDragStart={(e: any) => {
               if (e) {
-                console.log(e.active.data.current.comp);
                 setActiveElement(e.active.data.current.comp);
               }
             }}
@@ -109,7 +105,7 @@ export default function SortableOptionList(props: ISortableOptionListProps) {
               let items = props.options;
               const oldIndex = items.indexOf(active.data.current.comp);
               const newIndex = items.indexOf(over.data.current.comp);
-              console.log({ oldIndex, newIndex });
+
               let arryMoveVar = arrayMove(items, oldIndex, newIndex);
               props.updateOptions(arryMoveVar);
             }}

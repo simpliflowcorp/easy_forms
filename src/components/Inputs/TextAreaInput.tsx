@@ -35,19 +35,24 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
   return (
     <>
       <div className="input-cnt">
-        <label htmlFor={"textArea" + uid}>{props.label}</label>
+        <label htmlFor={"textArea" + uid}>
+          {props.label}
+          <span className="required-asterisk">
+            {props.isRequired ? "*" : ""}
+          </span>
+        </label>
         <textarea
           id={"textArea" + uid}
-          className={isValid || !IsNotEmpty ? "error-input" : ""}
+          className={!isValid || !IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "text");
           }}
-        />{" "}
+        />
         <ErroTextCnt
           isRequired={props.isRequired}
-          isValid={isValid}
+          isValid={!isValid}
           IsNotEmpty={!IsNotEmpty}
         />
       </div>

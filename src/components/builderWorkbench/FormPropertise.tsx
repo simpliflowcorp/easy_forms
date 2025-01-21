@@ -50,7 +50,7 @@ export default function FormPropertise(props: IFormPropertiseProps) {
         <div className="element-propertise">
           <div className="element-propertise-header">
             <span className="element-propertise-header-title">
-              {lang.element_propertise}
+              {lang.form_propertise}
             </span>
             <div className="btn-cnt">
               <SecondaryButton
