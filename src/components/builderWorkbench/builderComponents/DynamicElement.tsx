@@ -12,6 +12,7 @@ import TimePickerElement from "./TimePickerElement";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ElementOptionPopup from "./ElementOptionPopup";
+import { log } from "console";
 
 type Props = {
   data: any;
@@ -74,6 +75,10 @@ const DynamicElement = (props: Props) => {
         return <TextFieldElement data={props.data} />;
     }
   };
+
+  const currentPath = window.location.pathname.split("/").pop();
+  console.log("currentPath", currentPath);
+
   return (
     <div
       ref={setNodeRef}
@@ -91,12 +96,14 @@ const DynamicElement = (props: Props) => {
           <span className="form-field-element-label-text">
             {props.data.label}
           </span>
-          <i
-            onClick={() => {
-              setIsOptionsOpen(!isOptionsOpen);
-            }}
-            className=" form-field-element-options ic-three-dots-vertical"
-          ></i>
+          {currentPath === "create" || currentPath === "edit" ? (
+            <i
+              onClick={() => {
+                setIsOptionsOpen(!isOptionsOpen);
+              }}
+              className=" form-field-element-options ic-three-dots-vertical"
+            ></i>
+          ) : null}
         </div>
         {dynamicElement()}
         {isOptionsOpen ? (

@@ -28,6 +28,44 @@
     }
   }
 
+  .form-view-body {
+    display: flex;
+    height: 100%;
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 40%;
+      .button-cnt {
+        display: flex;
+      }
+
+      .form-timmer {
+      }
+
+      .form-description {
+      }
+    }
+
+    .right {
+      width: 60%;
+
+      .form-preview {
+        .form-preview-body {
+          padding: var(--button-padding);
+          border: var(--input-border);
+          border-radius: var(--element-border-radius);
+          display: flex;
+
+          .form-preview-body-cnt {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+
   .form-sec-cnt {
     flex-grow: 1;
     overflow: auto;

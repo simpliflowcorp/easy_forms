@@ -136,6 +136,11 @@
     "is_required" : "Is Required",
     "element_propertise": "Element Propertise",
     "form_propertise": "Form Propertise",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back",
     "add" : "Add",
+    "terminate" : "Terminate",
+    "go_to_analytics" : "Go to analytics",
     "goto_form" : "Go to form"
 }

@@ -17,6 +17,7 @@
     background-color: var(--primary-hover);
   }
 }
+
 .secondary-button {
   padding: var(--button-padding);
   background-color: var(--secondary-bg);
@@ -42,6 +43,26 @@
     span {
       color: var(--secondary-bg);
     }
+  }
+}
+
+.promotion-button {
+  padding: var(--promotion-button-padding);
+  background: var(--promotion-gradient);
+  border-radius: var(--button-border-radius);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  span {
+    color: var(--font-color);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--primary-hover);
   }
 }
 .disabled-btn {

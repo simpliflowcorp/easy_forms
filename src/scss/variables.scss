@@ -7,6 +7,15 @@
   --primary-hover: #006fe6;
   --primary-placeholder: #006fe656;
 
+  --promotion-gradient-2: linear-gradient(165deg, #007bff, #006fe6);
+
+  --promotion-gradient: linear-gradient(
+    135deg,
+    rgba(0, 96, 223, 1) 0%,
+    rgba(0, 188, 223, 1) 35%,
+    rgba(0, 223, 149, 1) 100%
+  );
+
   --secondary: #161616;
 
   --green-bg: #d2fadf;
@@ -37,6 +46,8 @@
   // Buttons
   --button-border-radius: 5px;
   --button-padding: 10px 15px;
+
+  --promotion-button-padding: 15px;
 
   --secondary-button-hover: #c1c1c11b;
 
