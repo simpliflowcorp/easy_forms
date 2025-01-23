@@ -30,9 +30,11 @@ export default function dashboard(props: IdashboardProps) {
   const barChartData = {};
 
   const metaData = {
-    name: "Form Name",
-    description: "A description of the form",
-    expriy: new Date(),
+    name: "SIGN UP FORM",
+    description:
+      "This is a sign up form. Used to collect user data for the upcoming event. The form includes fields for first name, last name, email, phone, and address. Each field is required to ensure we gather all necessary information from the users. The form is divided into two columns for better organization and readability. The form will expire in two days from now, and its current status is active. Users can fill out the form to register for the event, and the collected data will be used for event planning and communication purposes.",
+    expriy: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    status: 1,
     elements: [
       {
         id: 1,
@@ -79,6 +81,22 @@ export default function dashboard(props: IdashboardProps) {
         column: 1,
         position: 3,
       },
+      {
+        id: 6,
+        label: "Select Option",
+        type: 11,
+        required: 1,
+        unique: 0,
+        column: 2,
+        position: 3,
+        option: [
+          { id: 1, label: "Option 1" },
+          { id: 2, label: "Option 2" },
+          { id: 3, label: "Option 3" },
+          { id: 4, label: "Option 4" },
+          { id: 5, label: "Option 5" },
+        ],
+      },
     ],
   };
 
@@ -86,8 +104,21 @@ export default function dashboard(props: IdashboardProps) {
     <div className="form-cnt">
       <div className="form-header">
         <div className="left">
-          <span className="header-indicator">/</span>
-          <span className="header-text">{metaData.name}</span>
+          <div className="form-sec-header-left">
+            <span className="header-indicator">/</span>
+            <span className="header-text">{metaData.name}</span>
+          </div>
+          <div className="form-sec-header-right">
+            <div
+              className={
+                metaData.status === 1
+                  ? "forms-sec-item-status active"
+                  : "forms-sec-item-status expired"
+              }
+            >
+              {metaData.status === 1 ? lang.active : lang.expired}
+            </div>
+          </div>
         </div>
 
         <div className="right">
@@ -109,7 +140,7 @@ export default function dashboard(props: IdashboardProps) {
 
             <PrimaryButton
               label={"edit"}
-              action={() => router.push("/forms/create")}
+              action={() => router.push("/forms/" + 1 + "/edit")}
             />
           </div>
         </div>
@@ -120,12 +151,12 @@ export default function dashboard(props: IdashboardProps) {
           <div className="button-cnt">
             <PromotionButton
               label={"go_to_analytics"}
-              action={() => router.push("/forms")}
+              action={() => router.push("/forms/" + 1 + "/analytics")}
             />
           </div>
           <div className="form-timer">
             <div className="form-timer-header">
-              <p className="form-timer-header-text">Form Expiry</p>
+              <p className="form-timer-header-text">{lang.form_expiry}</p>
             </div>
             <div className="form-timer-body">
               <p className="form-timer-body-text">
@@ -135,7 +166,7 @@ export default function dashboard(props: IdashboardProps) {
           </div>
           <div className="form-description">
             <div className="form-description-header">
-              <p className="form-description-header-text">Description</p>
+              <p className="form-description-header-text">{lang.description}</p>
             </div>
             <div className="form-description-body">
               <p className="form-description-body-text">
@@ -146,8 +177,8 @@ export default function dashboard(props: IdashboardProps) {
         </div>
         <div className="right">
           <div className="form-preview">
-            <div className="form-preview-header">
-              <p className="form-preview-header-text">Form Preview</p>
+            <div className="form-preview-header ">
+              <p className="form-preview-header-text">{lang.form_preview}</p>
             </div>
             <div className="form-preview-body">
               <div className="form-preview-body-cnt">

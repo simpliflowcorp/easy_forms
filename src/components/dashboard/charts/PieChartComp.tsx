@@ -4,6 +4,7 @@ import generateColorShades from "@/helper/generateColorShades";
 
 type Props = {
   data: any;
+  index: string;
 };
 export default function PieChartComp(props: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -20,9 +21,14 @@ export default function PieChartComp(props: Props) {
     let newData = [];
     let colors = generateColorShades("#6439FF", "#7CF5FF", props.data.length);
     for (let i = 0; i < props.data.length; i++) {
-      newData.push({ ...props.data[i], fill: colors[i] });
+      newData.push({
+        fill: colors[i],
+        name: props.data[i].option,
+        value: props.data[i].value,
+      });
     }
     setChartData(newData);
+    console.log(newData);
   }, [props.data]);
 
   const renderActiveShape = (props: any) => {

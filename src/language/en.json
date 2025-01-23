@@ -142,5 +142,9 @@
     "add" : "Add",
     "terminate" : "Terminate",
     "go_to_analytics" : "Go to analytics",
+    "form_preview" : "Form Preview",
+    "form_expiry" : "Form Expiry",
+    "description" : "Description",
+    "sanalytics": "'s Analytics",
     "goto_form" : "Go to form"
 }

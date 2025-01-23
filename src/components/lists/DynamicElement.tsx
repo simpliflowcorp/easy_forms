@@ -40,8 +40,8 @@ const DynamicElement = (props: Props) => {
       style={style}
       className={
         isDragging
-          ? "form-field-element-cnt dragging-element-placeholder"
-          : "form-field-element-cnt"
+          ? "form-field-element-cnt form-bg dragging-element-placeholder"
+          : "form-field-element-cnt form-bg"
       }
       {...attributes}
       {...listeners}

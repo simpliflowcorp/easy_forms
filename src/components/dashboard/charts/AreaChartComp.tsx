@@ -1,4 +1,6 @@
-import React from "react";
+import generateColorShades from "@/helper/generateColorShades";
+import { set } from "mongoose";
+import React, { use } from "react";
 import {
   AreaChart,
   Area,
@@ -11,52 +13,30 @@ import {
 
 type Props = {
   data: any;
+  index: string;
 };
 export default function AreaChartComp(Props: Props) {
-  const data = [
-    {
-      name: "Page A",
-      uv: 4000,
-      pv: 2400,
-      amt: 2400,
-    },
-    {
-      name: "Page B",
-      uv: 3000,
-      pv: 1398,
-      amt: 2210,
-    },
-    {
-      name: "Page C",
-      uv: 2000,
-      pv: 9800,
-      amt: 2290,
-    },
-    {
-      name: "Page D",
-      uv: 2780,
-      pv: 3908,
-      amt: 2000,
-    },
-    {
-      name: "Page E",
-      uv: 1890,
-      pv: 4800,
-      amt: 2181,
-    },
-    {
-      name: "Page F",
-      uv: 2390,
-      pv: 3800,
-      amt: 2500,
-    },
-    {
-      name: "Page G",
-      uv: 3490,
-      pv: 4300,
-      amt: 2100,
-    },
-  ];
+  const [data, setData] = React.useState<any>([]);
+  const [varables, setVarables] = React.useState<any>([]);
+
+  const [barColorArray, setBarColorArray] = React.useState<any>([]);
+
+  React.useEffect(() => {
+    let keys = Object.keys(Props.data[0]).filter((key) => key !== Props.index);
+    setVarables(keys);
+
+    let data = Props.data.map((item: any) => {
+      let date = new Date(item[Props.index] * 1).toLocaleDateString();
+      let obj: { [key: string]: any } = { name: date };
+      keys.forEach((key: any) => {
+        obj[key] = item[key];
+      });
+      return obj;
+    });
+    setData(data);
+    let colors = generateColorShades("#6439FF", "#7CF5FF", keys.length);
+    setBarColorArray(colors.map((color: any) => color.slice(1)));
+  }, []);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -72,38 +52,55 @@ export default function AreaChartComp(Props: Props) {
         }}
       >
         <defs>
-          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
-          </linearGradient>
+          {barColorArray.map((color: any, index: any) => {
+            return (
+              <linearGradient id={color} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={"#" + color} stopOpacity={1} />
+                <stop offset="95%" stopColor={"#" + color} stopOpacity={0} />
+              </linearGradient>
+            );
+          })}
         </defs>
+
         <XAxis
           dataKey="name"
           padding={{ left: 15, right: 15 }}
           axisLine={false}
           tickLine={false}
         />
+
         <YAxis axisLine={false} tickLine={false} />
         <Tooltip />
         <Legend />
-        <Area
+
+        {varables.map((key: any, index: any) => {
+          return (
+            <Area
+              type="monotone"
+              fillOpacity={1}
+              fill={"url(#" + barColorArray[index] + ")"}
+              key={key}
+              dataKey={key}
+              stroke={"#" + barColorArray[index]}
+            />
+          );
+        })}
+
+        {/* <Area
           type="monotone"
           dataKey="uv"
           stroke="#8884d8"
           fillOpacity={1}
           fill="url(#colorUv)"
         />
+
         <Area
           type="monotone"
           dataKey="pv"
           stroke="#82ca9d"
           fillOpacity={1}
           fill="url(#colorPv)"
-        />
+        /> */}
       </AreaChart>
     </ResponsiveContainer>
   );

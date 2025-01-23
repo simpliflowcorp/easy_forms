@@ -9,29 +9,30 @@ type Props = {
   label: string;
   type: string;
   data: any;
+  index: string;
 };
 
 export const ChartComponetManger = (props: Props) => {
   const chartManager = () => {
     switch (props.type) {
       case "line":
-        return <LineChartComp data={props.data} />;
+        return <LineChartComp data={props.data} index={props.index} />;
         break;
 
       case "bar":
-        return <BarChartComp data={props.data} />;
+        return <BarChartComp data={props.data} index={props.index} />;
         break;
 
       case "radar":
-        return <RadarChartComp data={props.data} />;
+        return <RadarChartComp data={props.data} index={props.index} />;
         break;
 
       case "pie":
-        return <PieChartComp data={props.data} />;
+        return <PieChartComp data={props.data} index={props.index} />;
         break;
 
       case "area":
-        return <AreaChartComp data={props.data} />;
+        return <AreaChartComp data={props.data} index={props.index} />;
         break;
       default:
         return <div></div>;

@@ -85,7 +85,9 @@ const DynamicElement = (props: Props) => {
       style={style}
       className={
         isDragging
-          ? "form-field-element-cnt dragging-element-placeholder"
+          ? "form-field-element-cnt form-bg dragging-element-placeholder"
+          : currentPath === "create" || currentPath === "edit"
+          ? "form-field-element-cnt form-bg"
           : "form-field-element-cnt"
       }
       {...attributes}
