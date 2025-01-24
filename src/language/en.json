@@ -145,6 +145,7 @@
     "form_preview" : "Form Preview",
     "form_expiry" : "Form Expiry",
     "description" : "Description",
+    "all" : "All",
     "sanalytics": "'s Analytics",
     "goto_form" : "Go to form"
 }

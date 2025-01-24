@@ -38,63 +38,11 @@ export default function forms(props: IformsProps) {
       total_responses: 1,
       today_responses: 10,
     },
-    {
-      id: 2,
-      name: "form2",
-      status: 1,
-      expiry: new Date().valueOf() + 48 * 60 * 60 * 1000,
-      total_responses: 1,
-      today_responses: 1,
-    },
-    {
-      id: 3,
-      name: "form3",
-      status: 1,
-      expiry: new Date().valueOf() + 72 * 60 * 60 * 1000,
-      total_responses: 3,
-      today_responses: 0,
-    },
-    {
-      id: 1,
-      name: "form1",
-      status: 0,
-      expiry: new Date().valueOf() + 24 * 60 * 60 * 1000,
-      total_responses: 99,
-      today_responses: 0,
-    },
-    {
-      id: 2,
-      name: "form2",
-      status: 1,
-      expiry: new Date().valueOf() + 48 * 60 * 60 * 1000,
-      total_responses: 10000,
-      today_responses: 1000,
-    },
-    {
-      id: 3,
-      name: "form3",
-      status: 0,
-      expiry: new Date().valueOf() + 72 * 60 * 60 * 1000,
-      total_responses: 0,
-      today_responses: 0,
-    },
   ] as any);
 
   function countDown(expiringDate: number) {
     const now = Date.now();
     const timeRemaining = expiringDate - now;
-
-    // const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-    // const hours = Math.floor(
-    //   (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    // );
-    // const minutes = Math.floor(
-    //   (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
-    // );
-    // const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-
-    // return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-
     const totalHours = Math.floor(timeRemaining / (1000 * 60 * 60));
     const minutes = Math.floor(
       (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
@@ -129,7 +77,7 @@ export default function forms(props: IformsProps) {
                   isActive === "all" ? "tab-switch-active" : "tab-switch"
                 }
               >
-                <div className="tab-switch-text">All</div>
+                <div className="tab-switch-text">{lang.all}</div>
               </div>
               <div
                 onClick={() => setIsActive("active")}
@@ -137,7 +85,7 @@ export default function forms(props: IformsProps) {
                   isActive === "active" ? "tab-switch-active" : "tab-switch"
                 }
               >
-                <div className="tab-switch-text">Active</div>
+                <div className="tab-switch-text">{lang.active}</div>
               </div>
               <div
                 onClick={() => setIsActive("expired")}
@@ -145,7 +93,7 @@ export default function forms(props: IformsProps) {
                   isActive === "expired" ? "tab-switch-active" : "tab-switch"
                 }
               >
-                <div className="tab-switch-text">Expired</div>
+                <div className="tab-switch-text">{lang.expired}</div>
               </div>
             </div>
           </div>
