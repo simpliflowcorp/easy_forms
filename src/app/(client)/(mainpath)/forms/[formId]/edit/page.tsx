@@ -473,6 +473,7 @@ export default function forms(props: IformsProps) {
               form={forms}
               openElementProps={openElementProps}
             />
+
             {openElementPropertise && (
               <ElementPropertise
                 elementPropertise={elementPropertise}
@@ -490,6 +491,7 @@ export default function forms(props: IformsProps) {
             )}
           </div>
         </div>
+
         <DragOverlay
           dropAnimation={{
             duration: 500,

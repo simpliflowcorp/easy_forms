@@ -42,11 +42,15 @@ export default function dashboard(props: IdashboardProps) {
           <ChartComponetManger
             label={lang.activity_last_three_days}
             type="bar"
-            data={{
-              "1730566926000": { visited: 15, responded: 3 },
-              "1730653326000": { visited: 6, responded: 4 },
-              "1730739726000": { visited: 9, responded: 3 },
-            }}
+            data={[
+              { timeStamp: "1730566926000", visited: 2, responded: 1 },
+              { timeStamp: "1730653326000", visited: 4, responded: 4 },
+              { timeStamp: "1730739726000", visited: 4, responded: 0 },
+              { timeStamp: "1730826126000", visited: 10, responded: 4 },
+              { timeStamp: "1730912526000", visited: 3, responded: 0 },
+              { timeStamp: "1730998926000", visited: 7, responded: 1 },
+            ]}
+            index="timeStamp"
           />
           <ChartComponetManger
             label={lang.visited_forms_last_three_days}
@@ -56,6 +60,7 @@ export default function dashboard(props: IdashboardProps) {
               { name: "Form B", value: 6 },
               { name: "Form C", value: 9 },
             ]}
+            index="name"
           />
           <ChartComponetManger
             label={lang.responses_recorded_by_forms}
@@ -65,6 +70,7 @@ export default function dashboard(props: IdashboardProps) {
               { name: "Form B", value: 1 },
               { name: "Form C", value: 3 },
             ]}
+            index="name"
           />
         </div>
       </div>
