@@ -153,6 +153,11 @@ export default function dashboard(props: IdashboardProps) {
               label={"go_to_analytics"}
               action={() => router.push("/forms/" + 1 + "/analytics")}
             />
+
+            <PromotionButton
+              label={"data_table_view"}
+              action={() => router.push("/forms/" + 1 + "/tableview")}
+            />
           </div>
           <div className="form-timer">
             <div className="form-timer-header">

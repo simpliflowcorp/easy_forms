@@ -62,6 +62,153 @@
     }
   }
 
+  .table-sec-cnt {
+    height: calc(100% - 60px);
+    .table-sec {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .table-sec-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+
+        .table-sec-header-left {
+          .count {
+            display: flex;
+            gap: 10px;
+          }
+
+          .filter {
+            display: flex;
+            gap: 10px;
+          }
+        }
+
+        .table-sec-header-right {
+          display: flex;
+          gap: 10px;
+
+          .pagination {
+            display: flex;
+            gap: 10px;
+          }
+        }
+      }
+
+      .table-sec-body {
+        flex-grow: 1;
+        background: var(--secondary-bg-gradient);
+        border: var(--input-border);
+        border-radius: var(--element-border-radius);
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+        position: relative;
+
+        .table-header {
+          width: max-content;
+          background: var(--terinary-bg);
+          border-bottom: var(--input-border);
+          position: sticky;
+          top: 0;
+          z-index: 1;
+
+          .t-row {
+            position: sticky;
+            top: 0;
+
+            .sticky-row {
+              display: flex;
+              position: sticky;
+              top: 0;
+              left: 0;
+              z-index: 1;
+              background-color: var(--terinary-bg);
+            }
+
+            .t-cell {
+              border-right: var(--input-border);
+            }
+          }
+        }
+
+        .sticky-row {
+          display: flex;
+          position: sticky;
+          top: 0;
+          left: 0;
+          z-index: 1;
+          background-color: var(--terinary-bg);
+        }
+
+        .unsticky-row {
+          display: flex;
+        }
+
+        .table-body {
+          width: max-content;
+          flex-grow: 1;
+        }
+
+        .t-row {
+          display: flex;
+          align-items: stretch;
+          border-bottom: var(--common-border);
+
+          .t-cell {
+            width: 180px;
+            max-height: 60px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px;
+            border-right: var(--common-border);
+
+            .cell-left {
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 3;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: normal;
+            }
+
+            .cell-right {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+            }
+          }
+        }
+
+        .sticky {
+          position: sticky;
+          left: 0;
+          background: var(--terinary-bg);
+        }
+
+        .high-index {
+          z-index: 2;
+        }
+      }
+
+      .table-sec-footer {
+        padding: 10px;
+        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+  }
+
   .form-view-body {
     display: flex;
     height: calc(100% - 60px);
@@ -76,6 +223,7 @@
       .button-cnt {
         display: flex;
         padding: 15px 0;
+        gap: 15px;
       }
 
       .form-timer {

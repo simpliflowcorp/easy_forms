@@ -146,6 +146,9 @@
     "form_expiry" : "Form Expiry",
     "description" : "Description",
     "all" : "All",
+    "data_table_view": "Data Table View",
+    "export": "Export",
+    "of": "of",
     "sanalytics": "'s Analytics",
     "goto_form" : "Go to form"
 }   

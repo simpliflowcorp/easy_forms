@@ -52,6 +52,7 @@ export default function dashboard(props: IdashboardProps) {
             ]}
             index="timeStamp"
           />
+
           <ChartComponetManger
             label={lang.visited_forms_last_three_days}
             type="pie"
