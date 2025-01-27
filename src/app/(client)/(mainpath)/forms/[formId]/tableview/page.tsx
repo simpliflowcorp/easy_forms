@@ -8,6 +8,7 @@ import axios from "axios";
 import exp from "constants";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import Select from "react-select";
 
 export interface IformsProps {}
 
@@ -434,6 +435,90 @@ export default function forms(props: IformsProps) {
     },
   ];
 
+  const rowCountOptions = [
+    { value: "10", label: "10" },
+    { value: "20", label: "20" },
+    { value: "30", label: "30" },
+    { value: "40", label: "40" },
+    { value: "50", label: "50" },
+  ];
+
+  const [rowCount, setRowCount] = React.useState("10");
+
+  const darkThemeStyles = {
+    control: (base: any, state: { isFocused: any }) => ({
+      ...base,
+      backgroundColor: "#333",
+      color: "#fff",
+      border: state.isFocused ? "1px solid #555" : "1px solid #444",
+      boxShadow: state.isFocused ? "0 0 0 1px #555" : "none",
+      "&:hover": {
+        border: "1px solid #555",
+      },
+    }),
+
+    menu: (base: any) => ({
+      ...base,
+      backgroundColor: "#222",
+      color: "#fff",
+    }),
+
+    menuList: (base: any) => ({
+      ...base,
+      backgroundColor: "#222",
+      color: "#fff",
+      "::-webkit-scrollbar": {
+        width: "8px",
+      },
+      "::-webkit-scrollbar-track": {
+        background: "#333",
+      },
+      "::-webkit-scrollbar-thumb": {
+        background: "#555",
+      },
+    }),
+
+    option: (base: any, state: { isFocused: any }) => ({
+      ...base,
+      backgroundColor: state.isFocused ? "#444" : "#222",
+      color: "#fff",
+      "&:active": {
+        backgroundColor: "#555",
+      },
+    }),
+
+    singleValue: (base: any) => ({
+      ...base,
+      color: "#fff",
+    }),
+
+    placeholder: (base: any) => ({
+      ...base,
+      color: "#aaa",
+    }),
+
+    input: (base: any) => ({
+      ...base,
+      color: "#fff",
+    }),
+
+    dropdownIndicator: (base: any) => ({
+      ...base,
+      color: "#aaa",
+      "&:hover": {
+        color: "#fff",
+      },
+    }),
+
+    clearIndicator: (base: any) => ({
+      ...base,
+      color: "#aaa",
+      "&:hover": {
+        color: "#fff",
+      },
+    }),
+  };
+
   return (
     <div className="form-cnt">
       <div className="form-header">
@@ -466,7 +551,21 @@ export default function forms(props: IformsProps) {
       <div className="table-sec-cnt">
         <div className="table-sec">
           <div className="table-sec-header">
-            <div className="table-sec-header-left"></div>
+            <div className="table-sec-header-left">
+              <Select
+                id={"select" + "page"}
+                value={
+                  rowCountOptions.find((opt: any) => opt.value === rowCount) ||
+                  null
+                }
+                options={rowCountOptions}
+                onChange={(e: any) => {
+                  setRowCount(e.value);
+                }}
+                onBlur={() => {}}
+                styles={darkThemeStyles}
+              />
+            </div>
             <div className="table-sec-header-right">
               <div className="manage-col">
                 <IconButton action={() => {}} icon="table" />
