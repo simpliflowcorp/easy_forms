@@ -43,6 +43,7 @@ export default function AppLayout({
       <>
         {/* <MainHeader data={user} /> */}
         <SidebarMain isActive={isActive} data={{}} />
+        <div id="select-popup-target" className="select-popup-target"></div>
         <div className="app-wrapper">{children}</div>
       </>
     );

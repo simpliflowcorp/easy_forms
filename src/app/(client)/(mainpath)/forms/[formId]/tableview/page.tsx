@@ -446,6 +446,11 @@ export default function forms(props: IformsProps) {
   const [rowCount, setRowCount] = React.useState("10");
 
   const darkThemeStyles = {
+    menuPortal: (base: any) => ({
+      ...base,
+      zIndex: 9999, // Ensures the menu is always on top
+    }),
+
     control: (base: any, state: { isFocused: any }) => ({
       ...base,
       backgroundColor: "#333",
@@ -564,6 +569,9 @@ export default function forms(props: IformsProps) {
                 }}
                 onBlur={() => {}}
                 styles={darkThemeStyles}
+                menuPortalTarget={document.getElementById(
+                  "select-popup-target"
+                )}
               />
             </div>
             <div className="table-sec-header-right">
