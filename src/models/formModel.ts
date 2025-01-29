@@ -1,66 +1,108 @@
 import mongoose from "mongoose";
 
-const formSchema = new mongoose.Schema({
-  // Form Schema
+interface FormElement {
+  elementId: string;
+  type: number;
+  label: string;
+  required: boolean;
+  options?: Array<{
+    id: string;
+    value: number;
+    label: string;
+  }>;
+  position: number;
+  column: number;
+}
 
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  form_name: {
-    type: String,
-    required: true,
-  },
-  form_description: {
-    type: String,
-    default: "",
-  },
-  form_expiry: {
-    type: Date, // Use Date instead of number for easier querying
-    required: true,
-  },
-  elements: [
+interface FormAnalytics {
+  totalResponses: number;
+  dailyResponses: Array<{
+    date: Date;
+    count: number;
+  }>;
+}
+
+const FormElementSchema = new mongoose.Schema<FormElement>({
+  elementId: { type: String, required: true },
+  type: { type: Number, required: true },
+  label: { type: String, required: true },
+  required: { type: Boolean, default: false },
+  options: [
     {
-      id: {
-        type: String,
-        required: true,
-      }, // Unique identifier for the element (e.g., "q1")
-      type: {
-        type: String,
-        enum: ["text", "radio", "checkbox", "dropdown"],
-        required: true,
-      },
-      question: {
-        type: String,
-        required: true,
-      },
-      options: [
-        {
-          type: String,
-        },
-      ], // For radio/checkbox/dropdown
-      required: {
-        type: Boolean,
-        default: false,
-      },
+      id: Number,
+      label: String,
     },
   ],
-  created_at: {
-    type: Date,
-    default: Date.now,
-  },
-  is_published: {
-    type: Boolean,
-    default: false,
-  },
-  // Add settings for analytics (optional):
-  collect_metadata: {
-    ip: { type: Boolean, default: false },
-    user_agent: { type: Boolean, default: false },
-  },
+  position: { type: Number, required: true },
+  column: { type: Number, required: true },
 });
 
-const User = mongoose.models.form || mongoose.model("form", formSchema);
+const FormAnalyticsSchema = new mongoose.Schema<FormAnalytics>({
+  totalResponses: { type: Number, default: 0 },
+  dailyResponses: [
+    {
+      date: { type: Date, required: true },
+      count: { type: Number, default: 0 },
+    },
+  ],
+});
 
-export default User;
+const formSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    description: {
+      type: String,
+      default: "",
+      maxlength: 500,
+    },
+    expiry: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    elements: [FormElementSchema],
+    status: {
+      type: String,
+      default: 0,
+    },
+    analytics: {
+      type: FormAnalyticsSchema,
+      default: () => ({}),
+    },
+    metadataSettings: {
+      ip: { type: Boolean, default: false },
+      userAgent: { type: Boolean, default: false },
+      geolocation: { type: Boolean, default: false },
+      referrer: { type: Boolean, default: false },
+    },
+  },
+  {
+    timestamps: true, // Adds createdAt and updatedAt automatically
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// Indexes for common queries
+formSchema.index({ user: 1, status: 1 });
+formSchema.index({ "elements.elementId": 1 });
+
+// Virtual for form expiration status
+formSchema.virtual("isExpired").get(function () {
+  return this.expiry < new Date();
+});
+
+const Form = mongoose.models?.Form || mongoose.model("Form", formSchema);
+
+export default Form;

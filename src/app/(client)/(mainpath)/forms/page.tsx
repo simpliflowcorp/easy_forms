@@ -38,6 +38,14 @@ export default function forms(props: IformsProps) {
       total_responses: 1,
       today_responses: 10,
     },
+    {
+      id: 2,
+      name: "testing FORM",
+      status: 1,
+      expiry: new Date().valueOf() + 24 * 60 * 60 * 1000,
+      total_responses: 1,
+      today_responses: 10,
+    },
   ] as any);
 
   function countDown(expiringDate: number) {

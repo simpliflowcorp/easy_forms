@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema({
     required: [true, "Please provide a password"],
   },
 
+  forms: [
+    {
+      form_id: Number,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Form",
+    },
+  ],
+
   isAdmin: {
     type: Boolean,
     default: false,

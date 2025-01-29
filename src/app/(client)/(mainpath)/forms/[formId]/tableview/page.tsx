@@ -11,7 +11,10 @@ import * as React from "react";
 import Select from "react-select";
 
 export interface IformsProps {}
-
+// Define the type for an element
+interface Element {
+  id: string;
+}
 export default function forms(props: IformsProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
@@ -44,15 +47,15 @@ export default function forms(props: IformsProps) {
   ] as any);
 
   const [pinnedCol, setPinnedCol] = React.useState({
-    "1": true,
-    "2": false,
-    "3": false,
-    "4": false,
-    "5": false,
-    "6": false,
-    "7": false,
-    "8": false,
-    "9": false,
+    1: true,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+    6: false,
+    7: false,
+    8: false,
+    9: false,
   });
 
   function countDown(expiringDate: number) {
@@ -628,8 +631,8 @@ export default function forms(props: IformsProps) {
                     ))}
                 </div>
                 {metaData.elements
-                  .filter((e: any) => {
-                    return !pinnedCol[e.id];
+                  .filter((e: { id: number }) => {
+                    return !pinnedCol[e.id.toString()];
                   })
                   .map((element: any) => (
                     <div

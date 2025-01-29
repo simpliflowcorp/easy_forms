@@ -149,6 +149,8 @@
     "data_table_view": "Data Table View",
     "export": "Export",
     "of": "of",
+    "missing_required_fields": "Missing required fields",
+    "successfully_created_form" : "Successfully created form",
     "sanalytics": "'s Analytics",
     "goto_form" : "Go to form"
 }   
