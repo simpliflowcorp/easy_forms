@@ -1,3 +1,5 @@
+import { log } from "node:console";
+
 export const validationCheck = (
   value: string,
   required: boolean,
@@ -36,14 +38,16 @@ export const blurCheck = (
 ) => {
   if (type !== "password") value = value.trim();
   let validationRes = validationCheck(value, props.isRequired, type);
+  console.log(validationRes);
+
   if (validationRes === 1) {
     props.updateIsValid(true);
-    setIsNotEmpty(true);
     props.updateValue(value);
+    setIsNotEmpty(false);
     setIsValid(true);
   } else if (validationRes === 2) {
     props.updateIsValid(false);
-    setIsNotEmpty(false);
+    setIsNotEmpty(true);
   } else if (validationRes === 3) {
     props.updateIsValid(false);
     setIsValid(false);

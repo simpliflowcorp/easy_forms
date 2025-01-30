@@ -17,18 +17,16 @@ export interface ITextAreaInputProps {
 
 export default function TextAreaInput(props: ITextAreaInputProps) {
   const [isValid, setIsValid] = React.useState(true);
-  const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
+  const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
-    if (props.reset) {
-      if (props.value === "") {
-        setIsNotEmpty(false);
-      } else {
-        setIsValid(props.isValid);
-      }
+    if (props.value === "") {
+      setIsNotEmpty(false);
+    } else {
+      setIsValid(props.isValid);
     }
   }, [props.value, props.isValid, props.reset]);
 
@@ -43,7 +41,7 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
         </label>
         <textarea
           id={"textArea" + uid}
-          className={!isValid || !IsNotEmpty ? "error-input" : ""}
+          className={!isValid || IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
@@ -53,7 +51,7 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}
-          IsNotEmpty={!IsNotEmpty}
+          IsNotEmpty={IsNotEmpty}
         />
       </div>
     </>

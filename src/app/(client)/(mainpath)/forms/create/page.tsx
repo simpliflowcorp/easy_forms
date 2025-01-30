@@ -24,6 +24,9 @@ import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import IconButton from "@/components/buttons/IconButton";
 import FormPropertise from "@/components/builderWorkbench/FormPropertise";
+import { errorHandler } from "@/helper/errorHandler";
+import { stat } from "fs";
+import { successHandler } from "@/helper/successHandler";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -35,9 +38,9 @@ export default function forms(props: IformsProps) {
   const [data, setData] = React.useState({} as any);
 
   const [form, setForm] = React.useState({
-    name: "Form Name",
-    description: "Form Description",
-    expiry: new Date().toISOString().split("T")[0],
+    name: "",
+    description: "",
+    expiry: "",
   } as any);
 
   const [forms, setForms] = React.useState([
@@ -256,13 +259,16 @@ export default function forms(props: IformsProps) {
   const [activeElementType, setActiveElementType] = React.useState(
     "" as string
   );
+
+  const [resetBtn, setResetBtn] = React.useState(0);
+
   const newElementCountRef = React.useRef(101);
   const addedElementCountRef = React.useRef(101);
 
   const [elementPropertise, setElementPropertise] = React.useState({} as any);
   const [openElementPropertise, setOpenElementPropertise] =
     React.useState(false);
-  const [openFormPropertise, setOpenFormPropertise] = React.useState(false);
+  const [openFormPropertise, setOpenFormPropertise] = React.useState(true);
   React.useEffect(() => {}, []);
 
   const sensors = useSensors(
@@ -411,12 +417,30 @@ export default function forms(props: IformsProps) {
     setForm(data);
   };
 
-  const createForm = () => {
-    let form = {
-      name: "form name",
-      description: "form description",
-      elements: [],
-    };
+  const createForm = async (form_status: number) => {
+    if (form.name && form.description && form.expiry && forms.length > 0) {
+      try {
+        const data = {
+          name: form.name,
+          description: form.description,
+          expiry: form.expiry,
+          elements: forms,
+          status: form_status,
+        };
+        const res = await axios.post("/api/form/create", data);
+        if (res.status === 200) {
+          successHandler(res, lang);
+          console.log(res.data);
+
+          router.push("/forms/" + res.data.data.formId);
+        }
+      } catch (error: any) {
+        setResetBtn((p) => p + 1);
+        errorHandler(error, lang);
+      }
+    } else {
+      setResetBtn((p) => p + 1);
+    }
   };
 
   return (
@@ -441,9 +465,16 @@ export default function forms(props: IformsProps) {
               action={() => router.push("/forms")}
             />
 
+            <SecondaryButton
+              label={"draft"}
+              // resetBtn={resetBtn}
+              action={() => createForm(0)}
+            />
+
             <PrimaryButton
               label={"save"}
-              action={() => router.push("/forms/create")}
+              // resetBtn={resetBtn}
+              action={() => createForm(1)}
             />
           </div>
         </div>

@@ -60,6 +60,23 @@ export default function forms(props: IformsProps) {
     return `${totalHours}h ${minutes}m ${seconds}s`;
   }
 
+  React.useEffect(() => {
+    const getForms = async () => {
+      try {
+        const res = await axios.get("/api/forms/formBoardData");
+        if (res.status === 200) {
+          setForms(res.data.data);
+          setGotData(true);
+        }
+      } catch (error: any) {
+        console.log(error);
+      }
+    };
+    if (!gotData) {
+      getForms();
+    }
+  }, []);
+
   return (
     <div className="forms-cnt">
       <div className="forms-header">
@@ -167,17 +184,15 @@ export default function forms(props: IformsProps) {
                         </div>
                       </div>
                     </div>
-                    <div
-                      onClick={() => {
-                        router.push("/forms/" + form.id);
-                      }}
+                    <a
+                      href={"/forms/" + form.formId}
                       className="form-sec-footer"
                     >
                       <span className="form-sec-footer-text">
                         {lang.goto_form}
                       </span>
                       <i className="form-sec-footer-icon ic-box-arrow-right"></i>
-                    </div>
+                    </a>
                   </div>
                 ))}
             </div>

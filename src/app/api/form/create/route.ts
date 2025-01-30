@@ -10,10 +10,10 @@ import jwt from "jsonwebtoken";
 import { sendMail } from "@/helper/mailer";
 import { verify } from "crypto";
 import { generateVerificationCode } from "@/helper/generateVerificationCode";
+import Hashids from "hashids";
 
 export async function POST(request: NextRequest) {
   try {
-    const reqBody = await request.json();
     // // Authentication check start
 
     // Get session and cookies
@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create form document
+    const hashids = new Hashids("salt", 6);
+    const formId = hashids.encode(new Date().getTime());
+
     const newForm = await Form.create({
       user: CurrentUser.id,
       name: body.name,
@@ -60,6 +63,7 @@ export async function POST(request: NextRequest) {
         position: element.position,
         column: element.column,
       })),
+      formId: formId,
       status: body.status || 0,
       metadataSettings: {
         ip: body.metadataSettings?.ip || false,
@@ -67,9 +71,15 @@ export async function POST(request: NextRequest) {
       },
       analytics: {
         totalResponses: 0,
+        totalVisits: 0,
+        dailyVisits: [],
         dailyResponses: [],
       },
     });
+
+    console.log(formId);
+    console.log(newForm);
+
     return NextResponse.json(
       { success: true, data: newForm, message: "successfully_created_form" },
       { status: 200 }

@@ -28,7 +28,7 @@ const DynamicElement = (props: Props) => {
     transition,
     isDragging,
   } = useSortable({
-    id: props.data.id,
+    id: props.data.id || props.data.elementId,
     data: {
       type: "element",
       comp: props.data,

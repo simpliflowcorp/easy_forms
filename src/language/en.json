@@ -152,5 +152,7 @@
     "missing_required_fields": "Missing required fields",
     "successfully_created_form" : "Successfully created form",
     "sanalytics": "'s Analytics",
+    "save_and_publish" : "Save and Publish",
+    "draft" : "Draft",
     "goto_form" : "Go to form"
 }   

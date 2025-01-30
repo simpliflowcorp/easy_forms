@@ -20,6 +20,7 @@ export interface IFormPropertiseProps {
 export default function FormPropertise(props: IFormPropertiseProps) {
   const lang = useLanguageStore((state) => state.language);
   const [data, setData] = React.useState(props.formPropertise);
+  const [reset, setReset] = React.useState(0);
   const [isValid, setIsValid] = React.useState({
     name: true,
     expiry: true,
@@ -28,16 +29,41 @@ export default function FormPropertise(props: IFormPropertiseProps) {
 
   const updateElement = () => {
     // update element
-    if (isValid) {
+    if (
+      isValid.name &&
+      isValid.expiry &&
+      isValid.description &&
+      data.name !== "" &&
+      data.expiry !== ""
+    ) {
       props.updateFormElement(data);
+      props.close();
+    } else {
+      setIsValid({
+        name: data.name !== "",
+        expiry: data.expiry !== "",
+        description: data.description !== "",
+      });
+      setReset((prev) => prev + 1);
+    }
+  };
+
+  const closeSec = () => {
+    if (
+      data.name !== "" &&
+      data.expiry !== "" &&
+      isValid.expiry &&
+      isValid.description
+    ) {
       props.close();
     }
   };
+  console.log(isValid);
 
   return (
     <div
       onClick={() => {
-        props.close();
+        closeSec();
       }}
       className="window-overlay"
     >
@@ -76,12 +102,12 @@ export default function FormPropertise(props: IFormPropertiseProps) {
                   setData({ ...data, name: e });
                 }}
                 value={data.name}
-                updateIsValid={() =>
-                  setIsValid((prev) => ({ ...prev, name: true }))
+                updateIsValid={(e) =>
+                  setIsValid((prev) => ({ ...prev, name: e }))
                 }
                 isValid={isValid.name}
                 isRequired={true}
-                reset={1}
+                reset={reset}
               />
 
               <DateFieldInput
@@ -90,12 +116,12 @@ export default function FormPropertise(props: IFormPropertiseProps) {
                   setData({ ...data, expiry: e });
                 }}
                 value={data.expiry}
-                updateIsValid={() =>
-                  setIsValid((prev) => ({ ...prev, expiry: true }))
+                updateIsValid={(e) =>
+                  setIsValid((prev) => ({ ...prev, expiry: e }))
                 }
                 isValid={isValid.expiry}
                 isRequired={true}
-                reset={1}
+                reset={reset}
               />
 
               <TextAreaInput
@@ -104,12 +130,12 @@ export default function FormPropertise(props: IFormPropertiseProps) {
                   setData({ ...data, description: e });
                 }}
                 value={data.description}
-                updateIsValid={() =>
-                  setIsValid((prev) => ({ ...prev, description: true }))
+                updateIsValid={(e) =>
+                  setIsValid((prev) => ({ ...prev, description: e }))
                 }
                 isValid={isValid.description}
                 isRequired={false}
-                reset={1}
+                reset={reset}
               />
             </div>
           </div>

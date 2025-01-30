@@ -60,6 +60,7 @@ export default function SignUp(props: IsignUpProps) {
   React.useEffect(() => {
     dbtest();
   }, []);
+
   // React.useEffect(() => {
   //   const changeFavicon = (src) => {
   //     const link = document.querySelector("link[rel~='icon']");

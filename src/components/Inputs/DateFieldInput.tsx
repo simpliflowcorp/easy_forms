@@ -17,20 +17,20 @@ export interface IDateFieldProps {
 
 export default function DateFieldInput(props: IDateFieldProps) {
   const [isValid, setIsValid] = React.useState(true);
-  const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
+  const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
-  React.useEffect(() => {
-    if (props.reset) {
-      if (props.value === "") {
-        setIsNotEmpty(false);
-      } else {
-        setIsValid(props.isValid);
-      }
-    }
-  }, [props.value, props.isValid, props.reset]);
+  // React.useEffect(() => {
+  //   if (props.reset) {
+  //     if (props.value === "") {
+  //       setIsNotEmpty(false);
+  //     } else {
+  //       setIsValid(props.isValid);
+  //     }
+  //   }
+  // }, [props.value, props.isValid, props.reset]);
 
   return (
     <>
@@ -44,7 +44,7 @@ export default function DateFieldInput(props: IDateFieldProps) {
         <input
           type="date"
           id={"date" + uid}
-          className={!isValid || !IsNotEmpty ? "error-input" : ""}
+          className={!isValid || IsNotEmpty ? "error-input" : ""}
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -56,7 +56,7 @@ export default function DateFieldInput(props: IDateFieldProps) {
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}
-          IsNotEmpty={!IsNotEmpty}
+          IsNotEmpty={IsNotEmpty}
         />
       </div>
     </>

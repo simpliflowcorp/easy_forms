@@ -1,3 +1,4 @@
+import Hashids from "hashids";
 import mongoose from "mongoose";
 
 interface FormElement {
@@ -20,6 +21,11 @@ interface FormAnalytics {
     date: Date;
     count: number;
   }>;
+  totalVisits: number;
+  dailyVisits: Array<{
+    date: Date;
+    count: number;
+  }>;
 }
 
 const FormElementSchema = new mongoose.Schema<FormElement>({
@@ -39,7 +45,14 @@ const FormElementSchema = new mongoose.Schema<FormElement>({
 
 const FormAnalyticsSchema = new mongoose.Schema<FormAnalytics>({
   totalResponses: { type: Number, default: 0 },
+  totalVisits: { type: Number, default: 0 },
   dailyResponses: [
+    {
+      date: { type: Date, required: true },
+      count: { type: Number, default: 0 },
+    },
+  ],
+  dailyVisits: [
     {
       date: { type: Date, required: true },
       count: { type: Number, default: 0 },
@@ -85,6 +98,14 @@ const formSchema = new mongoose.Schema(
       userAgent: { type: Boolean, default: false },
       geolocation: { type: Boolean, default: false },
       referrer: { type: Boolean, default: false },
+    },
+    formId: {
+      type: String,
+      unique: true,
+      default: function () {
+        const hashids = new Hashids("salt", 6);
+        return hashids.encode(new Date().getTime());
+      },
     },
   },
   {
