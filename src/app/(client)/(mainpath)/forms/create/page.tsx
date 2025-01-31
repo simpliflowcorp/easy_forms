@@ -418,7 +418,7 @@ export default function forms(props: IformsProps) {
   };
 
   const createForm = async (form_status: number) => {
-    if (form.name && form.description && form.expiry && forms.length > 0) {
+    if (form.name && form.expiry && forms.length > 0) {
       try {
         const data = {
           name: form.name,
@@ -440,6 +440,14 @@ export default function forms(props: IformsProps) {
       }
     } else {
       setResetBtn((p) => p + 1);
+      errorHandler(
+        {
+          response: {
+            data: { message: "form_name_and_expiry_cannot_be_empty" },
+          },
+        },
+        lang
+      );
     }
   };
 

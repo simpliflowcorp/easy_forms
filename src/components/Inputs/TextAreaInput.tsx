@@ -23,10 +23,12 @@ export default function TextAreaInput(props: ITextAreaInputProps) {
   const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
-    if (props.value === "") {
-      setIsNotEmpty(false);
-    } else {
-      setIsValid(props.isValid);
+    if (props.reset !== 0) {
+      if (props.value === "") {
+        setIsNotEmpty(true);
+      } else {
+        setIsValid(props.isValid);
+      }
     }
   }, [props.value, props.isValid, props.reset]);
 

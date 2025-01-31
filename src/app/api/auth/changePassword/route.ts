@@ -1,4 +1,4 @@
-import connect from "@/dbConfig/dbConfig";
+import { connectDB } from "@/dbConfig/dbConfig";
 import User from "@/models/userModel";
 import { NextResponse, NextRequest } from "next/server";
 import bcryptjs from "bcryptjs";
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const { confirm_password, current_password, new_password } = reqBody;
 
     // Connect to the database
-    await connect();
+    await connectDB();
 
     // Get session and cookies
     const session = await getServerSession(); // Ensure authOptions is configured

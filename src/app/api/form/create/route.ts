@@ -1,4 +1,4 @@
-import connect from "@/dbConfig/dbConfig";
+import { connectDB } from "@/dbConfig/dbConfig";
 import { NextResponse, NextRequest } from "next/server";
 
 import { getServerSession } from "next-auth";
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    await connect();
+    await connectDB();
 
     // Parse and validate request body
     const body = await request.json();

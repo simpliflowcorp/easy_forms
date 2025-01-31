@@ -29,28 +29,14 @@ export default function forms(props: IformsProps) {
 
   const [data, setData] = React.useState({} as any);
 
-  const [forms, setForms] = React.useState([
-    {
-      id: 1,
-      name: "SIGN UP FORM",
-      status: 1,
-      expiry: new Date().valueOf() + 24 * 60 * 60 * 1000,
-      total_responses: 1,
-      today_responses: 10,
-    },
-    {
-      id: 2,
-      name: "testing FORM",
-      status: 1,
-      expiry: new Date().valueOf() + 24 * 60 * 60 * 1000,
-      total_responses: 1,
-      today_responses: 10,
-    },
-  ] as any);
+  const [forms, setForms] = React.useState([] as any);
 
   function countDown(expiringDate: number) {
+    let time = new Date(expiringDate).valueOf() + 24 * 60 * 60 * 1000 - 1;
+    console.log(time);
+
     const now = Date.now();
-    const timeRemaining = expiringDate - now;
+    const timeRemaining = time - now;
     const totalHours = Math.floor(timeRemaining / (1000 * 60 * 60));
     const minutes = Math.floor(
       (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)

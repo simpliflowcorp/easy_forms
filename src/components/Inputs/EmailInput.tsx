@@ -17,15 +17,15 @@ interface IEmailInputProps {
 
 export default function EmailInput(props: IEmailInputProps) {
   const [isValid, setIsValid] = React.useState(true);
-  const [IsNotEmpty, setIsNotEmpty] = React.useState(true);
+  const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
-    if (props.reset) {
+    if (props.reset !== 0) {
       if (props.value === "") {
-        setIsNotEmpty(false);
+        setIsNotEmpty(true);
       } else {
         setIsValid(props.isValid);
       }
@@ -45,7 +45,7 @@ export default function EmailInput(props: IEmailInputProps) {
           type="email"
           id={"email" + uid}
           value={value}
-          className={!isValid || !IsNotEmpty ? "error-input" : ""}
+          className={!isValid || IsNotEmpty ? "error-input" : ""}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "email");
@@ -54,7 +54,7 @@ export default function EmailInput(props: IEmailInputProps) {
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}
-          IsNotEmpty={!IsNotEmpty}
+          IsNotEmpty={IsNotEmpty}
         />
       </div>
     </>

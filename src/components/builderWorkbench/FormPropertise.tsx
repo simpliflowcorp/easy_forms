@@ -39,11 +39,11 @@ export default function FormPropertise(props: IFormPropertiseProps) {
       props.updateFormElement(data);
       props.close();
     } else {
-      setIsValid({
+      setIsValid((prev) => ({
+        ...prev,
         name: data.name !== "",
         expiry: data.expiry !== "",
-        description: data.description !== "",
-      });
+      }));
       setReset((prev) => prev + 1);
     }
   };
@@ -121,6 +121,7 @@ export default function FormPropertise(props: IFormPropertiseProps) {
                 }
                 isValid={isValid.expiry}
                 isRequired={true}
+                isDisableOldDate={true}
                 reset={reset}
               />
 

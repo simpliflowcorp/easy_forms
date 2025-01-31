@@ -154,5 +154,6 @@
     "sanalytics": "'s Analytics",
     "save_and_publish" : "Save and Publish",
     "draft" : "Draft",
+    "form_name_and_expiry_cannot_be_empty" : "Form name and expiry cannot be empty",
     "goto_form" : "Go to form"
 }   

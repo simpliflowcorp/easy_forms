@@ -20,17 +20,20 @@ export interface ISelectFieldInputProps {
 export default function SelectFieldInput(props: ISelectFieldInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [isNotEmpty, setIsNotEmpty] = React.useState(
-    props.isRequired ? Boolean(props.value) : true
+    props.isRequired ? Boolean(props.value) : false
   );
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
   React.useEffect(() => {
-    if (props.reset) {
-      if (props.isRequired) setIsNotEmpty(Boolean(props.value));
-      setIsValid(props.isValid);
+    if (props.reset !== 0) {
+      if (props.value === "") {
+        setIsNotEmpty(true);
+      } else {
+        setIsValid(props.isValid);
+      }
     }
-  }, [props.reset, props.value, props.isValid]);
+  }, [props.value, props.isValid, props.reset]);
 
   const darkThemeStyles = {
     control: (base: any, state: { isFocused: any }) => ({
@@ -106,7 +109,7 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
       </label>
       <Select
         id={"select" + uid}
-        className={!isValid || !isNotEmpty ? "error-input" : ""}
+        className={!isValid || isNotEmpty ? "error-input" : ""}
         value={props.options.find((opt) => opt.value === props.value) || null}
         options={props.options || []}
         onChange={(selectedOption) => {
@@ -124,7 +127,7 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
       <ErroTextCnt
         isRequired={props.isRequired}
         isValid={!isValid}
-        IsNotEmpty={!isNotEmpty}
+        IsNotEmpty={isNotEmpty}
       />
     </div>
   );

@@ -86,7 +86,7 @@ const formSchema = new mongoose.Schema(
     },
     elements: [FormElementSchema],
     status: {
-      type: String,
+      type: Number,
       default: 0,
     },
     analytics: {
@@ -118,6 +118,7 @@ const formSchema = new mongoose.Schema(
 // Indexes for common queries
 formSchema.index({ user: 1, status: 1 });
 formSchema.index({ "elements.elementId": 1 });
+formSchema.index({ expiry: 1, status: 1 }); // Compound index
 
 // Virtual for form expiration status
 formSchema.virtual("isExpired").get(function () {

@@ -7,8 +7,8 @@ import path from "path";
 export const sendMail = async (
   email: string,
   username: string,
-  verifyToken: string,
-  type: string
+  type: string,
+  verifyToken?: string
 ) => {
   try {
     const emailTemplatePath = path.join(
@@ -17,6 +17,7 @@ export const sendMail = async (
     );
     let htmlTemplate = fs.readFileSync(emailTemplatePath, "utf8");
     htmlTemplate = htmlTemplate.replace("{{username}}", username);
+
     if (type !== "changeEmail") {
       const verificationLink = `${process.env.DOMAIN}/auth/${
         type === "verifyEmail" ? "verify" : "resetPassword"

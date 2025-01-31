@@ -1,11 +1,11 @@
-import connect from "@/dbConfig/dbConfig"; // Import your database connection function
+import { connectDB } from "@/dbConfig/dbConfig"; // Import your database connection function
 import { NextResponse, NextRequest } from "next/server";
 import mongoose from "mongoose";
 import Test from "@/models/testModel";
 
 export async function GET(request: NextRequest) {
   try {
-    await connect(); // Ensure the database connection is established
+    await connectDB(); // Ensure the database connection is established
 
     const db = mongoose.connection.name;
 
@@ -40,4 +40,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-connect();
+connectDB();

@@ -22,8 +22,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
-  console.log(props);
-
   React.useEffect(() => {
     if (props.reset !== 0) {
       if (props.value === "") {
@@ -33,8 +31,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
       }
     }
   }, [props.value, props.isValid, props.reset]);
-
-  console.log(props);
 
   return (
     <>

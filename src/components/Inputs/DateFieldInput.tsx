@@ -13,6 +13,7 @@ export interface IDateFieldProps {
   isValid: boolean;
   reset: number;
   isRequired: boolean;
+  isDisableOldDate?: boolean;
 }
 
 export default function DateFieldInput(props: IDateFieldProps) {
@@ -21,16 +22,26 @@ export default function DateFieldInput(props: IDateFieldProps) {
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
+  const [disableOldDate, setDisableOldDate] = React.useState(
+    props.isDisableOldDate
+  );
+  const [minValue, setMinValue] = React.useState("");
 
-  // React.useEffect(() => {
-  //   if (props.reset) {
-  //     if (props.value === "") {
-  //       setIsNotEmpty(false);
-  //     } else {
-  //       setIsValid(props.isValid);
-  //     }
-  //   }
-  // }, [props.value, props.isValid, props.reset]);
+  React.useEffect(() => {
+    if (props.reset !== 0) {
+      if (props.value === "") {
+        setIsNotEmpty(true);
+      } else {
+        setIsValid(props.isValid);
+      }
+    }
+  }, [props.value, props.isValid, props.reset]);
+
+  React.useEffect(() => {
+    if (disableOldDate) {
+      setMinValue(new Date().toISOString().split("T")[0]);
+    }
+  }, [disableOldDate]);
 
   return (
     <>
@@ -52,6 +63,7 @@ export default function DateFieldInput(props: IDateFieldProps) {
           onBlur={() => {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "date");
           }}
+          min={minValue}
         />
         <ErroTextCnt
           isRequired={props.isRequired}

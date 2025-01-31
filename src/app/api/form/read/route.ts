@@ -1,4 +1,4 @@
-import connect from "@/dbConfig/dbConfig";
+import { connectDB } from "@/dbConfig/dbConfig";
 import { NextResponse, NextRequest } from "next/server";
 import Form from "@/models/formModel";
 import User from "@/models/userModel";
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    await connect();
+    await connectDB();
 
     // getting current date
     const today = new Date();

@@ -1,6 +1,6 @@
 import NextAuth from "next-auth/next";
 import GoogleProvider from "next-auth/providers/google";
-import connect from "@/dbConfig/dbConfig";
+import { connectDB } from "@/dbConfig/dbConfig";
 import User from "@/models/userModel";
 import jwt from "jsonwebtoken";
 import { NextResponse, NextRequest } from "next/server";
@@ -64,6 +64,6 @@ const handler = NextAuth({
     },
   },
 });
-connect();
+connectDB();
 
 export { handler as GET, handler as POST };
