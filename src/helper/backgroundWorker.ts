@@ -31,7 +31,7 @@ async function checkAndNotifyExpirations() {
         expiry: { $lte: now },
         status: { $ne: 0 },
       })
-        .select("_id name expiry status user")
+        .select("_id formId name expiry status user")
         .lean()
         .limit(batchSize)
         .skip(processed);
@@ -48,11 +48,11 @@ async function checkAndNotifyExpirations() {
           if (!user) continue;
 
           // 5. Send email
-          // await sendEmail({
-          //   to: user.email,
-          //   subject: `Form Expired: ${form.name}`,
-          //   html: expirationEmail(form.name, form.expiry.toLocaleDateString()),
-          // });
+          await sendEmail({
+            to: user.email,
+            subject: `Form Expired: ${form.name}`,
+            html: expirationEmail(form.name, form.expiry.toLocaleDateString()),
+          });
 
           console.log({ user, form });
 
