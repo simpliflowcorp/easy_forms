@@ -155,5 +155,9 @@
     "save_and_publish" : "Save and Publish",
     "draft" : "Draft",
     "form_name_and_expiry_cannot_be_empty" : "Form name and expiry cannot be empty",
+    "successfully_updated_form" : "Successfully updated form",
+    "edit_form" : "Edit Form",
+    "no_changes_saved": "No changes saved",
+    "publish" : "Publish",
     "goto_form" : "Go to form"
 }   

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Get forms id
 
-    let form_id = request.headers.get("referer")?.split("/").pop();
+    let form_id = request.headers.get("referer")?.split("/")[4];
 
     let form = await Form.findOne({ formId: form_id });
 

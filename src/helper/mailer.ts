@@ -8,24 +8,53 @@ export const sendMail = async (
   email: string,
   username: string,
   type: string,
-  verifyToken?: string
+  verifyToken?: string,
+  data?: any
 ) => {
+  // create reusable transporter object using the default SMTP transport
+  console.log({ email, username, type, verifyToken, data });
+
   try {
     const emailTemplatePath = path.join(
       process.cwd(),
       "src/emailTemplates/" + type + ".html"
     );
+
     let htmlTemplate = fs.readFileSync(emailTemplatePath, "utf8");
     htmlTemplate = htmlTemplate.replace("{{username}}", username);
 
-    if (type !== "changeEmail") {
-      const verificationLink = `${process.env.DOMAIN}/auth/${
-        type === "verifyEmail" ? "verify" : "resetPassword"
-      }?token=${verifyToken}`;
+    let subject = "";
 
-      htmlTemplate = htmlTemplate.replace("{{pageLink}}", verificationLink);
-    } else {
-      htmlTemplate = htmlTemplate.replace("{{verify_code}}", verifyToken);
+    switch (type) {
+      case "verifyEmail":
+        subject = "Verification email";
+        htmlTemplate = htmlTemplate.replace(
+          "{{pageLink}}",
+          `${process.env.DOMAIN}/auth/verify}?token=${verifyToken}`
+        );
+        break;
+
+      case "resetPassword":
+        subject = "Reset Password";
+        htmlTemplate = htmlTemplate.replace(
+          "{{verify_code}}",
+          `${process.env.DOMAIN}/auth/resetPassword}?token=${verifyToken}`
+        );
+        break;
+      case "changeEmail":
+        subject = "Change Email";
+        htmlTemplate = htmlTemplate.replace("{{verify_code}}", verifyToken!);
+        break;
+      case "formExpiry":
+        subject = "Form Expiration Notification";
+        htmlTemplate = htmlTemplate.replace("{{form_name}}", data.form_name!);
+        htmlTemplate = htmlTemplate.replace(
+          "{{pageLink}}",
+          `${process.env.DOMAIN}/forms/${verifyToken}`!
+        );
+        break;
+      default:
+        break;
     }
 
     var transporter = nodemailer.createTransport({
@@ -39,12 +68,7 @@ export const sendMail = async (
     const mailOptions = {
       from: "hi@demomailtrap.com",
       to: email,
-      subject:
-        type === "verifyEmail"
-          ? "Verification email"
-          : type === "changeEmail"
-          ? "Change Email"
-          : "Reset Password",
+      subject: subject,
       html: htmlTemplate,
     };
 

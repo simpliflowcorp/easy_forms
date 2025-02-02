@@ -45,7 +45,7 @@ export default function forms(props: IformsProps) {
 
   const [forms, setForms] = React.useState([
     {
-      id: 1,
+      elementId: 1,
       label: "First Name",
       type: 1,
       required: 1,
@@ -54,7 +54,7 @@ export default function forms(props: IformsProps) {
       position: 1,
     },
     {
-      id: 2,
+      elementId: 2,
       label: "Last Name",
       type: 1,
       required: 1,
@@ -63,7 +63,7 @@ export default function forms(props: IformsProps) {
       position: 1,
     },
     {
-      id: 3,
+      elementId: 3,
       label: "Email",
       type: 1,
       required: 1,
@@ -72,7 +72,7 @@ export default function forms(props: IformsProps) {
       position: 2,
     },
     {
-      id: 4,
+      elementId: 4,
       label: "Phone",
       type: 1,
       required: 1,
@@ -81,7 +81,7 @@ export default function forms(props: IformsProps) {
       position: 2,
     },
     {
-      id: 5,
+      elementId: 5,
       label: "Address",
       type: 1,
       required: 1,
@@ -90,7 +90,7 @@ export default function forms(props: IformsProps) {
       position: 3,
     },
     {
-      id: 6,
+      elementId: 6,
       label: "City",
       type: 1,
       required: 1,
@@ -99,53 +99,7 @@ export default function forms(props: IformsProps) {
       position: 3,
     },
     {
-      id: 7,
-      label: "State",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 4,
-    },
-    {
-      id: 8,
-      label: "Country",
-      type: 11,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 4,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-    },
-    {
-      id: 9,
-      label: "Zip Code",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 5,
-    },
-    {
-      id: 10,
-      label: "select Code",
-      type: 11,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 5,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-    },
-    {
-      id: 11,
+      elementId: 11,
       label: "Check",
       type: 13,
       required: 1,
@@ -159,7 +113,7 @@ export default function forms(props: IformsProps) {
       position: 6,
     },
     {
-      id: 12,
+      elementId: 12,
       label: "Radio",
       type: 14,
       required: 1,
@@ -171,87 +125,6 @@ export default function forms(props: IformsProps) {
         { id: 3, label: "Option 3", value: 0 },
       ],
       position: 6,
-    },
-    {
-      id: 13,
-      label: "Color",
-      type: 15,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 7,
-    },
-    {
-      id: 14,
-      label: "range",
-      type: 16,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 7,
-    },
-    {
-      id: 15,
-      label: "date",
-      type: 21,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 8,
-    },
-    {
-      id: 16,
-      label: "time",
-      type: 22,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 8,
-    },
-    {
-      id: 17,
-      label: "datetime",
-      type: 23,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 9,
-    },
-    {
-      id: 18,
-      label: "file",
-      type: 32,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 9,
-    },
-    {
-      id: 19,
-      label: "image",
-      type: 31,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 10,
-    },
-    {
-      id: 20,
-      label: "signature",
-      type: 33,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 10,
-    },
-    {
-      id: 21,
-      label: "textarea",
-      type: 41,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 11,
     },
   ] as any);
 
@@ -297,22 +170,24 @@ export default function forms(props: IformsProps) {
 
   const updateFormElement = (element: any) => {
     const newForm = forms.map((el: any) => {
-      if (el.id === element.id) {
+      if (el.elementId === element.elementId) {
         return element;
       }
       return el;
     });
-    setForm(newForm);
+    setForms(newForm);
   };
 
   const changeElementColumn = (element: any, column: number) => {
     const newForm = forms.map((el: any) => {
-      if (el.id === element.id) {
-        return { ...element, column };
+      if (el.elementId === element.elementId) {
+        console.log("aaa");
+
+        return { ...element, column: column };
       }
       return el;
     });
-    setForm(newForm);
+    setForms(newForm);
   };
 
   const dragEndHandeler = (e: any) => {
@@ -336,8 +211,8 @@ export default function forms(props: IformsProps) {
       setForms((item: any) => {
         let newform = [
           ...item.map((e: any) => {
-            if (e.id === id) {
-              return { ...e, id: newElementCountRef.current };
+            if (e.elementId === id) {
+              return { ...e, elementId: newElementCountRef.current };
             } else {
               return e;
             }
@@ -357,6 +232,7 @@ export default function forms(props: IformsProps) {
       if (activeElementType === "component") {
         let newElement = {
           id: active.id,
+          elementId: active.id,
           label: activeElement.label + " " + newElementCountRef.current,
           type: activeElement.type,
           column: over.data.current.comp.column,
@@ -399,6 +275,8 @@ export default function forms(props: IformsProps) {
         }
       } else {
         if (active.data.current.comp.column !== over.data.current.comp.column) {
+          console.log(active.data.current.comp);
+
           changeElementColumn(
             active.data.current.comp,
             over.data.current.comp.column

@@ -11,6 +11,7 @@ import { sendMail } from "@/helper/mailer";
 import { verify } from "crypto";
 import { generateVerificationCode } from "@/helper/generateVerificationCode";
 import Hashids from "hashids";
+import { isEqual } from "lodash";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,56 +38,35 @@ export async function POST(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json();
 
-    // Required fields validation
-    if (
-      !body.name ||
-      !body.expiry ||
-      !body.elements ||
-      body.elements.length === 0
-    ) {
+    let existingForm = await Form.findOne({ _id: body._id });
+
+    let changes = { ...body };
+
+    const actualChanges = Object.fromEntries(
+      Object.entries(changes).filter(
+        ([key, value]) => !isEqual(value, existingForm[key])
+      )
+    );
+    delete actualChanges["_id"];
+    console.log(actualChanges);
+
+    if (Object.keys(actualChanges).length > 0) {
+      await Form.updateOne({ _id: body._id }, { $set: actualChanges });
+    }
+
+    if (Object.keys(actualChanges).length === 0) {
       return NextResponse.json(
-        { success: false, error: "missing_required_fields" },
-        { status: 400 }
+        { success: false, message: "no_actual_changes_detected" },
+        { status: 200 }
       );
     }
 
-    // Create form document
-    const hashids = new Hashids("salt", 6);
-    const formId = hashids.encode(new Date().getTime());
+    console.log(body);
 
-    const newForm = await Form.create({
-      user: CurrentUser.id,
-      name: body.name,
-      description: body.description || "",
-      expiry: new Date(body.expiry),
-      elements: body.elements.map((element: any) => ({
-        elementId: element.elementId,
-        type: element.type,
-        label: element.label,
-        required: element.required || false,
-        options: element.options || [],
-        position: element.position,
-        column: element.column,
-      })),
-      formId: formId,
-      status: body.status || 0,
-      metadataSettings: {
-        ip: body.metadataSettings?.ip || false,
-        userAgent: body.metadataSettings?.userAgent || false,
-      },
-      analytics: {
-        totalResponses: 0,
-        totalVisits: 0,
-        dailyVisits: [],
-        dailyResponses: [],
-      },
-    });
-
-    console.log(formId);
-    console.log(newForm);
+    // getting forms
 
     return NextResponse.json(
-      { success: true, data: newForm, message: "successfully_created_form" },
+      { success: true, message: "successfully_updated_form" },
       { status: 200 }
     );
   } catch (error) {

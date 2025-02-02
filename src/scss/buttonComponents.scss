@@ -18,6 +18,26 @@
   }
 }
 
+.green-primary-button {
+  padding: var(--button-padding);
+  background: var(--green-primary);
+  border-radius: var(--button-border-radius);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  span {
+    color: var(--font-color);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--green-primary-hover);
+  }
+}
+
 .secondary-button {
   padding: var(--button-padding);
   background-color: var(--secondary-bg);
@@ -42,6 +62,35 @@
     p,
     span {
       color: var(--secondary-bg);
+    }
+  }
+}
+
+.red-secondary-button {
+  padding: var(--button-padding);
+  background-color: var(--secondary-bg);
+  border-radius: var(--button-border-radius);
+  border: var(--input-border);
+  border-color: var(--error-bg);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  p,
+  span {
+    color: var(--error-bg);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--red-bg);
+
+    p,
+    span {
+      color: var(--error-bg);
     }
   }
 }

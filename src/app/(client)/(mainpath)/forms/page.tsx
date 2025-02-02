@@ -32,10 +32,11 @@ export default function forms(props: IformsProps) {
   const [forms, setForms] = React.useState([] as any);
 
   function countDown(expiringDate: number) {
-    let time = new Date(expiringDate).valueOf() + 24 * 60 * 60 * 1000 - 1;
-    console.log(time);
+    let offset = new Date().getTimezoneOffset();
+    let time = new Date(expiringDate).valueOf() + offset * 60000;
 
-    const now = Date.now();
+    const now = Date.now() - new Date().getTimezoneOffset();
+
     const timeRemaining = time - now;
     const totalHours = Math.floor(timeRemaining / (1000 * 60 * 60));
     const minutes = Math.floor(
@@ -58,6 +59,7 @@ export default function forms(props: IformsProps) {
         console.log(error);
       }
     };
+
     if (!gotData) {
       getForms();
     }
@@ -108,6 +110,14 @@ export default function forms(props: IformsProps) {
                 >
                   <div className="tab-switch-text">{lang.expired}</div>
                 </div>
+                <div
+                  onClick={() => setIsActive("draft")}
+                  className={
+                    isActive === "draft" ? "tab-switch-active" : "tab-switch"
+                  }
+                >
+                  <div className="tab-switch-text">{lang.draft}</div>
+                </div>
               </div>
             </div>
             <div className="forms-sec-list-cnt">
@@ -116,12 +126,13 @@ export default function forms(props: IformsProps) {
                   .filter((form: any) => {
                     if (isActive === "all") return true;
                     if (isActive === "active" && form.status === 1) return true;
-                    if (isActive === "expired" && form.status === 0)
+                    if (isActive === "expired" && form.status === 2)
                       return true;
+                    if (isActive === "draft" && form.status === 0) return true;
                     return false;
                   })
                   .map((form: any) => (
-                    <div className="forms-sec-item">
+                    <div key={form.formId} className="forms-sec-item">
                       <div className="form-sec-header">
                         <div className="form-sec-header-left">
                           <div className="form-sec-header-indicator">/</div>
@@ -132,12 +143,18 @@ export default function forms(props: IformsProps) {
                         <div className="form-sec-header-right">
                           <div
                             className={
-                              form.status === 1
+                              form.status === 0
+                                ? "forms-sec-item-status draft"
+                                : form.status === 1
                                 ? "forms-sec-item-status active"
                                 : "forms-sec-item-status expired"
                             }
                           >
-                            {form.status === 1 ? lang.active : lang.expired}
+                            {form.status === 0
+                              ? lang.draft
+                              : form.status === 1
+                              ? lang.active
+                              : lang.expired}
                           </div>
                           {/* <div className="forms-sec-items-options">
                           <i className="ic-three-dots-vertical"></i>

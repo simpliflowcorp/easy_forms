@@ -24,6 +24,9 @@ import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import IconButton from "@/components/buttons/IconButton";
 import FormPropertise from "@/components/builderWorkbench/FormPropertise";
+import { cloneDeep } from "@/helper/cloneDeep";
+import { successHandler } from "@/helper/successHandler";
+import { errorHandler } from "@/helper/errorHandler";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -34,223 +37,10 @@ export default function forms(props: IformsProps) {
   const [gotData, setGotData] = React.useState(false);
   const [data, setData] = React.useState({} as any);
 
-  const [form, setForm] = React.useState({
-    name: "Form Name",
-    description: "Form Description",
-    expiry: new Date().toISOString().split("T")[0],
-  } as any);
-
-  const [forms, setForms] = React.useState([
-    {
-      id: 1,
-      label: "First Name",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 1,
-    },
-    {
-      id: 2,
-      label: "Last Name",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 1,
-    },
-    {
-      id: 3,
-      label: "Email",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 2,
-    },
-    {
-      id: 4,
-      label: "Phone",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 2,
-    },
-    {
-      id: 5,
-      label: "Address",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 3,
-    },
-    {
-      id: 6,
-      label: "City",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 3,
-    },
-    {
-      id: 7,
-      label: "State",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 4,
-    },
-    {
-      id: 8,
-      label: "Country",
-      type: 11,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 4,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-    },
-    {
-      id: 9,
-      label: "Zip Code",
-      type: 1,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 5,
-    },
-    {
-      id: 10,
-      label: "select Code",
-      type: 11,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 5,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-    },
-    {
-      id: 11,
-      label: "Check",
-      type: 13,
-      required: 1,
-      unique: 0,
-      column: 1,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-      position: 6,
-    },
-    {
-      id: 12,
-      label: "Radio",
-      type: 14,
-      required: 1,
-      unique: 0,
-      column: 2,
-      options: [
-        { id: 1, label: "Option 1", value: 0 },
-        { id: 2, label: "Option 2", value: 0 },
-        { id: 3, label: "Option 3", value: 0 },
-      ],
-      position: 6,
-    },
-    {
-      id: 13,
-      label: "Color",
-      type: 15,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 7,
-    },
-    {
-      id: 14,
-      label: "range",
-      type: 16,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 7,
-    },
-    {
-      id: 15,
-      label: "date",
-      type: 21,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 8,
-    },
-    {
-      id: 16,
-      label: "time",
-      type: 22,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 8,
-    },
-    {
-      id: 17,
-      label: "datetime",
-      type: 23,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 9,
-    },
-    {
-      id: 18,
-      label: "file",
-      type: 32,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 9,
-    },
-    {
-      id: 19,
-      label: "image",
-      type: 31,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 10,
-    },
-    {
-      id: 20,
-      label: "signature",
-      type: 33,
-      required: 1,
-      unique: 0,
-      column: 2,
-      position: 10,
-    },
-    {
-      id: 21,
-      label: "textarea",
-      type: 41,
-      required: 1,
-      unique: 0,
-      column: 1,
-      position: 11,
-    },
-  ] as any);
+  const [form, setForm] = React.useState({} as any);
+  const [formBkp, setFormBkp] = React.useState({} as any);
+  const [forms, setForms] = React.useState([] as any);
+  const [formsBkp, setFormsBkp] = React.useState([] as any);
 
   const [activeElement, setActiveElement] = React.useState({} as any);
   const [activeElementType, setActiveElementType] = React.useState(
@@ -263,7 +53,55 @@ export default function forms(props: IformsProps) {
   const [openElementPropertise, setOpenElementPropertise] =
     React.useState(false);
   const [openFormPropertise, setOpenFormPropertise] = React.useState(false);
-  React.useEffect(() => {}, []);
+
+  const [formID, setFormID] = React.useState("" as string);
+  const [form_Id, setForm_Id] = React.useState("" as string);
+  const [resetBtn, setResetBtn] = React.useState(0);
+
+  React.useEffect(() => {
+    setFormID(window.location.pathname.split("/")[2] + "");
+    getFormData();
+  }, []);
+
+  const getFormData = async () => {
+    try {
+      const res = await axios.get("/api/form/read");
+      if (res.status === 200) {
+        // setFormData(res.data.data);
+        setForm_Id(res.data.data._id);
+        let oldElements = cloneDeep(res.data.data.elements);
+        setForms(oldElements);
+        setFormsBkp(res.data.data.elements);
+        setForm(
+          (prev: any) =>
+            ({
+              ...prev,
+              name: res.data.data.name,
+              description: res.data.data.description,
+              expiry: new Date(res.data.data.expiry)
+                .toISOString()
+                .split("T")[0],
+            } as any)
+        ); //res.data.data);
+        setFormBkp(
+          (prev: any) =>
+            ({
+              ...prev,
+              name: res.data.data.name,
+              description: res.data.data.description,
+              expiry: new Date(res.data.data.expiry)
+                .toISOString()
+                .split("T")[0],
+            } as any)
+        ); //res.data.data);
+        setGotData(true);
+      }
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+
+  console.log(form_Id);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -291,22 +129,24 @@ export default function forms(props: IformsProps) {
 
   const updateFormElement = (element: any) => {
     const newForm = forms.map((el: any) => {
-      if (el.id === element.id) {
+      if (el.elementId === element.elementId) {
         return element;
       }
       return el;
     });
-    setForm(newForm);
+    setForms(newForm);
   };
 
   const changeElementColumn = (element: any, column: number) => {
     const newForm = forms.map((el: any) => {
-      if (el.id === element.id) {
-        return { ...element, column };
+      if (el.elementId === element.elementId) {
+        console.log("aaa");
+
+        return { ...element, column: column };
       }
       return el;
     });
-    setForm(newForm);
+    setForms(newForm);
   };
 
   const dragEndHandeler = (e: any) => {
@@ -330,8 +170,8 @@ export default function forms(props: IformsProps) {
       setForms((item: any) => {
         let newform = [
           ...item.map((e: any) => {
-            if (e.id === id) {
-              return { ...e, id: newElementCountRef.current };
+            if (e.elementId === id) {
+              return { ...e, elementId: newElementCountRef.current };
             } else {
               return e;
             }
@@ -351,6 +191,7 @@ export default function forms(props: IformsProps) {
       if (activeElementType === "component") {
         let newElement = {
           id: active.id,
+          elementId: active.id,
           label: activeElement.label + " " + newElementCountRef.current,
           type: activeElement.type,
           column: over.data.current.comp.column,
@@ -393,6 +234,8 @@ export default function forms(props: IformsProps) {
         }
       } else {
         if (active.data.current.comp.column !== over.data.current.comp.column) {
+          console.log(active.data.current.comp);
+
           changeElementColumn(
             active.data.current.comp,
             over.data.current.comp.column
@@ -411,97 +254,147 @@ export default function forms(props: IformsProps) {
     setForm(data);
   };
 
-  const createForm = () => {
-    let form = {
-      name: "form name",
-      description: "form description",
-      elements: [],
-    };
+  const updateForm = async () => {
+    let changes = {};
+    if (JSON.stringify(form) !== JSON.stringify(formBkp)) {
+      if (form.name !== formBkp.name) {
+        changes = {
+          ...changes,
+          name: form.name,
+        };
+      }
+      if (form.description !== formBkp.description) {
+        changes = {
+          ...changes,
+          description: form.description,
+        };
+      }
+      if (form.expiry !== formBkp.expiry) {
+        changes = {
+          ...changes,
+          expiry: form.expiry,
+        };
+      }
+    }
+    if (JSON.stringify(forms) !== JSON.stringify(formsBkp)) {
+      changes = {
+        ...changes,
+        elements: forms,
+      };
+    }
+
+    if (Object.keys(changes).length > 0) {
+      changes = {
+        ...changes,
+        _id: form_Id,
+      };
+      try {
+        const res = await axios.post("/api/form/update", changes);
+        if (res.status === 200) {
+          successHandler(res, lang);
+          router.push("/forms/" + formID);
+        }
+      } catch (error: any) {
+        setResetBtn((p) => p + 1);
+        errorHandler(error, lang);
+      }
+    } else {
+      router.push("/forms/" + formID);
+      errorHandler(
+        {
+          response: {
+            data: { message: "no_changes_saved" },
+          },
+        },
+        lang
+      );
+    }
   };
 
-  return (
-    <div className="form-cnt">
-      <div className="form-header">
-        <div className="left">
-          <div className="form-sec-header-left">
-            <span className="header-indicator">/</span>
-            <span className="header-text">{lang.create_form}</span>
+  if (!gotData) {
+    return <div className="accent-line-loader"></div>;
+  } else {
+    return (
+      <div className="form-cnt">
+        <div className="form-header">
+          <div className="left">
+            <div className="form-sec-header-left">
+              <span className="header-indicator">/</span>
+              <span className="header-text">{lang.edit_form}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="right">
-          <div className="btn-cnt">
-            <IconButton
-              icon="gear"
-              action={() => setOpenFormPropertise(true)}
-            />
-
-            <SecondaryButton
-              label={"cancel"}
-              action={() => router.push("/forms")}
-            />
-
-            <PrimaryButton
-              label={"save"}
-              action={() => router.push("/forms/create")}
-            />
-          </div>
-        </div>
-      </div>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={pointerWithin}
-        onDragStart={(e: any) => {
-          if (e) {
-            setActiveElement(e.active.data.current.comp);
-            setActiveElementType(e.active.data.current.type);
-          }
-        }}
-        onDragOver={(e: any) => {
-          dragOverHandeler(e);
-        }}
-        onDragEnd={(e: any) => {
-          dragEndHandeler(e);
-        }}
-      >
-        <div className="form-sec-cnt">
-          <div className="form-sec">
-            <ComponentsContainer />
-
-            <FormWorkbenchCnt
-              form={forms}
-              openElementProps={openElementProps}
-            />
-
-            {openElementPropertise && (
-              <ElementPropertise
-                elementPropertise={elementPropertise}
-                close={() => setOpenElementPropertise(false)}
-                updateFormElement={updateFormElement}
+          <div className="right">
+            <div className="btn-cnt">
+              <IconButton
+                icon="gear"
+                action={() => setOpenFormPropertise(true)}
               />
-            )}
 
-            {openFormPropertise && (
-              <FormPropertise
-                formPropertise={form}
-                close={() => setOpenFormPropertise(false)}
-                updateFormElement={updateFormData}
+              <SecondaryButton
+                label={"cancel"}
+                action={() => router.push("/forms/" + formID)}
               />
-            )}
+
+              <PrimaryButton label={"save"} action={() => updateForm()} />
+            </div>
           </div>
         </div>
 
-        <DragOverlay
-          dropAnimation={{
-            duration: 500,
-            easing: "cubic-bezier(0.645, 0.045, 0.355, 1.000)",
+        <DndContext
+          sensors={sensors}
+          collisionDetection={pointerWithin}
+          onDragStart={(e: any) => {
+            if (e) {
+              setActiveElement(e.active.data.current.comp);
+              setActiveElementType(e.active.data.current.type);
+            }
           }}
-          className="drag-overlay"
+          onDragOver={(e: any) => {
+            dragOverHandeler(e);
+          }}
+          onDragEnd={(e: any) => {
+            dragEndHandeler(e);
+          }}
         >
-          {activeElement && dynamicOverlay()}
-        </DragOverlay>
-      </DndContext>
-    </div>
-  );
+          <div className="form-sec-cnt">
+            <div className="form-sec">
+              <ComponentsContainer />
+
+              <FormWorkbenchCnt
+                form={forms}
+                openElementProps={openElementProps}
+              />
+
+              {openElementPropertise && (
+                <ElementPropertise
+                  elementPropertise={elementPropertise}
+                  close={() => setOpenElementPropertise(false)}
+                  updateFormElement={updateFormElement}
+                />
+              )}
+
+              {openFormPropertise && (
+                <FormPropertise
+                  formPropertise={form}
+                  close={() => setOpenFormPropertise(false)}
+                  updateFormElement={updateFormData}
+                />
+              )}
+            </div>
+          </div>
+
+          <DragOverlay
+            dropAnimation={{
+              duration: 500,
+              easing: "cubic-bezier(0.645, 0.045, 0.355, 1.000)",
+            }}
+            className="drag-overlay"
+          >
+            {activeElement && dynamicOverlay()}
+          </DragOverlay>
+        </DndContext>
+      </div>
+    );
+  }
 }

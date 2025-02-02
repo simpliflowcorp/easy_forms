@@ -5,12 +5,7 @@ import User from "../models/userModel";
 // import sendEmail from "@/lib/email";
 import { connectDB, disconnectDB } from "../dbConfig/dbConfig";
 import cron from "node-cron";
-
-// 1. Configure simple email template
-const expirationEmail = (name: string, expiryDate: string) => `
-  <p>Your form "${name}" expired on ${expiryDate}.</p>
-  <p>No new responses will be accepted.</p>
-`;
+import { sendMail } from "./mailer";
 
 // 2. Optimized expiration checker
 async function checkAndNotifyExpirations() {
@@ -29,12 +24,14 @@ async function checkAndNotifyExpirations() {
       // 3. Lean query with field projection
       const forms = await Form.find({
         expiry: { $lte: now },
-        status: { $ne: 0 },
+        status: 1,
       })
         .select("_id formId name expiry status user")
         .lean()
         .limit(batchSize)
         .skip(processed);
+
+      console.log(forms);
 
       if (forms.length === 0) break;
 
@@ -42,26 +39,29 @@ async function checkAndNotifyExpirations() {
         try {
           // 4. Get user email separately
           const user = await User.findById(form.user)
-            .select("email name")
+            .select("email username")
             .lean();
 
           if (!user) continue;
 
           // 5. Send email
-          await sendEmail({
-            to: user.email,
-            subject: `Form Expired: ${form.name}`,
-            html: expirationEmail(form.name, form.expiry.toLocaleDateString()),
-          });
 
-          console.log({ user, form });
+          if (!Array.isArray(user)) {
+            console.log(user);
+
+            await sendMail(
+              user.email,
+              user.username,
+              "formExpiry",
+              form.formId,
+              { form_name: form.name }
+            );
+          }
 
           // console.log(`Notified user ${user.email} about form ${form._id}`);
 
           // 6. Update form status
-          // await Form.updateOne({ _id: form._id }, { $set: { status: 0 } });
-
-          console.log(`Processed form ${form._id}`);
+          await Form.updateOne({ _id: form._id }, { $set: { status: 2 } });
         } catch (error) {
           console.error(`Error processing form ${form._id}:`, error);
         }

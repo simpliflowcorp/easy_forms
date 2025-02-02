@@ -18,6 +18,9 @@
 
   --secondary: #161616;
 
+  --green-primary: #48bf84;
+  --green-primary-hover: #34875d;
+
   --green-bg: #d2fadf;
   --green-font: #2c6143;
 
@@ -27,6 +30,7 @@
 
   --success: #4bb543;
   --success-bg: #aeb6ad;
+
   --error: #dc3545;
   --error-bg: #df4656;
 
@@ -74,7 +78,6 @@
   }
 
   .theme-dark {
-    --color-primary: #17ed90;
     --color-accent: #007bff;
 
     --primary-bg: #050505;

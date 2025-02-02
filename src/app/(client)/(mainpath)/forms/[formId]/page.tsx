@@ -1,8 +1,10 @@
 "use client";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
+import GreenPrimaryActionButton from "@/components/buttons/GreenPrimaryActionButton";
 import IconButton from "@/components/buttons/IconButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import PromotionButton from "@/components/buttons/PromotionButton";
+import RedSecondaryButton from "@/components/buttons/RedSecondaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import InfoCard from "@/components/dashboard/cards/InfoCard";
 import { ChartComponetManger } from "@/components/dashboard/charts/ChartComponetManger";
@@ -38,12 +40,9 @@ export default function dashboard(props: IdashboardProps) {
 
   React.useEffect(() => {
     // how to get form id
-
     setFormID(window.location.pathname.split("/").pop() + "");
     getFormData();
   }, []);
-
-  console.log(formId);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
@@ -59,12 +58,18 @@ export default function dashboard(props: IdashboardProps) {
             <div className="form-sec-header-right">
               <div
                 className={
-                  formData.status === 1
+                  formData.status === 0
+                    ? "forms-sec-item-status draft"
+                    : formData.status === 1
                     ? "forms-sec-item-status active"
                     : "forms-sec-item-status expired"
                 }
               >
-                {formData.status === 1 ? lang.active : lang.expired}
+                {formData.status === 0
+                  ? lang.draft
+                  : formData.status === 1
+                  ? lang.active
+                  : lang.expired}
               </div>
             </div>
           </div>
@@ -76,20 +81,33 @@ export default function dashboard(props: IdashboardProps) {
                 action={() => router.push("/forms")}
               />
 
-              <SecondaryButton
-                label={"terminate"}
-                action={() => router.push("/forms")}
-              />
+              {formData.status === 2 && (
+                <RedSecondaryButton
+                  label={"delete"}
+                  action={() => router.push("/forms")}
+                />
+              )}
 
-              <SecondaryButton
-                label={"delete"}
-                action={() => router.push("/forms")}
-              />
+              {formData.status === 1 && (
+                <SecondaryButton
+                  label={"terminate"}
+                  action={() => router.push("/forms")}
+                />
+              )}
 
-              <PrimaryButton
-                label={"edit"}
-                action={() => router.push("/forms/" + formId + "/edit")}
-              />
+              {formData.status !== 2 && (
+                <PrimaryButton
+                  label={"edit"}
+                  action={() => router.push("/forms/" + formId + "/edit")}
+                />
+              )}
+
+              {formData.status === 0 && (
+                <GreenPrimaryActionButton
+                  label={"publish"}
+                  action={() => router.push("/forms/" + formId + "/edit")}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -113,8 +131,6 @@ export default function dashboard(props: IdashboardProps) {
               </div>
               <div className="form-timer-body">
                 <p className="form-timer-body-text">
-                  {/* {new Date().toDateString()} */}
-                  {/* {new Date(formData.expiry)} */}
                   {new Date(formData.expiry).toDateString()}
                 </p>
               </div>

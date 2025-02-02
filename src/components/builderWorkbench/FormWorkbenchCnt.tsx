@@ -17,7 +17,7 @@ const FormWorkbenchCnt = (props: Props) => {
         <SortableContext
           items={props.form
             .filter((element: any) => element.column === 1)
-            .map((element: any) => element.id)}
+            .map((element: any) => element.elementId)}
           strategy={verticalListSortingStrategy}
         >
           <FormWorkbench
@@ -29,7 +29,7 @@ const FormWorkbenchCnt = (props: Props) => {
         <SortableContext
           items={props.form
             .filter((element: any) => element.column === 2)
-            .map((element: any) => element.id)}
+            .map((element: any) => element.elementId)}
           strategy={verticalListSortingStrategy}
         >
           <FormWorkbench

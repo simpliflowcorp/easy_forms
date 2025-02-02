@@ -112,8 +112,13 @@ export default function FormPropertise(props: IFormPropertiseProps) {
 
               <DateFieldInput
                 label="Expiry Date"
-                updateValue={(e: string) => {
-                  setData({ ...data, expiry: e });
+                updateValue={(e: any) => {
+                  let exp = new Date(e).valueOf() + 1000 * 60 * 60 * 24 - 1;
+                  console.log(new Date(exp).toISOString());
+                  setData({
+                    ...data,
+                    expiry: new Date(exp).toISOString(),
+                  });
                 }}
                 value={data.expiry}
                 updateIsValid={(e) =>
