@@ -5,7 +5,7 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ITextFieldInputProps {
+export interface ICheckboxInputProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
@@ -13,9 +13,10 @@ export interface ITextFieldInputProps {
   isValid: boolean;
   isRequired: boolean;
   reset: number;
+  options: { label: string; value: string }[];
 }
 
-export default function TextFieldInput(props: ITextFieldInputProps) {
+export default function CheckboxInput(props: ICheckboxInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
@@ -32,8 +33,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(props.value);
-
   return (
     <>
       <div className="input-cnt">
@@ -43,6 +42,22 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
             {props.isRequired ? "*" : ""}
           </span>
         </label>
+        {props.options.map((option: any, index: number) => {
+          return (
+            <div className="checkbox-switch" key={index}>
+              <input
+                type="checkbox"
+                disabled
+                id={props.label + "-" + uid + "-" + index}
+                name={props.label + "-" + uid + "-" + index}
+                value={option.value}
+              />
+              <label htmlFor={props.label + "-" + uid + "-" + index}>
+                {option.label}
+              </label>
+            </div>
+          );
+        })}
         <input
           type="text"
           id={"text" + uid}

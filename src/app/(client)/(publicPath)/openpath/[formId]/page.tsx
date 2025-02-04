@@ -4,6 +4,7 @@ import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
+import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 
 type Props = {};
 
@@ -21,6 +22,17 @@ const Publish = (props: Props) => {
       if (res.status === 200) {
         setForms(res.data.data);
         setGotData(true);
+        const datas = res.data.data.elements.reduce(
+          (accumulator: any, current: any) => {
+            accumulator[current.label] = "";
+            return accumulator;
+          },
+          {}
+        );
+
+        console.log(datas);
+
+        setData(datas);
       }
     } catch (error: any) {
       console.log(error);
@@ -33,6 +45,13 @@ const Publish = (props: Props) => {
   useEffect(() => {
     getFormData();
   }, []);
+
+  const [resetBtn, setResetBtn] = React.useState(0);
+
+  const [data, setData] = React.useState({});
+  const [dataIsValid, setDataIsValid] = React.useState({});
+
+  console.log(data);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
@@ -53,10 +72,29 @@ const Publish = (props: Props) => {
                     .filter((element: any) => element.column === 1)
                     .map((element: any, index: number) => {
                       return (
-                        <DynamicElement
-                          openElementProps={false}
-                          key={index}
-                          data={element}
+                        <DynamicFieldManger
+                          reset={resetBtn}
+                          label={element.label}
+                          options={element.options ? element.options : []}
+                          // value={data[item.name]}
+                          value={data[element.label as keyof typeof data]}
+                          updateValue={(value: string) =>
+                            setData({ ...data, [element.name]: value })
+                          }
+                          isRequired={false}
+                          // isValid={dataIsValid[item.name]}
+                          isValid={
+                            dataIsValid[
+                              element.name as keyof typeof dataIsValid
+                            ]
+                          }
+                          updateIsValid={(value: boolean) =>
+                            setDataIsValid((p) => ({
+                              ...p,
+                              [element.name]: value,
+                            }))
+                          }
+                          type={element.type}
                         />
                       );
                     })}
@@ -68,11 +106,31 @@ const Publish = (props: Props) => {
                   {forms.elements
                     .filter((element: any) => element.column === 2)
                     .map((element: any, index: number) => {
+                      console.log(data[element.label as keyof typeof data]);
+
                       return (
-                        <DynamicElement
-                          openElementProps={false}
-                          key={index}
-                          data={element}
+                        <DynamicFieldManger
+                          reset={resetBtn}
+                          label={element.label}
+                          options={element.options ? element.options : []}
+                          value={data[element.label as keyof typeof data]}
+                          updateValue={(value: string) =>
+                            setData({ ...data, [element.name]: value })
+                          }
+                          isRequired={false}
+                          // isValid={dataIsValid[item.name]}
+                          isValid={
+                            dataIsValid[
+                              element.name as keyof typeof dataIsValid
+                            ]
+                          }
+                          updateIsValid={(value: boolean) =>
+                            setDataIsValid((p) => ({
+                              ...p,
+                              [element.name]: value,
+                            }))
+                          }
+                          type={element.type}
                         />
                       );
                     })}

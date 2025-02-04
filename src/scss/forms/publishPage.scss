@@ -35,6 +35,15 @@
       }
       .form-body {
         flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding: 30px;
+        gap: 30px;
+
+        .form-body-comp {
+          flex-grow: 1;
+        }
       }
       .form-footer {
         display: flex;

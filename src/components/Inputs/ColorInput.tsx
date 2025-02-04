@@ -5,7 +5,7 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ITextFieldInputProps {
+export interface IColorInputProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
@@ -15,7 +15,7 @@ export interface ITextFieldInputProps {
   reset: number;
 }
 
-export default function TextFieldInput(props: ITextFieldInputProps) {
+export default function ColorInput(props: IColorInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
@@ -32,8 +32,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(props.value);
-
   return (
     <>
       <div className="input-cnt">
@@ -44,7 +42,7 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
           </span>
         </label>
         <input
-          type="text"
+          type="color"
           id={"text" + uid}
           className={!isValid || IsNotEmpty ? "error-input" : ""}
           value={value}
