@@ -74,6 +74,7 @@ const Publish = (props: Props) => {
                       return (
                         <DynamicFieldManger
                           reset={resetBtn}
+                          key={index + "l" + 1}
                           label={element.label}
                           options={element.options ? element.options : []}
                           // value={data[item.name]}
@@ -110,6 +111,7 @@ const Publish = (props: Props) => {
 
                       return (
                         <DynamicFieldManger
+                          key={index + "r" + 2}
                           reset={resetBtn}
                           label={element.label}
                           options={element.options ? element.options : []}

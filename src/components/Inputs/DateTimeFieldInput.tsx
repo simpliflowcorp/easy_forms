@@ -5,23 +5,29 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ICheckboxInputProps {
+export interface IDateTimeInputFieldProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
   updateIsValid: (value: boolean) => void;
   isValid: boolean;
-  isRequired: boolean;
   reset: number;
-  options: { label: string; value: string }[];
+  isRequired: boolean;
+  isDisableOldDate?: boolean;
 }
 
-export default function CheckboxInput(props: ICheckboxInputProps) {
+export default function DateTimeInputFieldInput(
+  props: IDateTimeInputFieldProps
+) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
+  const [disableOldDate, setDisableOldDate] = React.useState(
+    props.isDisableOldDate
+  );
+  const [minValue, setMinValue] = React.useState("");
 
   React.useEffect(() => {
     if (props.reset !== 0) {
@@ -33,6 +39,12 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
+  React.useEffect(() => {
+    if (disableOldDate) {
+      setMinValue(new Date().toISOString().split("T")[0]);
+    }
+  }, [disableOldDate]);
+
   return (
     <>
       <div className="input-cnt">
@@ -42,23 +54,19 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
             {props.isRequired ? "*" : ""}
           </span>
         </label>
-
-        {props.options.map((option: any, index: number) => {
-          return (
-            <div className="checkbox-switch" key={index}>
-              <input
-                type="checkbox"
-                id={props.label + "-" + uid + "-" + index}
-                name={props.label + "-" + uid + "-" + index}
-                value={option.value}
-              />
-              <label htmlFor={props.label + "-" + uid + "-" + index}>
-                {option.label}
-              </label>
-            </div>
-          );
-        })}
-
+        <input
+          type="datetime-local"
+          id={"date" + uid}
+          className={!isValid || IsNotEmpty ? "error-input" : ""}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+          }}
+          onBlur={() => {
+            blurCheck(value, props, setIsValid, setIsNotEmpty, "date");
+          }}
+          min={minValue}
+        />
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}

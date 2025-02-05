@@ -255,6 +255,47 @@ input[type="color"] {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  input[type="radio"] + label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    cursor: pointer;
+    font-family: "Arial";
+  }
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  input[type="radio"] + label:before {
+    content: "\25cf";
+    border: 1px solid var(--font-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: transparent;
+  }
+
+  input[type="radio"]:checked + label:before {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+
+  input[type="radio"]:disabled + label:before {
+    border-color: #aaa;
+  }
+
+  input[type="radio"]:checked:disabled + label:before {
+    transform: scale(1);
+    background-color: #f7c28f;
+    border-color: #f7c28f;
+  }
 }
 
 .color-picker {
@@ -322,6 +363,7 @@ input[type="color"] {
   background-size: 60% 100%;
   animation: l16 3s infinite;
 }
+
 @keyframes l16 {
   0% {
     background-position: -150% 0, -150% 0;

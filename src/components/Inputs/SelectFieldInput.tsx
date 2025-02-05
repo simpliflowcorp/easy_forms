@@ -15,6 +15,7 @@ export interface ISelectFieldInputProps {
   isRequired: boolean;
   reset: number;
   options: { label: string; value: string }[];
+  isMulti: boolean;
 }
 
 export default function SelectFieldInput(props: ISelectFieldInputProps) {
@@ -107,16 +108,24 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
         {props.label}{" "}
         <span className="required-asterisk">{props.isRequired ? "*" : ""}</span>
       </label>
+
       <Select
         id={"select" + uid}
         className={!isValid || isNotEmpty ? "error-input" : ""}
         value={props.options.find((opt) => opt.value === props.value) || null}
         options={props.options || []}
         onChange={(selectedOption) => {
-          const newValue = selectedOption ? selectedOption.value : "";
-          setIsNotEmpty(Boolean(newValue));
-          props.updateValue(newValue);
+          if (props.isMulti) {
+            const newValue = selectedOption ? selectedOption.value : "";
+            setIsNotEmpty(Boolean(newValue));
+            props.updateValue(newValue);
+          } else {
+            const newValue = selectedOption ? selectedOption.value : "";
+            setIsNotEmpty(Boolean(newValue));
+            props.updateValue(newValue);
+          }
         }}
+        isMulti={props.isMulti}
         placeholder={props.label}
         onBlur={() =>
           blurCheck(props.value, props, setIsValid, setIsNotEmpty, "text")
@@ -124,6 +133,7 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
         styles={darkThemeStyles}
         classNamePrefix="custom-select"
       />
+
       <ErroTextCnt
         isRequired={props.isRequired}
         isValid={!isValid}

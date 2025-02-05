@@ -5,7 +5,7 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ICheckboxInputProps {
+export interface IRadioInputProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
@@ -16,7 +16,7 @@ export interface ICheckboxInputProps {
   options: { label: string; value: string }[];
 }
 
-export default function CheckboxInput(props: ICheckboxInputProps) {
+export default function RadioInput(props: IRadioInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
@@ -42,14 +42,13 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
             {props.isRequired ? "*" : ""}
           </span>
         </label>
-
         {props.options.map((option: any, index: number) => {
           return (
-            <div className="checkbox-switch" key={index}>
+            <div className="radio-switch" key={index}>
               <input
-                type="checkbox"
+                type="radio"
                 id={props.label + "-" + uid + "-" + index}
-                name={props.label + "-" + uid + "-" + index}
+                name={props.label + "-" + uid}
                 value={option.value}
               />
               <label htmlFor={props.label + "-" + uid + "-" + index}>

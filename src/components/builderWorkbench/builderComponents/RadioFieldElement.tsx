@@ -13,8 +13,8 @@ const RadioFieldElement = (props: Props) => {
             <input
               disabled
               type="radio"
-              id={"weekday-" + index}
-              name={"weekday-" + index}
+              id={"radio-" + index}
+              name={"radio-" + option.label}
               value={option.value}
             />
             <label htmlFor={"weekday-" + index}>{option.label}</label>

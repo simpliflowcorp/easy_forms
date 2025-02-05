@@ -5,7 +5,7 @@ import { blurCheck, validationCheck } from "../../helper/validationCheck";
 import { useLanguageStore } from "@/store/store";
 import ErroTextCnt from "./components/ErrorTextCnt";
 
-export interface ICheckboxInputProps {
+export interface IRangeFieldInputProps {
   label: string;
   value: string;
   updateValue: (value: string) => void;
@@ -13,10 +13,9 @@ export interface ICheckboxInputProps {
   isValid: boolean;
   isRequired: boolean;
   reset: number;
-  options: { label: string; value: string }[];
 }
 
-export default function CheckboxInput(props: ICheckboxInputProps) {
+export default function RangeFieldInput(props: IRangeFieldInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
   const [value, setValue] = React.useState(props.value as string);
@@ -33,6 +32,8 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
+  console.log(props.value);
+
   return (
     <>
       <div className="input-cnt">
@@ -42,23 +43,16 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
             {props.isRequired ? "*" : ""}
           </span>
         </label>
-
-        {props.options.map((option: any, index: number) => {
-          return (
-            <div className="checkbox-switch" key={index}>
-              <input
-                type="checkbox"
-                id={props.label + "-" + uid + "-" + index}
-                name={props.label + "-" + uid + "-" + index}
-                value={option.value}
-              />
-              <label htmlFor={props.label + "-" + uid + "-" + index}>
-                {option.label}
-              </label>
-            </div>
-          );
-        })}
-
+        <input
+          type="range"
+          id={"text" + uid}
+          className={!isValid || IsNotEmpty ? "error-input" : ""}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => {
+            blurCheck(value, props, setIsValid, setIsNotEmpty, "text");
+          }}
+        />{" "}
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}

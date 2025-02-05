@@ -6,6 +6,14 @@ import Email from "next-auth/providers/email";
 import EmailInput from "./EmailInput";
 import PasswordInput from "./PasswordInput";
 import SelectFieldInput from "./SelectFieldInput";
+import CheckboxInput from "./CheckboxInput";
+import RadioInput from "./RadioInput";
+import ColorInput from "./ColorInput";
+import RangeFieldInput from "./RangeFieldInput";
+import DateFieldInput from "./DateFieldInput";
+import DateTimeInputFieldInput from "./DateTimeFieldInput";
+import TimeInputFieldInput from "./TimeFieldInput";
+import TextAreaInput from "./TextAreaInput";
 
 type Props = {
   type: number;
@@ -34,7 +42,6 @@ const DynamicFieldManger = (props: Props) => {
             reset={props.reset}
           />
         );
-        break;
       case 2:
         return (
           <NumberFieldInput
@@ -47,7 +54,6 @@ const DynamicFieldManger = (props: Props) => {
             reset={props.reset}
           />
         );
-        break;
       case 3:
         return (
           <DecimalNumberFieldInput
@@ -60,7 +66,6 @@ const DynamicFieldManger = (props: Props) => {
             reset={props.reset}
           />
         );
-        break;
       case 4:
         return (
           <EmailInput
@@ -73,7 +78,6 @@ const DynamicFieldManger = (props: Props) => {
             reset={props.reset}
           />
         );
-        break;
       case 11:
         return (
           <SelectFieldInput
@@ -85,9 +89,125 @@ const DynamicFieldManger = (props: Props) => {
             isValid={props.isValid}
             isRequired={props.isRequired}
             reset={props.reset}
+            isMulti={false}
           />
         );
-        break;
+      case 12:
+        return (
+          <SelectFieldInput
+            options={props.options}
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+            isMulti={true}
+          />
+        );
+      case 13:
+        return (
+          <CheckboxInput
+            options={props.options}
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+      case 14:
+        return (
+          <RadioInput
+            options={props.options}
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+      case 15:
+        return (
+          <ColorInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+      case 16:
+        return (
+          <RangeFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+
+      case 21:
+        return (
+          <DateFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+
+      case 22:
+        return (
+          <DateTimeInputFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+      case 23:
+        return (
+          <TimeInputFieldInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+
+      case 41:
+        return (
+          <TextAreaInput
+            label={props.label}
+            value={props.value}
+            updateValue={props.updateValue}
+            updateIsValid={props.updateIsValid}
+            isValid={props.isValid}
+            isRequired={props.isRequired}
+            reset={props.reset}
+          />
+        );
+
       case 101:
         return (
           <PasswordInput
