@@ -82,9 +82,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(formId);
-    console.log(newForm);
-
     return NextResponse.json(
       { success: true, data: newForm, message: "successfully_created_form" },
       { status: 200 }

@@ -58,7 +58,6 @@ export default function FormPropertise(props: IFormPropertiseProps) {
       props.close();
     }
   };
-  console.log(isValid);
 
   return (
     <div
@@ -114,7 +113,7 @@ export default function FormPropertise(props: IFormPropertiseProps) {
                 label="Expiry Date"
                 updateValue={(e: any) => {
                   let exp = new Date(e).valueOf() + 1000 * 60 * 60 * 24 - 1;
-                  console.log(new Date(exp).toISOString());
+
                   setData({
                     ...data,
                     expiry: new Date(exp).toISOString(),

@@ -14,11 +14,13 @@ const Publish = (props: Props) => {
   const [forms, setForms] = React.useState([] as any);
   const [gotData, setGotData] = React.useState(false);
 
+  const [formId, setFormId] = React.useState("");
+
   const getFormData = async () => {
     let formId = window.location.pathname.split("/")[2];
-
+    setFormId(formId);
     try {
-      const res = await axios.get("/api/form/read");
+      const res = await axios.get("/api/openpath/read");
       if (res.status === 200) {
         setForms(res.data.data);
         setGotData(true);
@@ -30,28 +32,47 @@ const Publish = (props: Props) => {
           {}
         );
 
-        console.log(datas);
-
         setData(datas);
       }
     } catch (error: any) {
       console.log(error);
     }
-    console.log(formId);
   };
-
-  console.log(forms);
 
   useEffect(() => {
     getFormData();
   }, []);
 
+  console.log(forms);
+
+  const submitForm = async () => {
+    try {
+      const response = await fetch("/api/openpath/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          form_id: formId,
+          data: {
+            first_name: "John",
+            last_name: "Doe",
+            phone: "1234567890",
+          },
+        }),
+      });
+
+      if (!response.ok) throw new Error("Submission failed");
+
+      const result = await response.json();
+      console.log("Response ID:", result.response_id);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+  };
+
   const [resetBtn, setResetBtn] = React.useState(0);
 
   const [data, setData] = React.useState({});
   const [dataIsValid, setDataIsValid] = React.useState({});
-
-  console.log(data);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
@@ -107,8 +128,6 @@ const Publish = (props: Props) => {
                   {forms.elements
                     .filter((element: any) => element.column === 2)
                     .map((element: any, index: number) => {
-                      console.log(data[element.label as keyof typeof data]);
-
                       return (
                         <DynamicFieldManger
                           key={index + "r" + 2}
@@ -144,7 +163,7 @@ const Publish = (props: Props) => {
                 <PrimaryActionButton
                   label="submit"
                   resetBtn={0}
-                  action={() => {}}
+                  action={() => submitForm()}
                 />
               </div>
             </div>

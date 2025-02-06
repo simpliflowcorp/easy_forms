@@ -12,7 +12,6 @@ export const sendMail = async (
   data?: any
 ) => {
   // create reusable transporter object using the default SMTP transport
-  console.log({ email, username, type, verifyToken, data });
 
   try {
     const emailTemplatePath = path.join(

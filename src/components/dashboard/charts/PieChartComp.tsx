@@ -28,7 +28,6 @@ export default function PieChartComp(props: Props) {
       });
     }
     setChartData(newData);
-    console.log(newData);
   }, [props.data]);
 
   const renderActiveShape = (props: any) => {

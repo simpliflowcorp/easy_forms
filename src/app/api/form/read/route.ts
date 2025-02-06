@@ -8,7 +8,6 @@ import mongoose from "mongoose";
 export async function GET(request: NextRequest) {
   try {
     // // Authentication check start
-    console.log();
 
     // Get session and cookies
     const cookies = request.cookies as any;

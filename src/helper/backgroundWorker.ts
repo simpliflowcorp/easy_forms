@@ -31,8 +31,6 @@ async function checkAndNotifyExpirations() {
         .limit(batchSize)
         .skip(processed);
 
-      console.log(forms);
-
       if (forms.length === 0) break;
 
       for (const form of forms) {
@@ -47,8 +45,6 @@ async function checkAndNotifyExpirations() {
           // 5. Send email
 
           if (!Array.isArray(user)) {
-            console.log(user);
-
             await sendMail(
               user.email,
               user.username,
@@ -58,7 +54,7 @@ async function checkAndNotifyExpirations() {
             );
           }
 
-          // console.log(`Notified user ${user.email} about form ${form._id}`);
+          //
 
           // 6. Update form status
           await Form.updateOne({ _id: form._id }, { $set: { status: 2 } });

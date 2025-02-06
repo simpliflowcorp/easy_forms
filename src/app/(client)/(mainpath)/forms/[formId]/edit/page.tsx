@@ -101,8 +101,6 @@ export default function forms(props: IformsProps) {
     }
   };
 
-  console.log(form_Id);
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 10 },
@@ -140,8 +138,6 @@ export default function forms(props: IformsProps) {
   const changeElementColumn = (element: any, column: number) => {
     const newForm = forms.map((el: any) => {
       if (el.elementId === element.elementId) {
-        console.log("aaa");
-
         return { ...element, column: column };
       }
       return el;
@@ -234,8 +230,6 @@ export default function forms(props: IformsProps) {
         }
       } else {
         if (active.data.current.comp.column !== over.data.current.comp.column) {
-          console.log(active.data.current.comp);
-
           changeElementColumn(
             active.data.current.comp,
             over.data.current.comp.column

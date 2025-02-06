@@ -32,8 +32,6 @@ export default function RangeFieldInput(props: IRangeFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(props.value);
-
   return (
     <>
       <div className="input-cnt">

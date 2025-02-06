@@ -23,8 +23,6 @@ export default function RadarChartComp(props: Props) {
     );
   }, []);
 
-  console.log(data);
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RadarChart outerRadius={150} width={500} height={500} data={data}>

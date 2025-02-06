@@ -181,8 +181,6 @@ export default function forms(props: IformsProps) {
   const changeElementColumn = (element: any, column: number) => {
     const newForm = forms.map((el: any) => {
       if (el.elementId === element.elementId) {
-        console.log("aaa");
-
         return { ...element, column: column };
       }
       return el;
@@ -275,8 +273,6 @@ export default function forms(props: IformsProps) {
         }
       } else {
         if (active.data.current.comp.column !== over.data.current.comp.column) {
-          console.log(active.data.current.comp);
-
           changeElementColumn(
             active.data.current.comp,
             over.data.current.comp.column
@@ -308,7 +304,6 @@ export default function forms(props: IformsProps) {
         const res = await axios.post("/api/form/create", data);
         if (res.status === 200) {
           successHandler(res, lang);
-          console.log(res.data);
 
           router.push("/forms/" + res.data.data.formId);
         }

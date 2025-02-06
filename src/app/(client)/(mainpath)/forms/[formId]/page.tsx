@@ -33,9 +33,7 @@ export default function dashboard(props: IdashboardProps) {
         setFormData(res.data.data);
         setGotData(true);
       }
-    } catch (error: any) {
-      console.log(error);
-    }
+    } catch (error: any) {}
   };
 
   React.useEffect(() => {

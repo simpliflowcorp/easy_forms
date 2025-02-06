@@ -1,67 +1,50 @@
+// models/Response.model.ts
 import mongoose from "mongoose";
 
 const ResponseSchema = new mongoose.Schema(
   {
-    formId: {
+    form_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Form",
       required: true,
       index: true,
     },
-    sessionId: {
-      type: String,
+
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       index: true,
     },
-    submittedAt: {
+
+    submitted_at: {
       type: Date,
       default: Date.now,
       index: true,
     },
-    answers: [
-      {
-        elementId: {
-          type: String,
-          required: true,
-          index: true,
-        },
-        type: {
-          type: String,
-          enum: ["text", "number", "date", "select", "checkbox", "file"],
-          required: true,
-        },
-        value: mongoose.Schema.Types.Mixed,
-        metadata: {
-          textValue: String,
-          numericValue: Number,
-          dateValue: Date,
-          options: [String],
-          fileInfo: {
-            url: String,
-            mimeType: String,
-            size: Number,
-          },
-        },
-      },
-    ],
-    analytics: {
-      completionTime: Number, // Seconds
-      deviceType: String,
-      geoLocation: {
-        country: String,
-        region: String,
-        city: String,
-      },
+
+    data: mongoose.Schema.Types.Mixed, // Flexible JSON structure
+
+    normalized_data: {
+      // For analytics/querying
+      type: Map,
+      of: mongoose.Schema.Types.Mixed,
+    },
+
+    metadata: {
+      ip_address: String,
+      user_agent: String,
+      duration_seconds: Number,
     },
   },
-  { timestamps: true }
+  {
+    versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
-// Indexes for common queries
-ResponseSchema.index({
-  "answers.elementId": 1,
-  "answers.type": 1,
-  submittedAt: -1,
-});
+// Index for common query patterns
+ResponseSchema.index({ form_id: 1, submitted_at: -1 });
 
 const Response =
   mongoose.models.response || mongoose.model("response", ResponseSchema);

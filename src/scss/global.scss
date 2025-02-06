@@ -260,7 +260,6 @@ input[type="color"] {
     display: flex;
     align-items: center;
     gap: 10px;
-
     cursor: pointer;
     font-family: "Arial";
   }
@@ -279,6 +278,7 @@ input[type="color"] {
     width: 14px;
     height: 14px;
     color: transparent;
+    transition: all 0.3s ease-in-out;
   }
 
   input[type="radio"]:checked + label:before {

@@ -1,16 +1,8 @@
 import { connectDB } from "@/dbConfig/dbConfig";
 import { NextResponse, NextRequest } from "next/server";
-
-import { getServerSession } from "next-auth";
 import Form from "@/models/formModel";
 import User from "@/models/userModel";
-
-import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendMail } from "@/helper/mailer";
-import { verify } from "crypto";
-import { generateVerificationCode } from "@/helper/generateVerificationCode";
-import Hashids from "hashids";
 import { isEqual } from "lodash";
 
 export async function POST(request: NextRequest) {
@@ -48,7 +40,6 @@ export async function POST(request: NextRequest) {
       )
     );
     delete actualChanges["_id"];
-    console.log(actualChanges);
 
     if (Object.keys(actualChanges).length > 0) {
       await Form.updateOne({ _id: body._id }, { $set: actualChanges });
@@ -60,8 +51,6 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     }
-
-    console.log(body);
 
     // getting forms
 

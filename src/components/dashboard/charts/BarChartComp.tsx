@@ -25,15 +25,10 @@ export default function BarChartComp(props: Props) {
     let workingData = { banana: 0, apple: 0, orange: 0 };
 
     let data = props.data.map((key: any) => {
-      console.log(key);
-
       return { name: dateConverter(key[props.index]), ...key };
     });
 
     let keys = Object.keys(props.data[0]).filter((key) => key !== props.index);
-
-    console.log(data);
-    console.log(keys);
 
     setChartData(data);
     setChartKeys(keys);

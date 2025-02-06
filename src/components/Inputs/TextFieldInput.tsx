@@ -32,8 +32,6 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(props.value);
-
   return (
     <>
       <div className="input-cnt">
@@ -44,15 +42,19 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
           </span>
         </label>
         <input
+          autoComplete="on"
           type="text"
           id={"text" + uid}
           className={!isValid || IsNotEmpty ? "error-input" : ""}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          // onChange={(e) => setValue(e.target.value)}
+          onInput={(e) => {
+            setValue(e.currentTarget.value);
+          }}
           onBlur={() => {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "text");
           }}
-        />{" "}
+        />
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}

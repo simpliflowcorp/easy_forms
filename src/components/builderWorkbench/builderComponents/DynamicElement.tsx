@@ -54,54 +54,30 @@ const DynamicElement = (props: Props) => {
       case 3:
       case 4:
       case 5:
-        return (
-          <TextFieldElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <TextFieldElement data={props.data} />;
       case 11:
       case 12:
-        return (
-          <SelectFieldElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <SelectFieldElement data={props.data} />;
       case 13:
-        return (
-          <CheckboxFieldElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <CheckboxFieldElement data={props.data} />;
       case 14:
-        return (
-          <RadioFieldElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <RadioFieldElement data={props.data} />;
       case 15:
-        return (
-          <ColorPickerElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <ColorPickerElement data={props.data} />;
       case 16:
-        return (
-          <RangePickerElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <RangePickerElement data={props.data} />;
       case 21:
-        return (
-          <DatePickerElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <DatePickerElement data={props.data} />;
       case 22:
-        return (
-          <TimePickerElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <TimePickerElement data={props.data} />;
       case 23:
-        return (
-          <DateTimePickerElement
-            isPublish={props.isPublish}
-            data={props.data}
-          />
-        );
+        return <DateTimePickerElement data={props.data} />;
       default:
-        return (
-          <TextFieldElement isPublish={props.isPublish} data={props.data} />
-        );
+        return <TextFieldElement data={props.data} />;
     }
   };
 
   const currentPath = window.location.pathname.split("/").pop();
-  console.log("currentPath", currentPath);
 
   return (
     <div

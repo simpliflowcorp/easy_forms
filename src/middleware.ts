@@ -12,15 +12,18 @@ export function middleware(request: NextRequest) {
     "/auth/signup",
     "/auth/forgotPassword",
     "/auth/resetPassword",
+    /^\/openpath\/.+$/,
   ];
 
   let openPaths = ["/auth/verify", "/auth/resetPassword"];
 
-  let isOpenPath = openPaths.includes(currentPath);
+  let isOpenPath =
+    openPaths.includes(currentPath) || currentPath.startsWith("/openpath/");
+
   let isPublicPath = publicPaths.includes(currentPath);
 
   if (isPublicPath && token) {
-    return NextResponse.redirect(new URL("/profile", request.nextUrl));
+    return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
   }
 
   if (!isPublicPath && !token && !isOpenPath) {
