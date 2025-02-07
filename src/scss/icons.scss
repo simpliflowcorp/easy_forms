@@ -23,6 +23,8 @@
   vertical-align: -0.185em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  cursor: pointer;
 }
 
 $bootstrap-icons-map: (

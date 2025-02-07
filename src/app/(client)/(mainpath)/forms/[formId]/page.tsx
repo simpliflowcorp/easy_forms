@@ -14,7 +14,10 @@ import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-
+import "react-tooltip/dist/react-tooltip.css";
+import { Tooltip } from "react-tooltip";
+import { successHandler } from "@/helper/successHandler";
+import { errorHandler } from "@/helper/errorHandler";
 export interface IdashboardProps {}
 
 export default function dashboard(props: IdashboardProps) {
@@ -69,6 +72,33 @@ export default function dashboard(props: IdashboardProps) {
                   ? lang.active
                   : lang.expired}
               </div>
+
+              <div className="url-link">
+                <a
+                  data-tooltip-id="my-tooltip"
+                  data-tooltip-content={lang.click_to_copy_form_url}
+                  data-tooltip-place="right"
+                >
+                  <i
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(
+                          process.env.NEXT_PUBLIC_DOMAIN + "/openpath/" + formId
+                        );
+                        successHandler(
+                          { data: { message: "form_url_copied" } },
+                          lang
+                        );
+                      } catch (err) {
+                        errorHandler(lang.form_url_not_copied, lang);
+                        console.error("Failed to copy:", err);
+                      }
+                    }}
+                    className="ic-copy"
+                  ></i>
+                </a>
+              </div>
+              <Tooltip id="my-tooltip" />
             </div>
           </div>
 

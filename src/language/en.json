@@ -160,5 +160,12 @@
     "no_changes_saved": "No changes saved",
     "publish" : "Publish",
     "submit" : "Submit",
+    "click_to_copy_form_url" : "Click to copy form url",
+    "form_url_not_copied" : "Form url not copied",
+    "form_url_copied" : "Form url copied",
+    "form_url" : "Form url",
+    "form_created_successfully" : "Form created successfully",
+    "form_updated_successfully" : "Form updated successfully",
+    "form_deleted_successfully" : "Form deleted successfully",
     "goto_form" : "Go to form"
 }   
