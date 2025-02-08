@@ -16,6 +16,11 @@ const Publish = (props: Props) => {
 
   const [formId, setFormId] = React.useState("");
 
+  const [resetBtn, setResetBtn] = React.useState(0);
+
+  const [data, setData] = React.useState({});
+  const [dataIsValid, setDataIsValid] = React.useState({});
+
   const getFormData = async () => {
     let formId = window.location.pathname.split("/")[2];
     setFormId(formId);
@@ -43,8 +48,6 @@ const Publish = (props: Props) => {
     getFormData();
   }, []);
 
-  console.log(forms);
-
   const submitForm = async () => {
     try {
       const response = await fetch("/api/openpath/submit", {
@@ -69,10 +72,7 @@ const Publish = (props: Props) => {
     }
   };
 
-  const [resetBtn, setResetBtn] = React.useState(0);
-
-  const [data, setData] = React.useState({});
-  const [dataIsValid, setDataIsValid] = React.useState({});
+  console.log(data);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
@@ -100,9 +100,10 @@ const Publish = (props: Props) => {
                           options={element.options ? element.options : []}
                           // value={data[item.name]}
                           value={data[element.label as keyof typeof data]}
-                          updateValue={(value: string) =>
-                            setData({ ...data, [element.name]: value })
-                          }
+                          updateValue={(value: any) => {
+                            console.log(value);
+                            setData({ ...data, [element.label]: value });
+                          }}
                           isRequired={false}
                           // isValid={dataIsValid[item.name]}
                           isValid={
@@ -136,19 +137,19 @@ const Publish = (props: Props) => {
                           options={element.options ? element.options : []}
                           value={data[element.label as keyof typeof data]}
                           updateValue={(value: string) =>
-                            setData({ ...data, [element.name]: value })
+                            setData({ ...data, [element.label]: value })
                           }
                           isRequired={false}
                           // isValid={dataIsValid[item.name]}
                           isValid={
                             dataIsValid[
-                              element.name as keyof typeof dataIsValid
+                              element.label as keyof typeof dataIsValid
                             ]
                           }
                           updateIsValid={(value: boolean) =>
                             setDataIsValid((p) => ({
                               ...p,
-                              [element.name]: value,
+                              [element.label]: value,
                             }))
                           }
                           type={element.type}

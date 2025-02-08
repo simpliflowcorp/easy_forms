@@ -14,6 +14,7 @@ const ComponentsElements = (props: Props) => {
       id: props.id,
       data: { comp: props.data, type: "component" },
     });
+
   const lang = useLanguageStore((state) => state.language);
   return (
     <div

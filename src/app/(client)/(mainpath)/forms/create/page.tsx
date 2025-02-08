@@ -188,50 +188,117 @@ export default function forms(props: IformsProps) {
     setForms(newForm);
   };
 
-  const dragEndHandeler = (e: any) => {
-    const { active, over } = e;
-    const activeId = active.id;
+  // const dragEndHandeler = (e: any) => {
+  //   const { active, over } = e;
+  //   const activeId = active.id;
 
-    if (over === null) return;
-    const overId = over.id;
-    const overType = over.data.current.type;
-    if (activeId === overId) return;
-    setForms((items: any) => {
-      const oldIndex = items.indexOf(active.data.current.comp);
-      const newIndex = items.indexOf(over.data.current.comp);
+  //   if (over === null) return;
+  //   const overId = over.id;
+  //   const overType = over.data.current.type;
+  //   if (activeId === overId) return;
+  //   setForms((items: any) => {
+  //     const oldIndex = items.indexOf(active.data.current.comp);
+  //     const newIndex = items.indexOf(over.data.current.comp);
 
-      let arryMoveVar = arrayMove(items, oldIndex, newIndex);
-      return arryMoveVar;
-    });
+  //     let arryMoveVar = arrayMove(items, oldIndex, newIndex);
+  //     return arryMoveVar;
+  //   });
 
-    if (activeElementType === "component") {
-      let id = active.id;
-      setForms((item: any) => {
-        let newform = [
-          ...item.map((e: any) => {
-            if (e.elementId === id) {
-              return { ...e, elementId: newElementCountRef.current };
-            } else {
-              return e;
-            }
-          }),
-        ];
-        return newform;
-      });
-      newElementCountRef.current++;
-    }
-  };
+  //   if (activeElementType === "component") {
+  //     let id = active.id;
+  //     setForms((item: any) => {
+  //       let newform = [
+  //         ...item.map((e: any) => {
+  //           if (e.elementId === id) {
+  //             return { ...e, elementId: newElementCountRef.current };
+  //           } else {
+  //             return e;
+  //           }
+  //         }),
+  //       ];
+  //       return newform;
+  //     });
+  //     newElementCountRef.current++;
+  //   }
+  // };
 
+  // const dragOverHandeler = (e: any) => {
+  //   const { active, over } = e;
+  //   if (!active || !over) return;
+
+  //   if (over.data.current?.comp) {
+  //     if (activeElementType === "component") {
+  //       let newElement = {
+  //         id: active.id,
+  //         elementId: active.id,
+  //         label: activeElement.label + " " + newElementCountRef.current,
+  //         type: activeElement.type,
+  //         column: over.data.current.comp.column,
+  //         required: 0,
+  //         unique: 0,
+  //         position: 0,
+  //       };
+
+  //       if (
+  //         activeElement.type === 11 ||
+  //         activeElement.type === 12 ||
+  //         activeElement.type === 13 ||
+  //         activeElement.type === 14
+  //       ) {
+  //         newElement = {
+  //           ...newElement,
+  //           options: [
+  //             { id: 1, label: "Option 1", value: "Option 1" },
+  //             { id: 2, label: "Option 2", value: "Option 2" },
+  //             { id: 3, label: "Option 3", value: "Option 3" },
+  //           ],
+  //         };
+  //       }
+
+  //       if (addedElementCountRef.current === newElementCountRef.current) {
+  //         setForms((items: any) => {
+  //           let arryMoveVar = [...items, newElement];
+  //           return arryMoveVar;
+  //         });
+  //         addedElementCountRef.current++;
+  //       } else {
+  //         if (
+  //           active.data.current.comp.column !== over.data.current.comp.column
+  //         ) {
+  //           changeElementColumn(
+  //             active.data.current.comp,
+  //             over.data.current.comp.column
+  //           );
+  //         }
+  //       }
+  //     } else {
+  //       if (active.data.current.comp.column !== over.data.current.comp.column) {
+  //         changeElementColumn(
+  //           active.data.current.comp,
+  //           over.data.current.comp.column
+  //         );
+  //       }
+  //     }
+  //   }
+  // };
+
+  //
+
+  // testing
   const dragOverHandeler = (e: any) => {
     const { active, over } = e;
     if (!active || !over) return;
 
     if (over.data.current?.comp) {
       if (activeElementType === "component") {
-        let newElement = {
-          id: active.id,
-          elementId: active.id,
-          label: activeElement.label + " " + newElementCountRef.current,
+        // Check if the element is already being added
+        const isAlreadyAdded = forms.some((el) => el.id === active.id);
+        if (isAlreadyAdded) return;
+
+        const newElement = {
+          id: active.id, // Keep `id` stable for tracking
+          elementId: newElementCountRef.current, // Assign unique `elementId`
+          label: `${activeElement.label} ${newElementCountRef.current}`,
           type: activeElement.type,
           column: over.data.current.comp.column,
           required: 0,
@@ -239,39 +306,19 @@ export default function forms(props: IformsProps) {
           position: 0,
         };
 
-        if (
-          activeElement.type === 11 ||
-          activeElement.type === 12 ||
-          activeElement.type === 13 ||
-          activeElement.type === 14
-        ) {
-          newElement = {
-            ...newElement,
-            options: [
-              { id: 1, label: "Option 1", value: 0 },
-              { id: 2, label: "Option 2", value: 0 },
-              { id: 3, label: "Option 3", value: 0 },
-            ],
-          };
+        if ([11, 12, 13, 14].includes(activeElement.type)) {
+          newElement.options = [
+            { id: 1, label: "Option 1", value: "Option 1" },
+            { id: 2, label: "Option 2", value: "Option 2" },
+            { id: 3, label: "Option 3", value: "Option 3" },
+          ];
         }
 
-        if (addedElementCountRef.current === newElementCountRef.current) {
-          setForms((items: any) => {
-            let arryMoveVar = [...items, newElement];
-            return arryMoveVar;
-          });
-          addedElementCountRef.current++;
-        } else {
-          if (
-            active.data.current.comp.column !== over.data.current.comp.column
-          ) {
-            changeElementColumn(
-              active.data.current.comp,
-              over.data.current.comp.column
-            );
-          }
-        }
+        setForms((items: any) => [...items, newElement]);
+
+        newElementCountRef.current++;
       } else {
+        // If dragging an existing element, just update its column
         if (active.data.current.comp.column !== over.data.current.comp.column) {
           changeElementColumn(
             active.data.current.comp,
@@ -280,6 +327,33 @@ export default function forms(props: IformsProps) {
         }
       }
     }
+  };
+  const dragEndHandeler = (e: any) => {
+    const { active, over } = e;
+    if (!active || !over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    setForms((items: any) => {
+      const oldIndex = items.findIndex((el: any) => el.id === activeId);
+      const newIndex = items.findIndex((el: any) => el.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1) return items;
+
+      return arrayMove(items, oldIndex, newIndex);
+    });
+
+    // Only update elementId after the drop
+    setForms((item: any) =>
+      item.map((el: any) =>
+        el.id === activeId
+          ? { ...el, elementId: newElementCountRef.current++ }
+          : el
+      )
+    );
   };
 
   const openElementProps = (element: any) => {

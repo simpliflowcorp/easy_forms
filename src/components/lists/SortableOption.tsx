@@ -53,7 +53,11 @@ export default function SortableOption(props: ISortableOptionProps) {
             className="input"
             type="text"
             onChange={(e) => {
-              setData({ ...data, label: e.target.value });
+              setData({
+                ...data,
+                label: e.target.value,
+                value: e.target.value,
+              });
             }}
             value={data.label}
             onBlur={() => {

@@ -1,5 +1,5 @@
 "use client";
-import React, { act } from "react";
+import React from "react";
 import META_DATAS from "@/metaData/fieldTypes.json";
 import { useLanguageStore } from "@/store/store";
 import ComponentsElements from "./ComponentsElements";
@@ -10,6 +10,8 @@ const ComponentsContainer = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
 
   const [activeSection, setActiveSection] = React.useState("");
+
+  console.log(META_DATAS);
 
   return (
     <div className="components-sec-cnt">

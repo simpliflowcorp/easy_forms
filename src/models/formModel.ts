@@ -8,7 +8,7 @@ interface FormElement {
   required: boolean;
   options?: Array<{
     id: string;
-    value: number;
+    value: string;
     label: string;
   }>;
   position: number;
@@ -37,6 +37,7 @@ const FormElementSchema = new mongoose.Schema<FormElement>({
     {
       id: Number,
       label: String,
+      value: String,
     },
   ],
   position: { type: Number, required: true },

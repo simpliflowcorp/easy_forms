@@ -12,7 +12,6 @@ import TimePickerElement from "./TimePickerElement";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ElementOptionPopup from "./ElementOptionPopup";
-import { log } from "console";
 
 type Props = {
   data: any;
@@ -29,7 +28,7 @@ const DynamicElement = (props: Props) => {
     transition,
     isDragging,
   } = useSortable({
-    id: props.data.id || props.data.elementId,
+    id: props.data.elementId,
     data: {
       type: "element",
       comp: props.data,

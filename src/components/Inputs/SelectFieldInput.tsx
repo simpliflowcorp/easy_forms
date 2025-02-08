@@ -114,13 +114,17 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
         className={!isValid || isNotEmpty ? "error-input" : ""}
         value={props.options.find((opt) => opt.value === props.value) || null}
         options={props.options || []}
-        onChange={(selectedOption) => {
+        onChange={(selectedOption: any) => {
           if (props.isMulti) {
             const newValue = selectedOption ? selectedOption.value : "";
             setIsNotEmpty(Boolean(newValue));
             props.updateValue(newValue);
           } else {
-            const newValue = selectedOption ? selectedOption.value : "";
+            const newValue = selectedOption
+              ? selectedOption.value
+                ? selectedOption.value
+                : selectedOption.label
+              : "";
             setIsNotEmpty(Boolean(newValue));
             props.updateValue(newValue);
           }
