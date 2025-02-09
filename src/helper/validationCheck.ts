@@ -1,13 +1,16 @@
-import { log } from "node:console";
-
 export const validationCheck = (
-  value: string,
+  value: any,
   required: boolean,
   type: string
 ): number => {
   if (required && value === "") return 2;
 
   switch (type) {
+    case "array":
+      if (Array.isArray(value)) {
+        return value.length > 0 ? 1 : 2; // Valid if array has elements
+      }
+      return 3;
     case "email":
       const emailRegex =
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -30,14 +33,15 @@ export const validationCheck = (
 };
 
 export const blurCheck = (
-  value: string,
+  value: any,
   props: any,
   setIsValid: any,
   setIsNotEmpty: any,
   type: string
 ) => {
-  if (type !== "password") value = value.trim();
+  if (type !== "password" && type !== "array") value = value.trim();
   let validationRes = validationCheck(value, props.isRequired, type);
+  console.log(validationRes);
 
   if (validationRes === 1) {
     props.updateIsValid(true);

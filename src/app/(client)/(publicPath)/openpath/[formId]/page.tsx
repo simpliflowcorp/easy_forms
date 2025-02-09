@@ -72,6 +72,14 @@ const Publish = (props: Props) => {
     }
   };
 
+  const updateVauleFn = (element: any, value: any) => {
+    switch (element.type) {
+      default:
+        setData({ ...data, [element.label]: value });
+        return;
+    }
+  };
+
   console.log(data);
 
   if (!gotData) {
@@ -101,8 +109,7 @@ const Publish = (props: Props) => {
                           // value={data[item.name]}
                           value={data[element.label as keyof typeof data]}
                           updateValue={(value: any) => {
-                            console.log(value);
-                            setData({ ...data, [element.label]: value });
+                            updateVauleFn(element, value);
                           }}
                           isRequired={false}
                           // isValid={dataIsValid[item.name]}
@@ -136,9 +143,9 @@ const Publish = (props: Props) => {
                           label={element.label}
                           options={element.options ? element.options : []}
                           value={data[element.label as keyof typeof data]}
-                          updateValue={(value: string) =>
-                            setData({ ...data, [element.label]: value })
-                          }
+                          updateValue={(value: any) => {
+                            updateVauleFn(element, value);
+                          }}
                           isRequired={false}
                           // isValid={dataIsValid[item.name]}
                           isValid={

@@ -42,7 +42,7 @@ export default function TextFieldInput(props: ITextFieldInputProps) {
           </span>
         </label>
         <input
-          autoComplete="on"
+          autoComplete="off"
           type="text"
           id={"text" + uid}
           className={!isValid || IsNotEmpty ? "error-input" : ""}

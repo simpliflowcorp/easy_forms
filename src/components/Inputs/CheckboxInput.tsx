@@ -7,7 +7,7 @@ import ErroTextCnt from "./components/ErrorTextCnt";
 
 export interface ICheckboxInputProps {
   label: string;
-  value: string;
+  value: any;
   updateValue: (value: string) => void;
   updateIsValid: (value: boolean) => void;
   isValid: boolean;
@@ -19,7 +19,7 @@ export interface ICheckboxInputProps {
 export default function CheckboxInput(props: ICheckboxInputProps) {
   const [isValid, setIsValid] = React.useState(true);
   const [IsNotEmpty, setIsNotEmpty] = React.useState(false);
-  const [value, setValue] = React.useState(props.value as string);
+  const [value, setValue] = React.useState<string[]>(props.value as string[]);
   const lang = useLanguageStore((state) => state.language);
   const [uid, setUid] = React.useState(Math.random());
 
@@ -32,6 +32,14 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
       }
     }
   }, [props.value, props.isValid, props.reset]);
+
+  const handleCheckboxChange = (option: string) => {
+    let values = [...value];
+    let newValues = values.includes(option)
+      ? values.filter((item: any) => item !== option) // Remove if already selected
+      : [...values, option];
+    return newValues;
+  };
 
   return (
     <>
@@ -51,6 +59,14 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
                 id={props.label + "-" + uid + "-" + index}
                 name={props.label + "-" + uid + "-" + index}
                 value={option.value}
+                checked={value.includes(option.value)}
+                onChange={(e) => {
+                  let values = handleCheckboxChange(e.target.value);
+                  setValue([...values]);
+                  console.log(values);
+
+                  blurCheck(values, props, setIsValid, setIsNotEmpty, "array");
+                }}
               />
               <label htmlFor={props.label + "-" + uid + "-" + index}>
                 {option.label}

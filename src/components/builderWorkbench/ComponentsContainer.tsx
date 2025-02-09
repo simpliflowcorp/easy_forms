@@ -4,23 +4,24 @@ import META_DATAS from "@/metaData/fieldTypes.json";
 import { useLanguageStore } from "@/store/store";
 import ComponentsElements from "./ComponentsElements";
 
-type Props = {};
+type Props = {
+  setOpenComponentsSection: (data: string) => void;
+  openComponentsSection: string;
+};
 
 const ComponentsContainer = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
 
-  const [activeSection, setActiveSection] = React.useState("");
-
-  console.log(META_DATAS);
+  // const [activeSection, setActiveSection] = React.useState("");
 
   return (
     <div className="components-sec-cnt">
       <div className="components-sec">
         <div
           onClick={() => {
-            activeSection === "base_components"
-              ? setActiveSection("")
-              : setActiveSection("base_components");
+            props.openComponentsSection === "base_components"
+              ? props.setOpenComponentsSection("")
+              : props.setOpenComponentsSection("base_components");
           }}
           className="components-sec-header"
         >
@@ -28,7 +29,7 @@ const ComponentsContainer = (props: Props) => {
           <span>
             <i
               className={
-                activeSection === "base_components"
+                props.openComponentsSection === "base_components"
                   ? "ic-caret-up-fill "
                   : "ic-caret-down-fill"
               }
@@ -36,7 +37,7 @@ const ComponentsContainer = (props: Props) => {
           </span>
         </div>
       </div>
-      {activeSection === "base_components" ? (
+      {props.openComponentsSection === "base_components" ? (
         <div className="components-sec-list">
           {META_DATAS.map((data: any, index: number) => {
             return (
@@ -54,9 +55,9 @@ const ComponentsContainer = (props: Props) => {
       <div className="components-sec">
         <div
           onClick={() => {
-            activeSection === "base_components1"
-              ? setActiveSection("")
-              : setActiveSection("base_components1");
+            props.openComponentsSection === "base_components1"
+              ? props.setOpenComponentsSection("")
+              : props.setOpenComponentsSection("base_components1");
           }}
           className="components-sec-header"
         >
@@ -64,7 +65,7 @@ const ComponentsContainer = (props: Props) => {
           <span>
             <i
               className={
-                activeSection === "base_components1"
+                props.openComponentsSection === "base_components1"
                   ? "ic-caret-up-fill "
                   : "ic-caret-down-fill"
               }
@@ -72,7 +73,7 @@ const ComponentsContainer = (props: Props) => {
           </span>
         </div>
       </div>
-      {activeSection === "base_components1" ? (
+      {props.openComponentsSection === "base_components1" ? (
         <div className="components-sec-list">
           {META_DATAS.map((data: any, index: number) => {
             return (

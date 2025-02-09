@@ -40,9 +40,10 @@
         width: 100%;
         padding: 20px;
         gap: 20px;
-
+        overflow: auto;
         .form-body-comp {
           flex-grow: 1;
+          width: 100%;
         }
       }
       .form-footer {

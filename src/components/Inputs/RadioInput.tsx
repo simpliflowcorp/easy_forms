@@ -33,6 +33,8 @@ export default function RadioInput(props: IRadioInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
+  console.log(value);
+
   return (
     <>
       <div className="input-cnt">
@@ -50,6 +52,16 @@ export default function RadioInput(props: IRadioInputProps) {
                 id={props.label + "-" + uid + "-" + index}
                 name={props.label + "-" + uid}
                 value={option.value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  blurCheck(
+                    e.target.value,
+                    props,
+                    setIsValid,
+                    setIsNotEmpty,
+                    "text"
+                  );
+                }}
               />
               <label htmlFor={props.label + "-" + uid + "-" + index}>
                 {option.label}

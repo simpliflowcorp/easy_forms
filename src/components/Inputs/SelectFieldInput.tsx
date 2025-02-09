@@ -125,7 +125,6 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
                 ? selectedOption.value
                 : selectedOption.label
               : "";
-            setIsNotEmpty(Boolean(newValue));
             props.updateValue(newValue);
           }
         }}
