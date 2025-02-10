@@ -11,8 +11,9 @@ type Props = {
 
 const ComponentsContainer = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
-
   // const [activeSection, setActiveSection] = React.useState("");
+
+  console.log(props.openComponentsSection);
 
   return (
     <div className="components-sec-cnt">
@@ -88,42 +89,6 @@ const ComponentsContainer = (props: Props) => {
       ) : (
         <></>
       )}
-      {/* <div className="components-sec">
-        <div
-          onClick={() => {
-            setActiveSection((prev) =>
-              prev === "base_components2" ? "" : "base_components2"
-            );
-          }}
-          className="components-sec-header"
-        >
-          <span className="header-text">{lang.base_components + 5}</span>
-          <span>
-            <i
-              className={
-                activeSection === "base_components2"
-                  ? "ic-caret-up-fill "
-                  : "ic-caret-down-fill"
-              }
-            ></i>
-          </span>
-        </div>
-      </div>
-      {activeSection === "base_components2" ? (
-        <div className="components-sec-list">
-          {META_DATAS.map((data: any, index: number) => {
-            return (
-              <ComponentsElements
-                key={"id" + index}
-                id={"base_components" + data.type}
-                data={data}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <></>
-      )} */}
     </div>
   );
 };

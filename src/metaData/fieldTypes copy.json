@@ -68,6 +68,26 @@
       "label": "time",
       "icon" : "stopwatch",
       "type": 23
+    },
+    {
+      "label": "image",
+      "icon" : "image",
+      "type": 31
+    },
+    {
+      "label": "file",
+      "icon" : "files",
+      "type": 32
+    },
+    {
+      "label": "signature",
+      "icon" : "pen",
+      "type": 33
+    },
+    {
+      "label": "textarea",
+      "icon" : "textarea-resize",
+      "type": 41
     }
   ]
   

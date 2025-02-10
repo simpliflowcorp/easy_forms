@@ -48,8 +48,8 @@ export default function forms(props: IformsProps) {
       elementId: 1,
       label: "First Name",
       type: 1,
-      required: 1,
-      unique: 0,
+      required: true,
+      unique: false,
       column: 1,
       position: 1,
     },
@@ -57,8 +57,8 @@ export default function forms(props: IformsProps) {
       elementId: 13,
       label: "Check",
       type: 13,
-      required: 1,
-      unique: 0,
+      required: true,
+      unique: false,
       column: 1,
       options: [
         { id: 1, label: "Option 1", value: "Option 1" },
@@ -71,8 +71,8 @@ export default function forms(props: IformsProps) {
       elementId: 12,
       label: "Radio",
       type: 14,
-      required: 1,
-      unique: 0,
+      required: true,
+      unique: false,
       column: 2,
       options: [
         { id: 1, label: "Option 1", value: "Option 1" },
@@ -85,8 +85,8 @@ export default function forms(props: IformsProps) {
       elementId: 11,
       label: "Select",
       type: 11,
-      required: 1,
-      unique: 0,
+      required: true,
+      unique: false,
       column: 2,
       options: [
         { id: 1, label: "Option 1", value: "Option 1" },
@@ -116,6 +116,7 @@ export default function forms(props: IformsProps) {
   const [openComponentsSection, setOpenComponentsSection] = React.useState(
     "base_components" as string
   );
+
   React.useEffect(() => {}, []);
 
   const sensors = useSensors(
@@ -195,6 +196,9 @@ export default function forms(props: IformsProps) {
       newElementCountRef.current++;
       setDndKey((prev) => prev + 1);
     }
+
+    setActiveElement({} as any);
+    setActiveElementType("");
   };
 
   const dragOverHandeler = (e: any) => {

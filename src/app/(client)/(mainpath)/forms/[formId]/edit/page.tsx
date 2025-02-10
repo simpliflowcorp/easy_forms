@@ -58,6 +58,10 @@ export default function forms(props: IformsProps) {
   const [form_Id, setForm_Id] = React.useState("" as string);
   const [resetBtn, setResetBtn] = React.useState(0);
 
+  const [openComponentsSection, setOpenComponentsSection] = React.useState(
+    "base_components" as string
+  );
+
   React.useEffect(() => {
     setFormID(window.location.pathname.split("/")[2] + "");
     getFormData();
@@ -353,7 +357,10 @@ export default function forms(props: IformsProps) {
         >
           <div className="form-sec-cnt">
             <div className="form-sec">
-              <ComponentsContainer />
+              <ComponentsContainer
+                openComponentsSection={openComponentsSection}
+                setOpenComponentsSection={setOpenComponentsSection}
+              />
 
               <FormWorkbenchCnt
                 form={forms}

@@ -17,6 +17,14 @@
     }
   }
 
+  textarea {
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-border-radius);
+    width: 100%;
+    resize: vertical;
+  }
+
   .password-inp-cnt {
     position: relative;
     display: flex;
