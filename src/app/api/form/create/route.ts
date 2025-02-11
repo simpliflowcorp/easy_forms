@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         type: element.type,
         label: element.label,
         required: element.required || false,
+        unique: element.unique || false,
         options: element.options || [],
         position: element.position,
         column: element.column,

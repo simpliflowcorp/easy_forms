@@ -106,13 +106,11 @@ const Publish = (props: Props) => {
                           key={index + "l" + 1}
                           label={element.label}
                           options={element.options ? element.options : []}
-                          // value={data[item.name]}
                           value={data[element.label as keyof typeof data]}
                           updateValue={(value: any) => {
                             updateVauleFn(element, value);
                           }}
-                          isRequired={false}
-                          // isValid={dataIsValid[item.name]}
+                          isRequired={element.required}
                           isValid={
                             dataIsValid[
                               element.name as keyof typeof dataIsValid
@@ -146,8 +144,7 @@ const Publish = (props: Props) => {
                           updateValue={(value: any) => {
                             updateVauleFn(element, value);
                           }}
-                          isRequired={false}
-                          // isValid={dataIsValid[item.name]}
+                          isRequired={element.required}
                           isValid={
                             dataIsValid[
                               element.label as keyof typeof dataIsValid
@@ -170,7 +167,7 @@ const Publish = (props: Props) => {
               <div className="btn-wrapper">
                 <PrimaryActionButton
                   label="submit"
-                  resetBtn={0}
+                  resetBtn={resetBtn}
                   action={() => submitForm()}
                 />
               </div>

@@ -1,10 +1,11 @@
-// app/api/responses/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Response from "@/models/responseModel";
 import Form from "@/models/formModel";
+// import UniqueValue from "@/models/uniqueValueModel";
 import { z } from "zod";
 import mongoose from "mongoose";
 import { connectDB } from "@/dbConfig/dbConfig";
+import UniqueValueModel from "@/models/UniqueValue.model";
 
 const schema = z.object({
   form_id: z.any(),
@@ -13,6 +14,9 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     await connectDB();
 
@@ -21,26 +25,43 @@ export async function POST(request: NextRequest) {
     const validation = schema.safeParse(body);
 
     if (!validation.success) {
+      await session.abortTransaction();
       return NextResponse.json(
         { error: validation.error.errors },
         { status: 400 }
       );
     }
 
-    console.log(body.form_id);
-
     // Verify form exists and is active
-    let form = await Form.findOne({ formId: body.form_id });
-    // const form = await Form.findById(body.form_id);
-    console.log(form);
-
-    if (!form || form.status === 0) {
+    const form = await Form.findOne({ formId: body.form_id }).session(session);
+    if (!form) {
+      await session.abortTransaction();
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    if (!form || form.status === 2) {
-      return NextResponse.json({ error: "Form not active" }, { status: 404 });
+    if (form.status === 0 || form.status === 2) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: "Form not active" }, { status: 403 });
     }
+
+    // Check unique field constraints
+    const uniqueElements = form.elements.filter((el: any) => el.unique);
+    const uniqueChecks = uniqueElements.map(async (el: any) => {
+      const value = body.data[el.elementId];
+      if (typeof value === "undefined") return;
+
+      const exists = await UniqueValueModel.exists({
+        formId: form._id,
+        elementId: el.elementId,
+        value: value.toString(),
+      }).session(session);
+
+      if (exists) {
+        throw new Error(`The value '${value}' for ${el.label} already exists`);
+      }
+    });
+
+    await Promise.all(uniqueChecks);
 
     // Normalize data for analytics
     const normalizedData = new Map<string, any>();
@@ -49,26 +70,56 @@ export async function POST(request: NextRequest) {
     }
 
     // Create response document
-    const response = await Response.create({
-      form_id: form._id,
-      data: body.data,
-      normalized_data: Object.fromEntries(normalizedData),
-      metadata: {
-        ip_address: request.headers.get("x-forwarded-for"),
-        user_agent: request.headers.get("user-agent"),
-      },
-    });
+    const [response] = await Response.create(
+      [
+        {
+          form_id: form._id,
+          data: body.data,
+          normalized_data: Object.fromEntries(normalizedData),
+          metadata: {
+            ip_address: request.headers.get("x-forwarded-for"),
+            user_agent: request.headers.get("user-agent"),
+          },
+        },
+      ],
+      { session }
+    );
 
+    // Store unique values
+    const uniqueValues = uniqueElements
+      .filter((el: any) => typeof body.data[el.elementId] !== "undefined")
+      .map((el: any) => ({
+        formId: form._id,
+        elementId: el.elementId,
+        value: body.data[el.elementId].toString(),
+      }));
+
+    if (uniqueValues.length > 0) {
+      await UniqueValueModel.insertMany(uniqueValues, { session });
+    }
+
+    await session.commitTransaction();
     return NextResponse.json(
       { success: true, response_id: response._id },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
+    await session.abortTransaction();
     console.error("[RESPONSE_SUBMISSION_ERROR]", error);
+
+    if (error.message.includes("already exists")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409 } // Conflict status code
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
+  } finally {
+    session.endSession();
   }
 }
 
