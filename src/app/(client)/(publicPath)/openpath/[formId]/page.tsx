@@ -5,6 +5,7 @@ import axios from "axios";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
+import { set } from "lodash";
 
 type Props = {};
 
@@ -20,6 +21,7 @@ const Publish = (props: Props) => {
 
   const [data, setData] = React.useState({});
   const [dataIsValid, setDataIsValid] = React.useState({});
+  const [formSubitted, setFormSubmitted] = React.useState(false);
 
   const getFormData = async () => {
     let formId = window.location.pathname.split("/")[2];
@@ -38,6 +40,7 @@ const Publish = (props: Props) => {
         );
 
         setData(datas);
+        setDataIsValid(datas);
       }
     } catch (error: any) {
       console.log(error);
@@ -49,26 +52,38 @@ const Publish = (props: Props) => {
   }, []);
 
   const submitForm = async () => {
-    try {
-      const response = await fetch("/api/openpath/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          form_id: formId,
-          data: {
-            first_name: "John",
-            last_name: "Doe",
-            phone: "1234567890",
-          },
-        }),
-      });
+    console.log(data);
 
-      if (!response.ok) throw new Error("Submission failed");
+    // check is required fields are filled
+    let requiredFields = forms.elements.filter(
+      (element: any) => element.required
+    );
 
-      const result = await response.json();
-      console.log("Response ID:", result.response_id);
-    } catch (error) {
-      console.error("Submission error:", error);
+    let isValid = requiredFields.reduce((acc: boolean, curr: any) => {
+      return (acc =
+        acc && dataIsValid[curr.label as keyof typeof dataIsValid] === true);
+    }, true);
+
+    console.log({ isValid, dataIsValid });
+
+    if (isValid) {
+      try {
+        const response = await fetch("/api/openpath/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            form_id: formId,
+            data: data,
+          }),
+        });
+        if (!response.ok) throw new Error("Submission failed");
+        const result = await response.json();
+        setFormSubmitted(true);
+      } catch (error) {
+        console.error("Submission error:", error);
+      }
+    } else {
+      setResetBtn((prev) => prev + 1);
     }
   };
 
@@ -87,93 +102,100 @@ const Publish = (props: Props) => {
   } else {
     return (
       <div className="publish-cnt">
-        <div className="publish-form-wrapper">
-          <div className="publish-form">
-            <div className="form-header">
-              <span className="header-indicator">/</span>
-              <span className="header-text">{forms.name}</span>
-            </div>
-            <div className="form-body">
-              {forms.elements.filter((element: any) => element.column === 1)
-                .length > 0 && (
-                <div className="form-body-comp">
-                  {forms.elements
-                    .filter((element: any) => element.column === 1)
-                    .map((element: any, index: number) => {
-                      return (
-                        <DynamicFieldManger
-                          reset={resetBtn}
-                          key={index + "l" + 1}
-                          label={element.label}
-                          options={element.options ? element.options : []}
-                          value={data[element.label as keyof typeof data]}
-                          updateValue={(value: any) => {
-                            updateVauleFn(element, value);
-                          }}
-                          isRequired={element.required}
-                          isValid={
-                            dataIsValid[
-                              element.name as keyof typeof dataIsValid
-                            ]
-                          }
-                          updateIsValid={(value: boolean) =>
-                            setDataIsValid((p) => ({
-                              ...p,
-                              [element.name]: value,
-                            }))
-                          }
-                          type={element.type}
-                        />
-                      );
-                    })}
+        {formSubitted && (
+          <div className="publish-success">
+            <h1>Form submitted successfully</h1>
+          </div>
+        )}
+        {!formSubitted && (
+          <div className="publish-form-wrapper">
+            <div className="publish-form">
+              <div className="form-header">
+                <span className="header-indicator">/</span>
+                <span className="header-text">{forms.name}</span>
+              </div>
+              <div className="form-body">
+                {forms.elements.filter((element: any) => element.column === 1)
+                  .length > 0 && (
+                  <div className="form-body-comp">
+                    {forms.elements
+                      .filter((element: any) => element.column === 1)
+                      .map((element: any, index: number) => {
+                        return (
+                          <DynamicFieldManger
+                            reset={resetBtn}
+                            key={index + "l" + 1}
+                            label={element.label}
+                            options={element.options ? element.options : []}
+                            value={data[element.label as keyof typeof data]}
+                            updateValue={(value: any) => {
+                              updateVauleFn(element, value);
+                            }}
+                            isRequired={element.required}
+                            isValid={
+                              dataIsValid[
+                                element.label as keyof typeof dataIsValid
+                              ]
+                            }
+                            updateIsValid={(value: boolean) =>
+                              setDataIsValid((p) => ({
+                                ...p,
+                                [element.label]: value,
+                              }))
+                            }
+                            type={element.type}
+                          />
+                        );
+                      })}
+                  </div>
+                )}
+                {forms.elements.filter((element: any) => element.column === 2)
+                  .length > 0 && (
+                  <div className="form-body-comp">
+                    {forms.elements
+                      .filter((element: any) => element.column === 2)
+                      .map((element: any, index: number) => {
+                        return (
+                          <DynamicFieldManger
+                            key={index + "r" + 2}
+                            reset={resetBtn}
+                            label={element.label}
+                            options={element.options ? element.options : []}
+                            value={data[element.label as keyof typeof data]}
+                            updateValue={(value: any) => {
+                              updateVauleFn(element, value);
+                            }}
+                            isRequired={element.required}
+                            isValid={
+                              dataIsValid[
+                                element.label as keyof typeof dataIsValid
+                              ]
+                            }
+                            updateIsValid={(value: boolean) =>
+                              setDataIsValid((p) => ({
+                                ...p,
+                                [element.label]: value,
+                              }))
+                            }
+                            type={element.type}
+                          />
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+              <div className="form-footer">
+                <div className="btn-wrapper">
+                  <PrimaryActionButton
+                    label="submit"
+                    resetBtn={resetBtn}
+                    action={() => submitForm()}
+                  />
                 </div>
-              )}
-              {forms.elements.filter((element: any) => element.column === 2)
-                .length > 0 && (
-                <div className="form-body-comp">
-                  {forms.elements
-                    .filter((element: any) => element.column === 2)
-                    .map((element: any, index: number) => {
-                      return (
-                        <DynamicFieldManger
-                          key={index + "r" + 2}
-                          reset={resetBtn}
-                          label={element.label}
-                          options={element.options ? element.options : []}
-                          value={data[element.label as keyof typeof data]}
-                          updateValue={(value: any) => {
-                            updateVauleFn(element, value);
-                          }}
-                          isRequired={element.required}
-                          isValid={
-                            dataIsValid[
-                              element.label as keyof typeof dataIsValid
-                            ]
-                          }
-                          updateIsValid={(value: boolean) =>
-                            setDataIsValid((p) => ({
-                              ...p,
-                              [element.label]: value,
-                            }))
-                          }
-                          type={element.type}
-                        />
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-            <div className="form-footer">
-              <div className="btn-wrapper">
-                <PrimaryActionButton
-                  label="submit"
-                  resetBtn={resetBtn}
-                  action={() => submitForm()}
-                />
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
