@@ -1,15 +1,23 @@
-import React from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import "@lottiefiles/lottie-player";
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "lottie-player": any;
+    }
+  }
+}
 
 const SuccessAnimation = () => {
   return (
-    <DotLottieReact
-      src="https://lottie.host/e50f4944-57f5-464d-9f6a-c321f9a6d315/iPaoeVGxuB.lottie"
-      loop
+    <lottie-player
+      src="/animation/successLight.json" // Place the .lottie file in the /public folder (for Next.js)
+      background="transparent"
+      speed="0.8"
+      style={{ width: 350, height: 350 }}
       autoplay
     />
   );
 };
 
 export default SuccessAnimation;
-// https://lottie.host/e50f4944-57f5-464d-9f6a-c321f9a6d315/iPaoeVGxuB

@@ -7,6 +7,7 @@ import * as React from "react";
 export interface IIconButtonProps {
   icon: string;
   action: () => void;
+  isDisabled?: boolean;
 }
 
 export default function IconButton(props: IIconButtonProps) {
@@ -22,7 +23,10 @@ export default function IconButton(props: IIconButtonProps) {
   }, [isClicked]);
 
   return (
-    <div className={"icon-button"} onClick={() => props.action()}>
+    <div
+      className={props.isDisabled ? "icon-button disabled-btn" : "icon-button"}
+      onClick={() => props.action()}
+    >
       <span className={"ic-" + props.icon}></span>
     </div>
   );

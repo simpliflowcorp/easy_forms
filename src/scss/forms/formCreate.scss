@@ -119,7 +119,7 @@
           border-bottom: var(--input-border);
           position: sticky;
           top: 0;
-          z-index: 1;
+          z-index: 2;
 
           .t-row {
             position: sticky;
@@ -130,7 +130,7 @@
               position: sticky;
               top: 0;
               left: 0;
-              z-index: 1;
+              z-index: 5;
               background-color: var(--terinary-bg);
             }
 

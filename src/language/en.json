@@ -167,5 +167,8 @@
     "form_created_successfully" : "Form created successfully",
     "form_updated_successfully" : "Form updated successfully",
     "form_deleted_successfully" : "Form deleted successfully",
+    "form_submitted_successfully" : "Form submitted successfully",
+    "thanks_for_your_response" : "Thanks for your response",
+    "page" : "Page",
     "goto_form" : "Go to form"
 }   

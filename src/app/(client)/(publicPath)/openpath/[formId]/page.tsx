@@ -6,6 +6,8 @@ import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import DynamicElement from "@/components/builderWorkbench/builderComponents/DynamicElement";
 import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import { set } from "lodash";
+import SuccessAnimation from "@/components/Animations/SuccessAnimation";
+import { errorHandler } from "@/helper/errorHandler";
 
 type Props = {};
 
@@ -81,8 +83,19 @@ const Publish = (props: Props) => {
         setFormSubmitted(true);
       } catch (error) {
         console.error("Submission error:", error);
+        errorHandler(errorHandler, lang);
       }
     } else {
+      errorHandler(
+        {
+          response: {
+            data: {
+              message: "Please fill in all required fields",
+            },
+          },
+        },
+        lang
+      );
       setResetBtn((prev) => prev + 1);
     }
   };
@@ -104,7 +117,9 @@ const Publish = (props: Props) => {
       <div className="publish-cnt">
         {formSubitted && (
           <div className="publish-success">
-            <h1>Form submitted successfully</h1>
+            <p className="success-text">{lang.form_submitted_successfully}</p>
+            <SuccessAnimation />
+            <p className="success-text">{lang.thanks_for_your_response}</p>
           </div>
         )}
         {!formSubitted && (

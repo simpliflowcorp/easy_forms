@@ -3,6 +3,7 @@ import IconButton from "@/components/buttons/IconButton";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import Icon from "@/components/icons/Icon";
+import { errorHandler } from "@/helper/errorHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import exp from "constants";
@@ -19,21 +20,10 @@ export default function forms(props: IformsProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
 
-  // const testModel = async () => {
-  //   let res = await axios.post("/api/testDb", { test: "T1" });
-
-  // };
-  // React.useEffect(() => {
-  //   testModel();
-  // });
-
-  const barChartData = {};
-
-  const [isActive, setIsActive] = React.useState("all" as string);
-
   const [gotData, setGotData] = React.useState(false);
-
-  const [data, setData] = React.useState({} as any);
+  const [formData, setFormData] = React.useState({} as any);
+  const [responseData, setResponseData] = React.useState([] as any);
+  const [totalResponses, setTotalResponses] = React.useState(0 as number);
 
   const [forms, setForms] = React.useState([
     {
@@ -46,16 +36,23 @@ export default function forms(props: IformsProps) {
     },
   ] as any);
 
-  const [pinnedCol, setPinnedCol] = React.useState({
-    1: true,
-    2: false,
-    3: false,
-    4: false,
-    5: false,
-    6: false,
-    7: false,
-    8: false,
-    9: false,
+  const [pageParams, setPageParams] = React.useState({
+    sortBy: "",
+    sortOrder: "asc",
+    pageNum: 1,
+    rowCount: 10,
+  });
+
+  const [pinnedCol, setPinnedCol] = React.useState<{ [key: string]: boolean }>({
+    "1": true,
+    "2": false,
+    "3": false,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false,
+    "8": false,
+    "9": false,
   });
 
   function countDown(expiringDate: number) {
@@ -195,255 +192,14 @@ export default function forms(props: IformsProps) {
     ],
   };
 
-  const formsData = [
-    {
-      id: 1,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "test@lll.com",
-      "4": "1331651651",
-      "5": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "6": "2",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 2,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 3,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc asdascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 4,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "test@lll.com",
-      "4": "1331651651",
-      "5": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "6": "2",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 5,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 6,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc asdascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 7,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "test@lll.com",
-      "4": "1331651651",
-      "5": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "6": "2",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 8,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 9,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc asdascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 10,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "test@lll.com",
-      "4": "1331651651",
-      "5": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "6": "2",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 11,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 12,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc asdascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 13,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "test@lll.com",
-      "4": "1331651651",
-      "5": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "6": "2",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 14,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-    {
-      id: 15,
-      created_time: new Date().valueOf(),
-      "1": "test",
-      "2": "2",
-      "3": "csascas@casc.csa",
-      "4": "123123123",
-      "5": "123/123 asdascascasc asdascasc",
-      "6": "1",
-      "7": "1331651651",
-      "8": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "9": "2",
-      "10": "1331651651",
-      "11": "1123/5 adsccdscadsc ascadsc ascssac asc ascascas sca wdcdsc dscds sdc sdcds vds vdsvb dsv dssc asc ascas cas casc assc",
-      "12": "2",
-    },
-  ];
+  const formsData = [{}];
 
   const rowCountOptions = [
-    { value: "10", label: "10" },
-    { value: "20", label: "20" },
-    { value: "30", label: "30" },
-    { value: "40", label: "40" },
-    { value: "50", label: "50" },
+    { value: 10, label: "10" },
+    { value: 20, label: "20" },
+    { value: 30, label: "30" },
+    { value: 40, label: "40" },
+    { value: 50, label: "50" },
   ];
 
   const [rowCount, setRowCount] = React.useState("10");
@@ -527,86 +283,197 @@ export default function forms(props: IformsProps) {
     }),
   };
 
-  return (
-    <div className="form-cnt">
-      <div className="form-header">
-        <div className="left">
-          <div className="form-sec-header-left">
-            <div className="header-indicator">/</div>
-            <div className="header-text">{metaData.name}</div>
-          </div>
-          <div className="form-sec-header-right">
-            <div
-              className={
-                metaData.status === 1
-                  ? "forms-sec-item-status active"
-                  : "forms-sec-item-status expired"
-              }
-            >
-              {metaData.status === 1 ? lang.active : lang.expired}
+  const getResponseData = async () => {
+    try {
+      let res = await axios.post("/api/form/tableView", pageParams);
+      setResponseData(res.data.data.responses);
+      setTotalResponses(res.data.data.totalResponses);
+    } catch (error) {
+      errorHandler(error, lang);
+    }
+  };
+
+  const getFormData = async () => {
+    try {
+      let res = await axios.get("/api/form/read");
+      setFormData(res.data.data);
+      console.log(res);
+      let pins = res.data.data.elements.reduce((els: any, el: any) => {
+        els[el.label] = false;
+        return els;
+      }, {});
+      setPinnedCol(pins);
+      setGotData(true);
+    } catch (error) {
+      errorHandler(error, lang);
+    }
+  };
+
+  React.useEffect(() => {
+    getResponseData();
+    getFormData();
+  }, []);
+
+  React.useEffect(() => {
+    if (gotData) getResponseData();
+  }, [pageParams]);
+
+  console.log(responseData);
+  console.log(formData);
+
+  if (!gotData) {
+    return <div className="accent-line-loader"></div>;
+  } else {
+    return (
+      <div className="form-cnt">
+        <div className="form-header">
+          <div className="left">
+            <div className="form-sec-header-left">
+              <div className="header-indicator">/</div>
+              <div className="header-text">{formData.name}</div>
             </div>
-          </div>
-        </div>
-
-        <div className="right">
-          <PrimaryButton
-            label={"export"}
-            action={() => router.push("/forms/create")}
-          />
-        </div>
-      </div>
-
-      <div className="table-sec-cnt">
-        <div className="table-sec">
-          <div className="table-sec-header">
-            <div className="table-sec-header-left">
-              <Select
-                id={"select" + "page"}
-                value={
-                  rowCountOptions.find((opt: any) => opt.value === rowCount) ||
-                  null
+            <div className="form-sec-header-right">
+              <div
+                className={
+                  formData.status === 1
+                    ? "forms-sec-item-status active"
+                    : "forms-sec-item-status expired"
                 }
-                options={rowCountOptions}
-                onChange={(e: any) => {
-                  setRowCount(e.value);
-                }}
-                onBlur={() => {}}
-                styles={darkThemeStyles}
-                menuPortalTarget={document.getElementById(
-                  "select-popup-target"
-                )}
-              />
-            </div>
-            <div className="table-sec-header-right">
-              <div className="manage-col">
-                <IconButton action={() => {}} icon="table" />
-              </div>
-              <div className="pagination">
-                <IconButton action={() => {}} icon="chevron-left" />
-                <IconButton action={() => {}} icon="chevron-right" />
+              >
+                {formData.status === 1 ? lang.active : lang.expired}
               </div>
             </div>
           </div>
-          <div className="table-sec-body">
-            <div className="table-header">
-              <div className="t-row">
-                <div className="sticky-row">
-                  {metaData.elements
+
+          <div className="right">
+            <PrimaryButton
+              label={"export"}
+              action={() => router.push("/forms/create")}
+            />
+          </div>
+        </div>
+
+        <div className="table-sec-cnt">
+          <div className="table-sec">
+            <div className="table-sec-header">
+              <div className="table-sec-header-left">
+                <Select
+                  id={"select" + "page"}
+                  value={
+                    rowCountOptions.find(
+                      (opt: any) => opt.value === pageParams.rowCount
+                    ) || null
+                  }
+                  options={rowCountOptions}
+                  onChange={(e: any) => {
+                    setPageParams((prev) => ({
+                      ...prev,
+                      rowCount: e.value,
+                    }));
+                  }}
+                  onBlur={() => {}}
+                  styles={darkThemeStyles}
+                  menuPortalTarget={document.getElementById(
+                    "select-popup-target"
+                  )}
+                />
+              </div>
+              <div className="table-sec-header-right">
+                {/* <div className="manage-col">
+                  <IconButton action={() => {}} icon="table" />
+                </div> */}
+                <div className="pagination">
+                  <IconButton
+                    isDisabled={
+                      pageParams.pageNum === 1 || totalResponses === 0
+                    }
+                    action={() => {
+                      setPageParams((prev) => ({
+                        ...prev,
+                        pageNum: prev.pageNum - 1,
+                      }));
+                    }}
+                    icon="chevron-left"
+                  />
+                  <IconButton
+                    isDisabled={
+                      totalResponses === 0 ||
+                      totalResponses <= pageParams.rowCount * pageParams.pageNum
+                    }
+                    action={() => {
+                      setPageParams((prev) => ({
+                        ...prev,
+                        pageNum: prev.pageNum + 1,
+                      }));
+                    }}
+                    icon="chevron-right"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="table-sec-body">
+              <div className="table-header">
+                <div className="t-row">
+                  <div className="sticky-row">
+                    {formData.elements
+                      .filter((e: any) => {
+                        return pinnedCol[e.label];
+                      })
+                      .map((element: any) => (
+                        <div
+                          className={
+                            pinnedCol[element.label] ? "t-cell " : "t-cell"
+                          }
+                        >
+                          <span className="cell-left">{element.label}</span>
+                          <span className="cell-right">
+                            {!pinnedCol[element.label] ? (
+                              <Icon
+                                action={() => {
+                                  setPinnedCol({
+                                    ...pinnedCol,
+                                    [element.label]: !pinnedCol[element.label],
+                                  });
+                                }}
+                                icon="pin-angle"
+                              />
+                            ) : (
+                              <Icon
+                                action={() => {
+                                  setPinnedCol({
+                                    ...pinnedCol,
+                                    [element.label]: !pinnedCol[element.label],
+                                  });
+                                }}
+                                icon="pin"
+                              />
+                            )}
+                            <div className="sort-sec">
+                              <Icon action={() => {}} icon="caret-up" />
+                              <Icon action={() => {}} icon="caret-down" />
+                            </div>
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                  {formData.elements
                     .filter((e: any) => {
-                      return pinnedCol[e.id];
+                      return !pinnedCol[e.label.toString()];
                     })
                     .map((element: any) => (
                       <div
-                        className={pinnedCol[element.id] ? "t-cell " : "t-cell"}
+                        className={
+                          pinnedCol[element.label] ? "t-cell " : "t-cell"
+                        }
                       >
                         <span className="cell-left">{element.label}</span>
                         <span className="cell-right">
-                          {!pinnedCol[element.id] ? (
+                          {!pinnedCol[element.label] ? (
                             <Icon
                               action={() => {
                                 setPinnedCol({
                                   ...pinnedCol,
-                                  [element.id]: !pinnedCol[element.id],
+                                  [element.label]: !pinnedCol[element.label],
                                 });
                               }}
                               icon="pin-angle"
@@ -616,7 +483,7 @@ export default function forms(props: IformsProps) {
                               action={() => {
                                 setPinnedCol({
                                   ...pinnedCol,
-                                  [element.id]: !pinnedCol[element.id],
+                                  [element.label]: !pinnedCol[element.label],
                                 });
                               }}
                               icon="pin"
@@ -630,84 +497,53 @@ export default function forms(props: IformsProps) {
                       </div>
                     ))}
                 </div>
-                {metaData.elements
-                  .filter((e: { id: number }) => {
-                    return !pinnedCol[e.id.toString()];
-                  })
-                  .map((element: any) => (
-                    <div
-                      className={pinnedCol[element.id] ? "t-cell " : "t-cell"}
-                    >
-                      <span className="cell-left">{element.label}</span>
-                      <span className="cell-right">
-                        {!pinnedCol[element.id] ? (
-                          <Icon
-                            action={() => {
-                              setPinnedCol({
-                                ...pinnedCol,
-                                [element.id]: !pinnedCol[element.id],
-                              });
-                            }}
-                            icon="pin-angle"
-                          />
-                        ) : (
-                          <Icon
-                            action={() => {
-                              setPinnedCol({
-                                ...pinnedCol,
-                                [element.id]: !pinnedCol[element.id],
-                              });
-                            }}
-                            icon="pin"
-                          />
-                        )}
-                        <div className="sort-sec">
-                          <Icon action={() => {}} icon="caret-up" />
-                          <Icon action={() => {}} icon="caret-down" />
-                        </div>
-                      </span>
-                    </div>
-                  ))}
               </div>
-            </div>
-            <div className="table-body">
-              {formsData.map((form: any) => (
-                <div className="t-row">
-                  <div className="sticky-row">
-                    {metaData.elements
-                      .filter((e: any) => {
-                        return pinnedCol[e.id];
-                      })
-                      .map((element: any, index: any) => (
-                        <div
-                          key={index + "o" + element.id}
-                          className={
-                            pinnedCol[element.id] ? "t-cell" : "t-cell"
-                          }
-                        >
-                          <span className="cell-left"> {form[element.id]}</span>
-                        </div>
-                      ))}
+              <div className="table-body">
+                {responseData.map((form: any) => (
+                  <div className="t-row">
+                    <div className="sticky-row">
+                      {formData.elements
+                        .filter((e: any) => {
+                          return pinnedCol[e.label];
+                        })
+                        .map((element: any, index: any) => (
+                          <div
+                            key={index + "o" + element.label}
+                            className={
+                              pinnedCol[element.label] ? "t-cell" : "t-cell"
+                            }
+                          >
+                            <span className="cell-left">
+                              {Array.isArray(form.data[element.label])
+                                ? form.data[element.label].join(", ")
+                                : form.data[element.label]}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="unsticky-row">
+                      {formData.elements
+                        .filter((e: any) => {
+                          return !pinnedCol[e.label];
+                        })
+                        .map((element: any, index: any) => (
+                          <div
+                            key={index + "o" + element.label}
+                            className={
+                              pinnedCol[element.label] ? "t-cell" : "t-cell"
+                            }
+                          >
+                            <span className="cell-left">
+                              {Array.isArray(form.data[element.label])
+                                ? form.data[element.label].join(", ")
+                                : form.data[element.label]}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                  <div className="unsticky-row">
-                    {metaData.elements
-                      .filter((e: any) => {
-                        return !pinnedCol[e.id];
-                      })
-                      .map((element: any, index: any) => (
-                        <div
-                          key={index + "o" + element.id}
-                          className={
-                            pinnedCol[element.id] ? "t-cell" : "t-cell"
-                          }
-                        >
-                          <span className="cell-left"> {form[element.id]}</span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
-              {/* {formsData.map((form: any) => (
+                ))}
+                {/* {formsData.map((form: any) => (
                 <div className="t-row">
                   <div className="unsticky-row">
                     {metaData.elements
@@ -727,26 +563,32 @@ export default function forms(props: IformsProps) {
                   </div>
                 </div>
               ))} */}
+              </div>
             </div>
-          </div>
 
-          <div className="table-sec-footer">
-            <span>page 1 of 1</span>
-            <span>
-              {formsData.length +
-                " " +
-                lang.of +
-                " " +
-                formsData.length +
-                " " +
-                lang.responses}
-            </span>
-            {/* <span>
-              Responses {formsData.length} of {formsData.length}
-            </span> */}
+            <div className="table-sec-footer">
+              <span>
+                {lang.page +
+                  " " +
+                  pageParams.pageNum +
+                  " " +
+                  lang.of +
+                  " " +
+                  Math.ceil(totalResponses / pageParams.rowCount)}
+              </span>
+              <span>
+                {responseData.length +
+                  " " +
+                  lang.of +
+                  " " +
+                  totalResponses +
+                  " " +
+                  lang.responses}
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
