@@ -3,6 +3,7 @@ import IconButton from "@/components/buttons/IconButton";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import Icon from "@/components/icons/Icon";
+import blobDownloader from "@/helper/blobDownloader";
 import { errorHandler } from "@/helper/errorHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
@@ -318,6 +319,43 @@ export default function forms(props: IformsProps) {
     if (gotData) getResponseData();
   }, [pageParams]);
 
+  const exportData = async (data: string, filename?: string, type?: string) => {
+    try {
+      let res = await axios.get("/api/export/" + data);
+      console.log(res);
+
+      console.log(res.data.data);
+
+      if (data === "pdf") {
+        const reader = res.data.body?.getReader();
+        if (!reader) return;
+
+        const chunks: Uint8Array[] = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        const blob = new Blob(chunks, { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `form_${formData.name}_responses.pdf`;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      } else blobDownloader(res.data, filename || "default_filename", type);
+    } catch (error) {
+      console.log(error);
+      errorHandler(error, lang);
+    }
+  };
+
   console.log(responseData);
   console.log(formData);
 
@@ -348,7 +386,11 @@ export default function forms(props: IformsProps) {
           <div className="right">
             <PrimaryButton
               label={"export"}
-              action={() => router.push("/forms/create")}
+              action={() => exportData("csv", "form.csv", "text/csv")}
+            />
+            <PrimaryButton
+              label={"export_pdf"}
+              action={() => exportData("pdf", "form.pdf", "application/pdf")}
             />
           </div>
         </div>
