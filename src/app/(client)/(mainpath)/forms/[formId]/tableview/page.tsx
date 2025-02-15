@@ -321,34 +321,22 @@ export default function forms(props: IformsProps) {
 
   const exportData = async (data: string, filename?: string, type?: string) => {
     try {
-      let res = await axios.get("/api/export/" + data);
-      console.log(res);
+      let res = await axios.get("/api/export/" + data, {
+        responseType: "blob",
+      });
+      if (data === "pdf" || data === "pdftest") {
+        // ✅ Read response as a Blob
+        const blob = res.data;
 
-      console.log(res.data.data);
-
-      if (data === "pdf") {
-        const reader = res.data.body?.getReader();
-        if (!reader) return;
-
-        const chunks: Uint8Array[] = [];
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-
-        const blob = new Blob(chunks, { type: "application/pdf" });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `form_${formData.name}_responses.pdf`;
-        document.body.appendChild(link);
-        link.click();
-
-        // Cleanup
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(link);
+        // ✅ Create a download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "test.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       } else blobDownloader(res.data, filename || "default_filename", type);
     } catch (error) {
       console.log(error);
