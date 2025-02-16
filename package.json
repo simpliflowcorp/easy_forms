@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "ts-node src/helper/backgroundWorker.ts"
+    "worker": "ts-node -r dotenv/config src/helper/backgroundWorker.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
