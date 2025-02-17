@@ -8,11 +8,13 @@ import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import { set } from "lodash";
 import SuccessAnimation from "@/components/Animations/SuccessAnimation";
 import { errorHandler } from "@/helper/errorHandler";
+import { useRouter } from "next/navigation";
 
 type Props = {};
 
 const Publish = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
+  const router = useRouter();
 
   const [forms, setForms] = React.useState([] as any);
   const [gotData, setGotData] = React.useState(false);
@@ -45,7 +47,7 @@ const Publish = (props: Props) => {
         setDataIsValid(datas);
       }
     } catch (error: any) {
-      console.log(error);
+      router.push("/404");
     }
   };
 

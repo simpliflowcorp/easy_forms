@@ -50,22 +50,25 @@ const FormElementSchema = new mongoose.Schema<FormElement>({
   column: { type: Number, required: true },
 });
 
-const FormAnalyticsSchema = new mongoose.Schema<FormAnalytics>({
-  totalResponses: { type: Number, default: 0 },
-  totalVisits: { type: Number, default: 0 },
-  dailyResponses: [
-    {
-      date: { type: Date, required: true },
-      count: { type: Number, default: 0 },
-    },
-  ],
-  dailyVisits: [
-    {
-      date: { type: Date, required: true },
-      count: { type: Number, default: 0 },
-    },
-  ],
-});
+const FormAnalyticsSchema = new mongoose.Schema(
+  {
+    totalResponses: { type: Number, default: 0 },
+    totalVisits: { type: Number, default: 0 },
+    dailyResponses: [
+      {
+        date: { type: Date, required: true, index: true },
+        count: { type: Number, default: 0 },
+      },
+    ],
+    dailyVisits: [
+      {
+        date: { type: Date, required: true, index: true },
+        count: { type: Number, default: 0 },
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
 const formSchema = new mongoose.Schema(
   {

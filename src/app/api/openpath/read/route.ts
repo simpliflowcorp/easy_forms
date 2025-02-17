@@ -9,109 +9,75 @@ export async function GET(request: NextRequest) {
 
     // Extract form ID from referer
     const referer = request.headers.get("referer");
-    const form_id = referer?.split("/")[4]; // Verify this index matches your URL structure
+    const form_id = referer?.split("/")[4]; // Ensure index matches your URL structure
 
     if (!form_id) {
       return NextResponse.json({ error: "Invalid form URL" }, { status: 400 });
     }
 
-    // Check for existing cookie
-    const cookieName = `form_${form_id}_visited`;
-    const hasVisited = request.cookies.has(cookieName);
+    // Check if the user has already visited
+    const cookieName = `form_${form_id}`;
+    const cookieStore = cookies();
+    const hasVisited = cookieStore.get(cookieName);
 
-    let form;
+    // Fetch the form
+    let form = await Form.findOne({ formId: form_id });
+    if (!form) {
+      return NextResponse.json({ error: "Form not found" }, { status: 404 });
+    }
+
+    console.log(hasVisited);
+
     if (!hasVisited) {
-      // Atomic update for visits
       const today = new Date();
-      today.setUTCHours(0, 0, 0, 0); // Normalize to UTC midnight
+      today.setUTCHours(0, 0, 0, 0);
 
-      form = await Form.findOneAndUpdate(
+      await Form.findOneAndUpdate(
         { formId: form_id },
-        {
-          $inc: { "analytics.totalVisits": 1 },
-          $set: {
-            "analytics.dailyVisits": {
-              $concatArrays: [
-                {
-                  $filter: {
-                    input: "$analytics.dailyVisits",
-                    cond: { $ne: ["$$this.date", today] },
-                  },
-                },
-                [
+        [
+          {
+            $set: {
+              "analytics.totalVisits": { $add: ["$analytics.totalVisits", 1] },
+              "analytics.dailyVisits": {
+                $cond: [
+                  { $in: [today, "$analytics.dailyVisits.date"] },
                   {
-                    $mergeObjects: [
-                      {
-                        $arrayElemAt: [
-                          {
-                            $filter: {
-                              input: "$analytics.dailyVisits",
-                              cond: { $eq: ["$$this.date", today] },
-                            },
-                          },
-                          0,
+                    $map: {
+                      input: "$analytics.dailyVisits",
+                      in: {
+                        $cond: [
+                          { $eq: ["$$this.date", today] },
+                          { date: today, count: { $add: ["$$this.count", 1] } },
+                          "$$this",
                         ],
                       },
-                      {
-                        date: today,
-                        count: {
-                          $add: [
-                            {
-                              $ifNull: [
-                                {
-                                  $arrayElemAt: [
-                                    "$analytics.dailyVisits.count",
-                                    0,
-                                  ],
-                                },
-                                0,
-                              ],
-                            },
-                            1,
-                          ],
-                        },
-                      },
+                    },
+                  },
+                  {
+                    $concatArrays: [
+                      "$analytics.dailyVisits",
+                      [{ date: today, count: 1 }],
                     ],
                   },
                 ],
-              ],
+              },
             },
           },
-        },
-        { new: true } // Return updated document
+        ],
+        { new: true }
       );
-
-      if (!form) {
-        return NextResponse.json(
-          { message: "Form not found" },
-          { status: 404 }
-        );
-      }
-    } else {
-      form = await Form.findOne({ formId: form_id });
     }
 
+    // Set visit cookie for 24 hours
     const response = NextResponse.json(
       { success: true, data: form },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
+      { status: 200 }
     );
 
-    // Set cookie only if new visit
-    if (!hasVisited && form) {
-      response.cookies.set({
-        name: cookieName,
-        value: "true",
-        expires: form.expiry,
-        path: `/form/${form_id}`,
-        sameSite: "Lax",
-        secure: process.env.NODE_ENV === "production",
-      });
-    }
+    response.cookies.set(cookieName, "true", {
+      httpOnly: true,
+      expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
+    });
 
     return response;
   } catch (error) {

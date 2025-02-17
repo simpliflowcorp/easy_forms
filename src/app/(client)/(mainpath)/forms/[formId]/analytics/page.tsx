@@ -23,8 +23,6 @@ export default function dashboard(props: IdashboardProps) {
   //   testModel();
   // });
 
-  const barChartData = {};
-
   const metaData = {
     name: "SIGN UP FORM",
     description:
@@ -164,50 +162,187 @@ export default function dashboard(props: IdashboardProps) {
         ],
         index: "option",
       },
-      // {
-      //   label: "Responses Recorded By Forms",
-      //   type: "line",
-      //   data: [
-      //     { name: "Form A", value: 6 },
-      //     { name: "Form B", value: 1 },
-      //     { name: "Form C", value: 3 },
-      //   ],
-      // },
-      // {
-      //   label: "Responses Recorded By Forms",
-      //   type: "area",
-      //   data: [
-      //     { name: "Form A", value: 6 },
-      //     { name: "Form B", value: 1 },
-      //     { name: "Form C", value: 3 },
-      //   ],
-      // },
     ],
   };
 
-  return (
-    <div className="dashboard-cnt">
-      <div className="dashboard-header">
-        <span className="header-indicator">/</span>
-        <span className="header-text">{metaData.name + lang.sanalytics}</span>
-      </div>
-      <div className="dashboard">
-        <div className="cards-cnt">
-          {analyticsData.cards.map((card) => (
-            <InfoCard label={card.label} count={card.count} />
-          ))}
+  const [gotData, setGotData] = React.useState(false);
+  const [formData, setFormData] = React.useState([] as any);
+
+  const analytics = {
+    dailyVisits: [
+      {
+        _id: "67b376e70543551ddb6c2c9f",
+        date: "2025-02-17T00:00:00.000Z",
+        count: 2,
+      },
+      // Add more data if needed
+    ],
+    dailyResponses: [
+      {
+        _id: "67b376e70543551ddb6c2d1a",
+        date: "2025-02-17T00:00:00.000Z",
+        count: 1,
+      },
+      // Add more data if needed
+    ],
+  };
+
+  // Convert analytics data to chart format
+  const chartData = analytics.dailyVisits.map((visit) => {
+    const response = analytics.dailyResponses.find(
+      (res) => new Date(res.date).getTime() === new Date(visit.date).getTime()
+    );
+
+    return {
+      timeStamp: new Date(visit.date).getTime().toString(),
+      visited: visit.count,
+      responded: response ? response.count : 0,
+    };
+  });
+
+  // Function to add missing days
+  const ensureThreeDays = (data: any) => {
+    let currentDate = new Date();
+    currentDate.setUTCHours(0, 0, 0, 0);
+
+    while (data.length < 3) {
+      currentDate.setDate(currentDate.getDate() - 1); // Move one day back
+      const timeStamp = currentDate.getTime().toString();
+
+      // Ensure the placeholder is not duplicating an existing entry
+      if (!data.some((entry: any) => entry.timeStamp === timeStamp)) {
+        data.unshift({
+          timeStamp,
+          visited: 0,
+          responded: 0,
+        });
+      }
+    }
+
+    return data;
+  };
+
+  const getFormData = async () => {
+    try {
+      let res = await axios.get("/api/form/analyticsView");
+      setGotData(true);
+      console.log(res.data.data.analytics);
+
+      let card = [
+        {
+          label: "Total Responses",
+          count: res.data.data.analytics.totalResponses,
+        },
+        {
+          label: "Total Visitors",
+          count: res.data.data.analytics.totalVisits,
+        },
+        {
+          label: "Today Responses",
+          count:
+            res.data.data.analytics.dailyResponses.filter((v: any) => {
+              const visitDate = new Date(v.date).setUTCHours(0, 0, 0, 0);
+              const today = new Date().setUTCHours(0, 0, 0, 0);
+
+              console.log(new Date(v.date), new Date(today));
+              console.log(visitDate === today);
+
+              return visitDate === today;
+            })[0]?.count | 0,
+        },
+        {
+          label: "Today Visitors",
+          count:
+            res.data.data.analytics.dailyVisits.filter((v: any) => {
+              const visitDate = new Date(v.date).setUTCHours(0, 0, 0, 0);
+              const today = new Date().setUTCHours(0, 0, 0, 0);
+
+              console.log(new Date(v.date), new Date(today));
+              console.log(visitDate === today);
+
+              return visitDate === today;
+            })[0]?.count | 0,
+        },
+      ];
+
+      const chartData = res.data.data.analytics.dailyVisits.map(
+        (visit: any) => {
+          const response = res.data.data.analytics.dailyResponses.find(
+            (res: any) =>
+              new Date(res.date).getTime() === new Date(visit.date).getTime()
+          );
+
+          return {
+            timeStamp: new Date(visit.date).getTime().toString(), // Convert to timestamp (milliseconds)
+            visited: visit.count,
+            responded: response ? response.count : 0, // Default to 0 if no response exists
+          };
+        }
+      );
+
+      let graphs = [
+        {
+          label: "Activity Last Week Days",
+          type: "area",
+          data: chartData,
+          index: "date",
+        },
+        {
+          label: "Activity Last Week Days",
+          type: "line",
+          data: ensureThreeDays(chartData),
+          index: "date",
+        },
+        {
+          label: "Activity Last Week Days",
+          type: "bar",
+          data: ensureThreeDays(chartData),
+          index: "date",
+        },
+      ];
+
+      console.log(chartData);
+
+      setFormData({ cards: card, charts: graphs });
+
+      console.log(card);
+
+      // setFormData(res.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  React.useEffect(() => {
+    getFormData();
+  }, []);
+
+  if (!gotData) {
+    return <div className="accent-line-loader"></div>;
+  } else
+    return (
+      <div className="dashboard-cnt">
+        <div className="dashboard-header">
+          <span className="header-indicator">/</span>
+          <span className="header-text">{metaData.name + lang.sanalytics}</span>
         </div>
-        <div className="charts-cnt">
-          {analyticsData.charts.map((chart) => (
-            <ChartComponetManger
-              label={chart.label}
-              type={chart.type}
-              data={chart.data}
-              index={chart.index}
-            />
-          ))}
+        <div className="dashboard">
+          <div className="cards-cnt">
+            {formData.cards.map((card: any) => (
+              <InfoCard label={card.label} count={card.count} />
+            ))}
+          </div>
+          <div className="charts-cnt">
+            {formData.charts.map((chart: any) => (
+              <ChartComponetManger
+                label={chart.label}
+                type={chart.type}
+                data={chart.data}
+                index={chart.index}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }

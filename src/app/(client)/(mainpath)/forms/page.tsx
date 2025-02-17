@@ -120,93 +120,101 @@ export default function forms(props: IformsProps) {
                 </div>
               </div>
             </div>
-            <div className="forms-sec-list-cnt">
-              <div className="forms-sec-list">
-                {forms
-                  .filter((form: any) => {
-                    if (isActive === "all") return true;
-                    if (isActive === "active" && form.status === 1) return true;
-                    if (isActive === "expired" && form.status === 2)
-                      return true;
-                    if (isActive === "draft" && form.status === 0) return true;
-                    return false;
-                  })
-                  .map((form: any) => (
-                    <div key={form.formId} className="forms-sec-item">
-                      <div className="form-sec-header">
-                        <div className="form-sec-header-left">
-                          <div className="form-sec-header-indicator">/</div>
-                          <div className="form-sec-header-text">
-                            {form.name}
+            {forms.length > 0 ? (
+              <div className="forms-sec-list-cnt">
+                <div className="forms-sec-list">
+                  {forms
+                    .filter((form: any) => {
+                      if (isActive === "all") return true;
+                      if (isActive === "active" && form.status === 1)
+                        return true;
+                      if (isActive === "expired" && form.status === 2)
+                        return true;
+                      if (isActive === "draft" && form.status === 0)
+                        return true;
+                      return false;
+                    })
+                    .map((form: any) => (
+                      <div key={form.formId} className="forms-sec-item">
+                        <div className="form-sec-header">
+                          <div className="form-sec-header-left">
+                            <div className="form-sec-header-indicator">/</div>
+                            <div className="form-sec-header-text">
+                              {form.name}
+                            </div>
                           </div>
-                        </div>
-                        <div className="form-sec-header-right">
-                          <div
-                            className={
-                              form.status === 0
-                                ? "forms-sec-item-status draft"
+                          <div className="form-sec-header-right">
+                            <div
+                              className={
+                                form.status === 0
+                                  ? "forms-sec-item-status draft"
+                                  : form.status === 1
+                                  ? "forms-sec-item-status active"
+                                  : "forms-sec-item-status expired"
+                              }
+                            >
+                              {form.status === 0
+                                ? lang.draft
                                 : form.status === 1
-                                ? "forms-sec-item-status active"
-                                : "forms-sec-item-status expired"
-                            }
-                          >
-                            {form.status === 0
-                              ? lang.draft
-                              : form.status === 1
-                              ? lang.active
-                              : lang.expired}
-                          </div>
-                          {/* <div className="forms-sec-items-options">
+                                ? lang.active
+                                : lang.expired}
+                            </div>
+                            {/* <div className="forms-sec-items-options">
                           <i className="ic-three-dots-vertical"></i>
                         </div> */}
-                        </div>
-                      </div>
-                      <div className="forms-sec-item-expiry">
-                        {form.status === 1
-                          ? lang.form_expiring_in +
-                            "  " +
-                            countDown(form.expiry)
-                          : lang.form_expired_on +
-                            " " +
-                            new Date(form.expiry).toLocaleDateString()}
-                      </div>
-                      <div className="forms-sec-item-body-cnt">
-                        <div className="forms-sec-item-body-header">
-                          {lang.responses_received}
-                        </div>
-                        <div className="forms-sec-item-body">
-                          <div className="forms-sec-item-body-counter">
-                            <div className="counter-text">{lang.total}</div>
-                            <div className="counter-value">
-                              {form.total_responses > 9999
-                                ? "9999+"
-                                : form.total_responses}
-                            </div>
-                          </div>
-                          <div className="forms-sec-item-body-split"></div>
-                          <div className="forms-sec-item-body-counter">
-                            <div className="counter-text">{lang.today}</div>
-                            <div className="counter-value">
-                              {form.today_responses > 9999
-                                ? "9999+"
-                                : form.today_responses}
-                            </div>
                           </div>
                         </div>
+                        <div className="forms-sec-item-expiry">
+                          {form.status === 1
+                            ? lang.form_expiring_in +
+                              "  " +
+                              countDown(form.expiry)
+                            : lang.form_expired_on +
+                              " " +
+                              new Date(form.expiry).toLocaleDateString()}
+                        </div>
+                        <div className="forms-sec-item-body-cnt">
+                          <div className="forms-sec-item-body-header">
+                            {lang.responses_received}
+                          </div>
+                          <div className="forms-sec-item-body">
+                            <div className="forms-sec-item-body-counter">
+                              <div className="counter-text">{lang.total}</div>
+                              <div className="counter-value">
+                                {form.total_responses > 9999
+                                  ? "9999+"
+                                  : form.total_responses}
+                              </div>
+                            </div>
+                            <div className="forms-sec-item-body-split"></div>
+                            <div className="forms-sec-item-body-counter">
+                              <div className="counter-text">{lang.today}</div>
+                              <div className="counter-value">
+                                {form.today_responses > 9999
+                                  ? "9999+"
+                                  : form.today_responses}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          href={"/forms/" + form.formId}
+                          className="form-sec-footer"
+                        >
+                          <span className="form-sec-footer-text">
+                            {lang.goto_form}
+                          </span>
+                          <i className="form-sec-footer-icon ic-box-arrow-right"></i>
+                        </a>
                       </div>
-                      <a
-                        href={"/forms/" + form.formId}
-                        className="form-sec-footer"
-                      >
-                        <span className="form-sec-footer-text">
-                          {lang.goto_form}
-                        </span>
-                        <i className="form-sec-footer-icon ic-box-arrow-right"></i>
-                      </a>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="error-forms-sec">
+                <span className="error-forms-sec-text">No forms found</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
