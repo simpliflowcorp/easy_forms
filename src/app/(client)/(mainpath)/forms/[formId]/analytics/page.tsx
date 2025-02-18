@@ -201,7 +201,7 @@ export default function dashboard(props: IdashboardProps) {
   });
 
   // Function to add missing days
-  const ensureThreeDays = (data: any) => {
+  const ensureThreeDays = (data: any, isBoth: boolean) => {
     let currentDate = new Date();
     currentDate.setUTCHours(0, 0, 0, 0);
 
@@ -210,15 +210,23 @@ export default function dashboard(props: IdashboardProps) {
       const timeStamp = currentDate.getTime().toString();
 
       // Ensure the placeholder is not duplicating an existing entry
-      if (!data.some((entry: any) => entry.timeStamp === timeStamp)) {
-        data.unshift({
-          timeStamp,
-          visited: 0,
-          responded: 0,
-        });
+      if (isBoth) {
+        if (!data.some((entry: any) => entry.timeStamp === timeStamp)) {
+          data.unshift({
+            timeStamp,
+            visited: 0,
+            responded: 0,
+          });
+        }
+      } else {
+        if (!data.some((entry: any) => entry.timeStamp === timeStamp)) {
+          data.unshift({
+            timeStamp,
+            visited: 0,
+          });
+        }
       }
     }
-
     return data;
   };
 
@@ -265,7 +273,7 @@ export default function dashboard(props: IdashboardProps) {
         },
       ];
 
-      const chartData = res.data.data.analytics.dailyVisits.map(
+      let barChartData = res.data.data.analytics.dailyVisits.map(
         (visit: any) => {
           const response = res.data.data.analytics.dailyResponses.find(
             (res: any) =>
@@ -280,24 +288,30 @@ export default function dashboard(props: IdashboardProps) {
         }
       );
 
+      barChartData = ensureThreeDays(barChartData, true);
+
+      let chartData = res.data.data.analytics.dailyVisits.map((visit: any) => {
+        return {
+          timeStamp: new Date(visit.date).getTime().toString(), // Convert to timestamp (milliseconds)
+          visited: visit.count,
+        };
+      });
+
+      chartData = ensureThreeDays(chartData, false);
+
       let graphs = [
         {
           label: "Activity Last Week Days",
           type: "area",
           data: chartData,
-          index: "date",
+          index: "timeStamp",
         },
-        {
-          label: "Activity Last Week Days",
-          type: "line",
-          data: ensureThreeDays(chartData),
-          index: "date",
-        },
+
         {
           label: "Activity Last Week Days",
           type: "bar",
-          data: ensureThreeDays(chartData),
-          index: "date",
+          data: barChartData,
+          index: "timeStamp",
         },
       ];
 

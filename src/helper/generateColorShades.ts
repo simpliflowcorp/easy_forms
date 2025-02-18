@@ -3,6 +3,8 @@ export default function generateColorShades(
   endColor: string,
   numShades: number
 ) {
+  if (numShades === 1) return [startColor];
+
   const shades = [];
 
   // Convert hex to RGB

@@ -35,8 +35,12 @@ export default function AreaChartComp(Props: Props) {
     });
     setData(data);
     let colors = generateColorShades("#6439FF", "#7CF5FF", keys.length);
+    console.log(colors);
+
     setBarColorArray(colors.map((color: any) => color.slice(1)));
   }, []);
+
+  console.log(barColorArray);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -85,22 +89,6 @@ export default function AreaChartComp(Props: Props) {
             />
           );
         })}
-
-        {/* <Area
-          type="monotone"
-          dataKey="uv"
-          stroke="#8884d8"
-          fillOpacity={1}
-          fill="url(#colorUv)"
-        />
-
-        <Area
-          type="monotone"
-          dataKey="pv"
-          stroke="#82ca9d"
-          fillOpacity={1}
-          fill="url(#colorPv)"
-        /> */}
       </AreaChart>
     </ResponsiveContainer>
   );
