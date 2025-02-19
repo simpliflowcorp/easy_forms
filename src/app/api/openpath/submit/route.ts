@@ -98,6 +98,48 @@ export async function POST(request: NextRequest) {
       await UniqueValueModel.insertMany(uniqueValues, { session });
     }
 
+    // Update form analytics
+    // Update response analytics
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    await Form.findOneAndUpdate(
+      { _id: form._id },
+      [
+        {
+          $set: {
+            "analytics.totalResponses": {
+              $add: ["$analytics.totalResponses", 1],
+            },
+            "analytics.dailyResponses": {
+              $cond: [
+                { $in: [today, "$analytics.dailyResponses.date"] },
+                {
+                  $map: {
+                    input: "$analytics.dailyResponses",
+                    in: {
+                      $cond: [
+                        { $eq: ["$$this.date", today] },
+                        { date: today, count: { $add: ["$$this.count", 1] } },
+                        "$$this",
+                      ],
+                    },
+                  },
+                },
+                {
+                  $concatArrays: [
+                    "$analytics.dailyResponses",
+                    [{ date: today, count: 1 }],
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { session, new: true }
+    );
+
     await session.commitTransaction();
     return NextResponse.json(
       { success: true, response_id: response._id },
