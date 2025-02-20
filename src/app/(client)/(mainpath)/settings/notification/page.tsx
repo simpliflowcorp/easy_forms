@@ -13,16 +13,6 @@ export default function notification(props: InotificationProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
 
-  // const testModel = async () => {
-  //   let res = await axios.post("/api/testDb", { test: "T1" });
-
-  // };
-  // React.useEffect(() => {
-  //   testModel();
-  // });
-
-  const barChartData = {};
-
   return (
     <div className="setting-cnt">
       <div className="setting-header">

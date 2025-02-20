@@ -44,6 +44,22 @@ const userSchema = new mongoose.Schema({
   secondaryEmail: { type: String, required: false },
   secondaryEmailVerifyCode: { type: String, required: false },
   secondaryVerifyCodeExpiry: { type: Date, required: false },
+  notificationSettings: {
+    popup: {
+      formExpired: { type: Boolean, default: true },
+      newResponse: { type: Boolean, default: true },
+    },
+    email: {
+      formExpired: { type: Boolean, default: true },
+      weeklySummary: { type: Boolean, default: false },
+      responseAlert: { type: Boolean, default: true },
+    },
+    frequency: {
+      type: String,
+      enum: ["immediate", "daily", "weekly"],
+      default: "immediate",
+    },
+  },
 });
 
 const User = mongoose.models.users || mongoose.model("users", userSchema);
