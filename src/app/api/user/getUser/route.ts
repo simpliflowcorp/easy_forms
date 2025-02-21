@@ -9,6 +9,13 @@ export async function GET(request: NextRequest) {
   try {
     //Check user exists
     let token = cookies().get("token");
+
+    console.log(token);
+
+    if (!token) {
+      return NextResponse.json({ message: "No token found" }, { status: 404 });
+    }
+
     let user: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
 
     const userData = await User.findOne({ email: user.email });

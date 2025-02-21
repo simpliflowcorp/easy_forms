@@ -2,6 +2,7 @@
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import { errorHandler } from "@/helper/errorHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,23 @@ export interface InotificationProps {}
 export default function notification(props: InotificationProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
+
+  React.useEffect(() => {
+    return () => {};
+    getData();
+  }, []);
+
+  const [gotData, setGotData] = React.useState(false as boolean);
+  const [data, setData] = React.useState([] as any);
+  const getData = async () => {
+    try {
+      let res = await axios.get("/api/settings/notification");
+      setData(res.data.data);
+      setGotData(true);
+    } catch (error) {
+      errorHandler(error, lang);
+    }
+  };
 
   return (
     <div className="setting-cnt">

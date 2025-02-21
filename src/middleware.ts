@@ -36,12 +36,12 @@ export function middleware(request: NextRequest) {
 //   matcher:
 //     "/((?!api|_next/static|_next/image|favicon.ico|favicon_not.ico|sitemap.xml|robots.txt).*)",
 // };
-export const config = {
-  matcher: "/",
-};
-
 // export const config = {
-//   matcher: [
-//     "/((?!api|_next/static|_next/image|animation|favicon.ico|sitemap.xml|robots.txt).*)",
-//   ],
+//   matcher: "/",
 // };
+
+export const config = {
+  matcher: [
+    "/((?!api|_next/static|_next/image|animation|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
+};

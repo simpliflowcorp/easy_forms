@@ -52,12 +52,7 @@ const userSchema = new mongoose.Schema({
     email: {
       formExpired: { type: Boolean, default: true },
       weeklySummary: { type: Boolean, default: false },
-      responseAlert: { type: Boolean, default: true },
-    },
-    frequency: {
-      type: String,
-      enum: ["immediate", "daily", "weekly"],
-      default: "immediate",
+      responseAlert: { type: Boolean, default: false },
     },
   },
 });
