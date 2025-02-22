@@ -44,6 +44,25 @@ const userSchema = new mongoose.Schema({
   secondaryEmail: { type: String, required: false },
   secondaryEmailVerifyCode: { type: String, required: false },
   secondaryVerifyCodeExpiry: { type: Date, required: false },
+  profile: {
+    firstName: { type: String, required: false },
+    lastName: { type: String, required: false },
+    dob: { type: Date, required: false },
+    phoneNumber: { type: String, required: false },
+    address: { type: String, required: false },
+    city: { type: String, required: false },
+    state: { type: String, required: false },
+    country: { type: String, required: false },
+    zipCode: { type: String, required: false },
+    about: { type: String, required: false },
+    profileImage: { type: String, required: false },
+    website: { type: String, required: false },
+  },
+  preferences: {
+    date_format: { type: String, default: "dd-mm-yyyy" },
+    country: { type: String, default: "india" },
+    time_format: { type: String, default: "12" },
+  },
   notificationSettings: {
     popup: {
       formExpired: { type: Boolean, default: true },

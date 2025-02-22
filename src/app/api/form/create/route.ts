@@ -7,9 +7,6 @@ import User from "@/models/userModel";
 
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendMail } from "@/helper/mailer";
-import { verify } from "crypto";
-import { generateVerificationCode } from "@/helper/generateVerificationCode";
 import Hashids from "hashids";
 
 export async function POST(request: NextRequest) {

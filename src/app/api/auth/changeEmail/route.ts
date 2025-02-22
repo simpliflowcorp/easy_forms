@@ -4,8 +4,6 @@ import { NextResponse, NextRequest } from "next/server";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendMail } from "@/helper/mailer";
-import { getServerSession } from "next-auth";
-import { verify } from "crypto";
 import { generateVerificationCode } from "@/helper/generateVerificationCode";
 
 export async function POST(request: NextRequest) {
@@ -56,8 +54,8 @@ export async function POST(request: NextRequest) {
     await sendMail(
       CurrentUser.email,
       CurrentUser.username,
-      verifyCode,
-      "changeEmail"
+      "changeEmail",
+      verifyCode
     );
 
     const response = NextResponse.json(

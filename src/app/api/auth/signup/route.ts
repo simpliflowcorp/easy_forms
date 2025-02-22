@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // create token
     const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
 
-    await sendMail(email, username, verifyToken, "verifyEmail");
+    await sendMail(email, username, "verifyEmail", verifyToken);
     const response = NextResponse.json(
       {
         message: "user_created",
