@@ -20,17 +20,18 @@ export default function security(props: IsecurityProps) {
   const router = useRouter();
 
   const [data, setData] = React.useState({
+    language: "",
     date_format: "",
     country: "",
     time_format: "",
   });
 
   const [dataIsValid, setDataIsValid] = React.useState({
+    language: false,
     date_format: false,
     time_format: false,
     country: false,
   });
-
   const [structureData, setStructureData] = React.useState([
     {
       name: "date_format",
@@ -39,6 +40,14 @@ export default function security(props: IsecurityProps) {
         { label: "dd-mm-yyyy", value: "dd-mm-yyyy" },
         { label: "mm-dd-yyyy", value: "mm-dd-yyyy" },
         { label: "yyyy-mm-dd", value: "yyyy-mm-dd" },
+      ],
+    },
+    {
+      name: "language",
+      type: 11,
+      options: [
+        { value: "en", label: "English" },
+        { value: "ch", label: "Chinese" },
       ],
     },
     {
