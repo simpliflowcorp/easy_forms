@@ -170,5 +170,8 @@
     "form_submitted_successfully" : "Form submitted successfully",
     "thanks_for_your_response" : "Thanks for your response",
     "page" : "Page",
+    "profile_updated_successfully": "Profile updated successfully",
+    "profile_update_failed": "Profile update failed",
+    "update" : "Update",
     "goto_form" : "Go to form"
 }   

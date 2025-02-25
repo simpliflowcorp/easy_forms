@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, data: CurrentUser.notificationSettings },
+      { success: true, data: CurrentUser.profile },
       {
         status: 200,
         headers: {
@@ -71,16 +71,19 @@ export async function POST(request: NextRequest) {
 
     // Update the notification settings
 
-    const notificationSettings = request.body as any;
+    const reqBody = await request.json();
+    const profile = reqBody;
+
+    console.log(profile);
 
     const updatedUser = await User.findByIdAndUpdate(
       tokenData._id,
-      { notificationSettings },
+      { profile },
       { new: true }
     );
 
     return NextResponse.json(
-      { success: true, data: CurrentUser.notificationSettings },
+      { success: true, message: "profile_updated_successfully" },
       {
         status: 200,
         headers: {

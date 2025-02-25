@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
       email,
       password: hashedPassword,
       verifyToken: verifyToken,
+      profile: {
+        firstName: username,
+      },
       verifyTokenExpiry: new Date(Date.now() + 60 * 60 * 24 * 1000),
     });
 
