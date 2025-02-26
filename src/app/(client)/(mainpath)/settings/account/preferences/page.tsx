@@ -1,7 +1,6 @@
 "use client";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ToogleSwitch from "@/components/buttons/toogleSwitch";
 import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import PasswordInput from "@/components/Inputs/PasswordInput";
 import SelectFieldInput from "@/components/Inputs/SelectFieldInput";
@@ -12,6 +11,7 @@ import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import countryData from "@/metaData/country.json";
 
 export interface IsecurityProps {}
 
@@ -53,30 +53,35 @@ export default function security(props: IsecurityProps) {
     {
       name: "country",
       type: 11,
-      options: [
-        { value: "india", label: "India" },
-        { value: "us", label: "United States" },
-      ],
+      options: countryData,
     },
   ]);
 
   const [resetBtn, setResetBtn] = React.useState(0);
+  const [reset, setReset] = React.useState(0);
 
-  const forgotPassword = async () => {
-    if (
-      dataIsValid.date_format &&
-      dataIsValid.time_format &&
-      dataIsValid.country
-    ) {
-      try {
-        const res = await axios.post("/api/auth/updateProfile", data);
-        successHandler(res, lang);
-        router.push("/auth/signin");
-      } catch (error: any) {
-        setResetBtn((p) => p + 1);
-        errorHandler(error, lang);
-      }
-    } else {
+  const getPreferences = async () => {
+    try {
+      const res = await axios.get("/api/settings/preferences");
+      console.log(res.data.data);
+
+      setData(res.data.data);
+    } catch (error: any) {
+      errorHandler(error, lang);
+    }
+  };
+
+  React.useEffect(() => {
+    getPreferences();
+  }, []);
+
+  const updatePreferences = async () => {
+    try {
+      const res = await axios.post("/api/settings/preferences", data);
+      successHandler(res, lang);
+      setResetBtn((p) => p + 1);
+    } catch (error: any) {
+      errorHandler(error, lang);
       setResetBtn((p) => p + 1);
     }
   };
@@ -87,6 +92,13 @@ export default function security(props: IsecurityProps) {
         <div className="left">
           <span className="header-indicator">/</span>
           <span className="header-text">{lang.account}</span>
+        </div>
+        <div className="right">
+          <PrimaryActionButton
+            resetBtn={resetBtn}
+            label={"update"}
+            action={() => updatePreferences()}
+          />
         </div>
       </div>
       <div className="setting-body">
@@ -103,7 +115,7 @@ export default function security(props: IsecurityProps) {
               {structureData.map((item, index) => (
                 <div key={index} className="sub-setting-body-profile-line">
                   <DynamicFieldManger
-                    reset={resetBtn}
+                    reset={reset}
                     label={lang[item.name]}
                     options={item.options ? item.options : []}
                     // value={data[item.name]}

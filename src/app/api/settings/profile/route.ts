@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    console.log(CurrentUser.profile);
+
     return NextResponse.json(
       { success: true, data: CurrentUser.profile },
       {
@@ -73,8 +75,6 @@ export async function POST(request: NextRequest) {
 
     const reqBody = await request.json();
     const profile = reqBody;
-
-    console.log(profile);
 
     const updatedUser = await User.findByIdAndUpdate(
       tokenData._id,

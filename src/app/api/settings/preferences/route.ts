@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, data: CurrentUser.notificationSettings },
+      { success: true, data: CurrentUser.preferences },
       {
         status: 200,
         headers: {
@@ -69,18 +69,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // Update the notification settings
+    // Update the preferences settings
 
-    const notificationSettings = request.body as any;
+    const reqBody = await request.json();
+    const preferences = reqBody;
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedPreferences = await User.findByIdAndUpdate(
       tokenData._id,
-      { notificationSettings },
+      { preferences },
       { new: true }
     );
 
     return NextResponse.json(
-      { success: true, data: CurrentUser.notificationSettings },
+      { success: true, message: "preferences_updated_successfully" },
       {
         status: 200,
         headers: {

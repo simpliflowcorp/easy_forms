@@ -32,6 +32,8 @@ export default function NumberFieldInput(props: INumberFieldInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
+  console.log({ value, props, IsNotEmpty });
+
   return (
     <>
       <div className="input-cnt">
@@ -45,7 +47,7 @@ export default function NumberFieldInput(props: INumberFieldInputProps) {
           onBlur={() => {
             blurCheck(value, props, setIsValid, setIsNotEmpty, "number");
           }}
-        />{" "}
+        />
         <ErroTextCnt
           isRequired={props.isRequired}
           isValid={!isValid}

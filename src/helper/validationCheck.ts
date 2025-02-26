@@ -22,7 +22,7 @@ export const validationCheck = (
     case "text":
       return 1;
     case "number":
-      const numberRegex = /^[0-9]+?$/gm;
+      const numberRegex = /^(?:[0-9]+)?$/gm;
       return numberRegex.test(value) ? 1 : 3;
     case "decimal":
       const decimalNumberRegex = /^[0-9]+(\.[0-9]+)?$/gm;

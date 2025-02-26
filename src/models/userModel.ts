@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema({
   profile: {
     firstName: { type: String, required: false },
     lastName: { type: String, required: false },
-    dob: { type: Date, required: false },
+    dob: { type: String, required: false },
     phoneNumber: { type: String, required: false },
     address: { type: String, required: false },
     city: { type: String, required: false },
@@ -60,9 +60,11 @@ const userSchema = new mongoose.Schema({
   },
   preferences: {
     date_format: { type: String, default: "dd-mm-yyyy" },
-    country: { type: String, default: "india" },
+    country: { type: String, default: "IN" },
     time_format: { type: String, default: "12" },
+    language: { type: String, default: "en" },
   },
+
   notificationSettings: {
     popup: {
       formExpired: { type: Boolean, default: true },

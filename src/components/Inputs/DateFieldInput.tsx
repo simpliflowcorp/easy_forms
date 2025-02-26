@@ -43,6 +43,8 @@ export default function DateFieldInput(props: IDateFieldProps) {
     }
   }, [disableOldDate]);
 
+  console.log("DateFieldInput", value);
+
   return (
     <>
       <div className="input-cnt">

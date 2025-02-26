@@ -97,7 +97,7 @@ export default function security(props: IsecurityProps) {
     {
       name: "dob",
       label: "dob",
-      type: 2,
+      type: 21,
     },
   ]);
 
@@ -130,7 +130,6 @@ export default function security(props: IsecurityProps) {
       const response = await axios.get("/api/settings/profile");
       if (response.status === 200) {
         setData((prevState) => ({ ...prevState, ...response.data.data }));
-
         setGotData(true);
       }
     } catch (error) {

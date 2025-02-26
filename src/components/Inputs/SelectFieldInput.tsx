@@ -102,6 +102,8 @@ export default function SelectFieldInput(props: ISelectFieldInputProps) {
     }),
   };
 
+  console.log("SelectFieldInput", props.value);
+
   return (
     <div className="select-cnt">
       <label htmlFor={"select" + uid}>
