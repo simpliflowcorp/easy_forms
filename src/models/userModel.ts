@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { date } from "zod";
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -59,21 +60,21 @@ const userSchema = new mongoose.Schema({
     website: { type: String, required: false },
   },
   preferences: {
-    date_format: { type: String, default: "dd-mm-yyyy" },
+    dateFormat: { type: String, default: "dd-mm-yyyy" },
     country: { type: String, default: "IN" },
-    time_format: { type: String, default: "12" },
+    timeFormat: { type: String, default: "12" },
     language: { type: String, default: "en" },
   },
 
   notificationSettings: {
     popup: {
       formExpired: { type: Boolean, default: true },
-      newResponse: { type: Boolean, default: true },
+      newResponseAlert: { type: Boolean, default: true },
     },
     email: {
       formExpired: { type: Boolean, default: true },
-      weeklySummary: { type: Boolean, default: false },
-      responseAlert: { type: Boolean, default: false },
+      newResponseAlert: { type: Boolean, default: false },
+      responseSummary: { type: Boolean, default: false },
     },
   },
 });

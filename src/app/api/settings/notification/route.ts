@@ -71,16 +71,17 @@ export async function POST(request: NextRequest) {
 
     // Update the notification settings
 
-    const notificationSettings = request.body as any;
+    const reqBody = await request.json();
+    const notificationSettings = reqBody;
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedPreferences = await User.findByIdAndUpdate(
       tokenData._id,
       { notificationSettings },
       { new: true }
     );
 
     return NextResponse.json(
-      { success: true, data: CurrentUser.notificationSettings },
+      { success: true, message: "notification_updated_successfully" },
       {
         status: 200,
         headers: {

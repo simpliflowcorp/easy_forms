@@ -14,6 +14,18 @@ export default function ToogleSwitch(props: IToogleSwitchProps) {
   const [uid, setUid] = React.useState(Math.random());
   const [checked, setChecked] = React.useState(props.value);
 
+  // React.useEffect(() => {
+  //   if (props.reset !== 0) {
+  //     if (props.value === "") {
+  //       setIsNotEmpty(true);
+  //     } else {
+  //       setIsValid(props.isValid);
+  //     }
+  //   }
+  // }, [props.value, props.isValid, props.reset]);
+
+  console.log(props);
+
   return (
     <div className="toogle-switch">
       <span>{lang[props.label]}</span>
