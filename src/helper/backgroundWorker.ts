@@ -6,6 +6,7 @@ import User from "../models/userModel";
 import { connectDB, disconnectDB } from "../dbConfig/dbConfig";
 import cron from "node-cron";
 import { sendMail } from "./mailer";
+import Notification from "@/models/notificationModel";
 
 // 2. Optimized expiration checker
 async function checkAndNotifyExpirations() {
@@ -58,6 +59,19 @@ async function checkAndNotifyExpirations() {
 
           // 6. Update form status
           await Form.updateOne({ _id: form._id }, { $set: { status: 2 } });
+
+          // 7. Log notification
+          await Notification.create({
+            user: form.user,
+            type: "FORM_EXPIRED",
+            message: `Form "${form.name}" has expired`,
+            relatedForm: form._id,
+            triggeredAt: new Date(), // Actual expiration time
+            metadata: {
+              formId: form.formId,
+              expiredAt: form.expiry,
+            },
+          });
         } catch (error) {
           console.error(`Error processing form ${form._id}:`, error);
         }
