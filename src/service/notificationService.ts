@@ -2,16 +2,15 @@ import Notification from "@/models/notificationModel";
 
 class NotificationService {
   private activeClients: any;
-
   constructor(activeClients: any) {
     this.activeClients = activeClients;
   }
 
-  async sendNotification(userId, message) {
+  async sendNotification(userId: any, message: any) {
     // 1. Check if user is active
     if (this.activeClients.has(userId)) {
       // Real-time delivery
-      this.activeClients.get(userId).forEach((ws) => {
+      this.activeClients.get(userId).forEach((ws: any) => {
         ws.send(JSON.stringify(message));
       });
     } else {
@@ -25,7 +24,7 @@ class NotificationService {
     }
   }
 
-  async checkPendingNotifications(userId) {
+  async checkPendingNotifications(userId: any) {
     const pending = await Notification.find({
       userId,
       delivered: false,

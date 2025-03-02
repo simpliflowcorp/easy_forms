@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const userData = await User.findOne({ email: user.email });
 
     let data = {
+      id: userData?._id,
       username: userData?.username,
       email: userData?.email,
       isAdmin: userData?.isAdmin,

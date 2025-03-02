@@ -40,7 +40,7 @@ export default function SignUp(props: IsignUpProps) {
       try {
         const res = await axios.post("/api/auth/signup", data);
         if (res.status === 200) {
-          router.push("/profile");
+          router.push("/");
         }
       } catch (error: any) {
         setResetBtn((p) => p + 1);
@@ -53,13 +53,6 @@ export default function SignUp(props: IsignUpProps) {
   const authSignUp = (auth: string) => {
     signIn(auth);
   };
-
-  const dbtest = async () => {
-    const res = await axios.get("/api/testDb");
-  };
-  React.useEffect(() => {
-    dbtest();
-  }, []);
 
   // React.useEffect(() => {
   //   const changeFavicon = (src) => {

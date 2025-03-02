@@ -1,7 +1,7 @@
 // hooks/useActivityDetection.ts
 import { useEffect } from "react";
 
-const useActivityDetection = (callback: () => void, timeout = 30000) => {
+const useActivityDetector = (callback: () => void, timeout = 30000) => {
   useEffect(() => {
     let activityTimer: NodeJS.Timeout;
 
@@ -23,4 +23,4 @@ const useActivityDetection = (callback: () => void, timeout = 30000) => {
   }, [callback, timeout]);
 };
 
-export default useActivityDetection;
+export default useActivityDetector;
