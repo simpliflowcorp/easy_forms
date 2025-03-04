@@ -39,7 +39,7 @@ export default function AppLayout({
       setGotData(true);
     } catch (error) {
       console.error(error);
-      router.push("/login");
+      // router.push("/login");
     }
   }, [router]);
 
@@ -50,21 +50,22 @@ export default function AppLayout({
   }, [getUserData]);
 
   // Fetch user data only once
-  React.useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch("/api/user/me");
-        const data = await res.json();
-        setUserData(data);
-      } catch (error) {
-        router.push("/login");
-      }
-    };
+  // React.useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     try {
+  //       const res = await fetch("/api/user/me");
+  //       const data = await res.json();
+  //       setUserData(data);
+  //     } catch (error) {
+  //       router.push("/login");
+  //     }
+  //   };
 
-    if (status === "authenticated") {
-      fetchUserData();
-    }
-  }, [status, router]);
+  //   if (status === "authenticated") {
+  //     fetchUserData();
+  //   }
+
+  // }, [status, router]);
 
   // WebSocket message handler
   // Connect WebSocket only when userId exists
