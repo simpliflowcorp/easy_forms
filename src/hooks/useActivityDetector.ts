@@ -1,26 +1,32 @@
-// hooks/useActivityDetection.ts
+"use client";
 import { useEffect } from "react";
+import kv from "@/lib/redis";
+import toast from "react-hot-toast";
 
-const useActivityDetector = (callback: () => void, timeout = 30000) => {
-  useEffect(() => {
-    let activityTimer: NodeJS.Timeout;
-
-    const resetTimer = () => {
-      clearTimeout(activityTimer);
-      callback();
-      activityTimer = setTimeout(() => {
-        // Consider inactive after timeout
-      }, timeout);
-    };
-
-    const events = ["mousemove", "keydown", "scroll", "click"];
-    events.forEach((event) => window.addEventListener(event, resetTimer));
-
-    return () => {
-      events.forEach((event) => window.removeEventListener(event, resetTimer));
-      clearTimeout(activityTimer);
-    };
-  }, [callback, timeout]);
+// Add notification display function
+const showNotification = (notification: any) => {
+  toast(notification.message, {
+    icon: "ℹ️",
+    duration: 5000,
+    position: "top-right",
+  });
 };
 
-export default useActivityDetector;
+export default function useActivityDetector(userId: string) {
+  useEffect(() => {
+    const checkPending = async () => {
+      const res = await fetch(`/api/notifications/${userId}`);
+      const pending = await res.json();
+      if (pending.length > 0) {
+        pending.forEach(showNotification);
+        await fetch(`/api/notifications/${userId}`, { method: "DELETE" });
+      }
+    };
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) checkPending();
+    });
+
+    checkPending();
+  }, [userId]);
+}

@@ -6,6 +6,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { connectDB } from "@/dbConfig/dbConfig";
 import UniqueValueModel from "@/models/UniqueValue.model";
+import kv from "@/lib/redis";
 
 const schema = z.object({
   form_id: z.any(),
@@ -141,6 +142,34 @@ export async function POST(request: NextRequest) {
     );
 
     await session.commitTransaction();
+
+    // Notification logic - Add this after commitTransaction
+    try {
+      const formOwnerId = form.user.toString(); // Assuming form has a 'user' field
+      const notification = {
+        type: "new-response",
+        formId: form.formId,
+        message: `New response received for "${form.name}"`,
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log("Notification Payload:", notification);
+      console.log("Form Owner ID:", formOwnerId);
+
+      console.log("Sending to SSE API...");
+      const sseResponse = await fetch("/api/sse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: formOwnerId,
+          message: notification,
+        }),
+      });
+      console.log("SSE API Response:", await sseResponse.json());
+    } catch (notificationError) {
+      console.error("Notification failed:", notificationError);
+      // Don't fail the main request, just log the error
+    }
     return NextResponse.json(
       { success: true, response_id: response._id },
       { status: 201 }

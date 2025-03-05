@@ -26,6 +26,7 @@
     "dotenv": "^16.4.7",
     "fs": "^0.0.1-security",
     "hashids": "^2.3.0",
+    "ioredis": "^5.5.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",

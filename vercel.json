@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-expired",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "env": {
+    "KV_REST_API_URL": "@your-kv-store-url",
+    "KV_REST_API_TOKEN": "@your-kv-token"
+  }
+}

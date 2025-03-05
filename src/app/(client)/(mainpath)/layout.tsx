@@ -8,6 +8,7 @@ import axios from "axios";
 import { useRouter, usePathname } from "next/navigation";
 import * as React from "react";
 import { useSession } from "next-auth/react";
+import NotificationHandler from "@/components/handler/NotificationHandler";
 
 export default function AppLayout({
   children,
@@ -24,13 +25,6 @@ export default function AppLayout({
 
   const { data: session, status } = useSession();
   const [userData, setUserData] = React.useState<any>(null);
-
-  // Activity detector
-  // useActivityDetector(() => {
-  //   if (user?.id) {
-  //     fetch("/api/notifications/pending");
-  //   }
-  // });
 
   const getUserData = React.useCallback(async () => {
     try {
@@ -49,50 +43,6 @@ export default function AppLayout({
     getUserData();
   }, [getUserData]);
 
-  // Fetch user data only once
-  // React.useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     try {
-  //       const res = await fetch("/api/user/me");
-  //       const data = await res.json();
-  //       setUserData(data);
-  //     } catch (error) {
-  //       router.push("/login");
-  //     }
-  //   };
-
-  //   if (status === "authenticated") {
-  //     fetchUserData();
-  //   }
-
-  // }, [status, router]);
-
-  // WebSocket message handler
-  // Connect WebSocket only when userId exists
-  // useWebSocket(user?.id);
-  // In your client component
-  const wsRef = React.useRef<WebSocket | null>(null);
-
-  React.useEffect(() => {
-    // Connect to separate WebSocket port
-    wsRef.current = new WebSocket("ws://localhost:3001");
-
-    wsRef.current.onopen = () => {
-      console.log("WebSocket connected");
-      wsRef.current?.send("Authentication token here");
-    };
-
-    wsRef.current.onmessage = (event) => {
-      console.log("Message:", event.data);
-    };
-
-    return () => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
-
   if (!gotData) return <FullPageLoader />;
 
   return (
@@ -100,6 +50,7 @@ export default function AppLayout({
       <SidebarMain isActive={isActive} data={{}} />
       <div id="select-popup-target" className="select-popup-target"></div>
       <div className="app-wrapper">{children}</div>
+      {user?.id && <NotificationHandler userId={user.id} />}
     </>
   );
 }
