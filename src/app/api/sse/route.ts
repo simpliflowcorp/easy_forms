@@ -1,44 +1,68 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import kv from "@/lib/redis";
 
-// Track active connections
-const activeConnections = new Map<string, WritableStreamDefaultWriter>();
+const createPubSubClient = () => {
+  if (process.env.NODE_ENV === "development") {
+    // Only use duplicate() in development (ioredis)
+    return (kv.client as import("ioredis").Redis).duplicate();
+  }
+  throw new Error("Pub/Sub is not supported with Vercel KV.");
+};
 
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("userId");
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  const stream = new TransformStream();
-  const writer = stream.writable.getWriter();
   const encoder = new TextEncoder();
+  let isConnected = true;
 
-  // Store connection
-  activeConnections.set(userId, writer);
+  const stream = new ReadableStream({
+    async start(controller) {
+      // 1. Send existing notifications first
+      const pending = await kv.lrange(`notifications:${userId}`, 0, -1);
+      if (pending.length > 0) {
+        pending.forEach((msg) => {
+          controller.enqueue(encoder.encode(`data: ${msg}\n\n`));
+        });
+        await kv.del(`notifications:${userId}`);
+      }
+      await kv.set(`active:${userId}`, "true", { ex: 60 });
+      try {
+        // Create dedicated pub/sub connection
+        const pubSub = createPubSubClient(); // No need to connect()
 
-  // Track active user in Redis
-  await kv.set(`active:${userId}`, "true", { ex: 300 });
+        // Subscribe to user channel
+        await pubSub.subscribe(`user:${userId}`);
 
-  // Send pending notifications
-  const pending = await kv.lrange(`notifications:${userId}`, 0, -1);
-  pending.forEach((notification) => {
-    writer.write(encoder.encode(`data: ${notification}\n\n`));
+        pubSub.on("message", (channel, message) => {
+          if (channel === `user:${userId}`) {
+            console.log(`🔔 Received message for ${userId}:`, message);
+            controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+          }
+        });
+
+        console.log(`✅ Subscribed to user:${userId}`);
+
+        // 3. Heartbeat system
+        const heartbeat = setInterval(() => {
+          controller.enqueue(encoder.encode(":heartbeat\n\n"));
+        }, 15000);
+
+        // 4. Cleanup on disconnect
+        req.signal.onabort = async () => {
+          clearInterval(heartbeat);
+          isConnected = false;
+          await pubSub.unsubscribe();
+          await pubSub.quit();
+          controller.close();
+        };
+      } catch (error) {
+        console.error("SSE Connection Error:", error);
+      }
+    },
   });
-  await kv.del(`notifications:${userId}`);
 
-  // Heartbeat
-  const heartbeat = setInterval(() => {
-    writer.write(encoder.encode("data: ♥\n\n"));
-  }, 25000);
-
-  // Cleanup
-  req.signal.onabort = async () => {
-    clearInterval(heartbeat);
-    activeConnections.delete(userId);
-    await kv.del(`active:${userId}`);
-    writer.close();
-  };
-
-  return new Response(stream.readable, {
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -47,18 +71,36 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// New endpoint to send notifications
 export async function POST(req: NextRequest) {
-  const { userId, message } = await req.json();
+  try {
+    const { userId, message } = await req.json();
+    if (!userId) return new Response("Invalid request", { status: 400 });
 
-  if (activeConnections.has(userId)) {
-    const writer = activeConnections.get(userId);
-    const encoder = new TextEncoder();
-    writer?.write(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
-  } else {
+    // Always store the notification first
     await kv.lpush(`notifications:${userId}`, JSON.stringify(message));
+    await kv.ltrim(`notifications:${userId}`, 0, 99);
     await kv.expire(`notifications:${userId}`, 604800);
-  }
 
-  return new Response(JSON.stringify({ success: true }));
+    // Enhanced active check
+    const activeValue = await kv.get(`active:${userId}`);
+    const isActive = activeValue !== null;
+    console.log(`Active check for ${userId}:`, { activeValue, isActive });
+
+    if (isActive && process.env.NODE_ENV === "development") {
+      try {
+        const pubSub = createPubSubClient();
+        await pubSub.publish(`user:${userId}`, JSON.stringify(message));
+        pubSub.disconnect();
+        console.log(`Real-time notification sent to ${userId}`);
+        console.log(`🔔 Publishing message to user:${userId}`, message);
+      } catch (pubSubError) {
+        console.error("Pub/Sub error:", pubSubError);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Notification Error:", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
 }

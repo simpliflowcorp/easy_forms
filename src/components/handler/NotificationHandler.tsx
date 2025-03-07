@@ -4,29 +4,44 @@ import toast from "react-hot-toast";
 
 export default function NotificationHandler({ userId }: { userId: string }) {
   useEffect(() => {
-    const eventSource = new EventSource(`/api/sse?userId=${userId}`);
+    if (!userId) return;
 
-    eventSource.onmessage = (e) => {
-      if (e.data === "♥") return;
+    const url = new URL("/api/sse", window.location.origin);
+    url.searchParams.set("userId", userId);
+
+    const es = new EventSource(url.toString(), {
+      withCredentials: true,
+    });
+
+    // Explicitly listen for message events
+    es.addEventListener("message", (e) => {
+      console.log("SSE Event:", e.data);
+      if (e.data === ":heartbeat") return;
 
       try {
-        const notification = JSON.parse(e.data);
-        toast(notification.message, {
-          icon: "ℹ️",
-          duration: 5000,
-          position: "top-right",
-        });
+        const data = JSON.parse(e.data);
+        toast.success(data.message, { duration: Infinity });
       } catch (error) {
-        console.error("Invalid notification format:", e.data);
+        console.error("Invalid message format:", e.data);
       }
-    };
+    });
 
-    eventSource.onerror = () => {
-      eventSource.close();
-      setTimeout(() => new EventSource(`/api/sse?userId=${userId}`), 3000);
-    };
+    // Handle stream open
+    es.addEventListener("open", () => {
+      console.log("SSE Connection opened");
+    });
 
-    return () => eventSource.close();
+    // Handle errors
+    es.addEventListener("error", (e) => {
+      console.error("SSE Error:", e);
+      es.close();
+      setTimeout(() => window.location.reload(), 5000);
+    });
+
+    return () => {
+      console.log("Cleaning up SSE connection");
+      es.close();
+    };
   }, [userId]);
 
   return null;
