@@ -27,6 +27,7 @@ import FormPropertise from "@/components/builderWorkbench/FormPropertise";
 import { cloneDeep } from "@/helper/cloneDeep";
 import { successHandler } from "@/helper/successHandler";
 import { errorHandler } from "@/helper/errorHandler";
+import DndPage from "@/components/dndPage/DndPage";
 export interface IformsProps {}
 
 export default function forms(props: IformsProps) {
@@ -56,11 +57,6 @@ export default function forms(props: IformsProps) {
 
   const [formID, setFormID] = React.useState("" as string);
   const [form_Id, setForm_Id] = React.useState("" as string);
-  const [resetBtn, setResetBtn] = React.useState(0);
-
-  const [openComponentsSection, setOpenComponentsSection] = React.useState(
-    "base_components" as string
-  );
 
   React.useEffect(() => {
     setFormID(window.location.pathname.split("/")[2] + "");
@@ -103,153 +99,6 @@ export default function forms(props: IformsProps) {
     } catch (error: any) {
       console.log(error);
     }
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 10 },
-    })
-  );
-
-  const dynamicOverlay = () => {
-    if (activeElement) {
-      if (activeElementType === "element") {
-        return (
-          <div className="drag-overlay-item">
-            <DynamicElement openElementProps={() => {}} data={activeElement} />
-          </div>
-        );
-      } else if (activeElementType === "component") {
-        return (
-          <div className="drag-overlay-item">
-            <ComponentsElements id="active" data={activeElement} />
-          </div>
-        );
-      }
-    }
-  };
-
-  const updateFormElement = (element: any) => {
-    const newForm = forms.map((el: any) => {
-      if (el.elementId === element.elementId) {
-        return element;
-      }
-      return el;
-    });
-    setForms(newForm);
-  };
-
-  const changeElementColumn = (element: any, column: number) => {
-    const newForm = forms.map((el: any) => {
-      if (el.elementId === element.elementId) {
-        return { ...element, column: column };
-      }
-      return el;
-    });
-    setForms(newForm);
-  };
-
-  const dragEndHandeler = (e: any) => {
-    const { active, over } = e;
-    const activeId = active.id;
-
-    if (over === null) return;
-    const overId = over.id;
-    const overType = over.data.current.type;
-    if (activeId === overId) return;
-    setForms((items: any) => {
-      const oldIndex = items.indexOf(active.data.current.comp);
-      const newIndex = items.indexOf(over.data.current.comp);
-
-      let arryMoveVar = arrayMove(items, oldIndex, newIndex);
-      return arryMoveVar;
-    });
-
-    if (activeElementType === "component") {
-      let id = active.id;
-      setForms((item: any) => {
-        let newform = [
-          ...item.map((e: any) => {
-            if (e.elementId === id) {
-              return { ...e, elementId: newElementCountRef.current };
-            } else {
-              return e;
-            }
-          }),
-        ];
-        return newform;
-      });
-      newElementCountRef.current++;
-    }
-  };
-
-  const dragOverHandeler = (e: any) => {
-    const { active, over } = e;
-    if (!active || !over) return;
-
-    if (over.data.current?.comp) {
-      if (activeElementType === "component") {
-        let newElement = {
-          id: active.id,
-          elementId: active.id,
-          label: activeElement.label + " " + newElementCountRef.current,
-          type: activeElement.type,
-          column: over.data.current.comp.column,
-          required: 0,
-          unique: 0,
-          position: 0,
-        };
-
-        if (
-          activeElement.type === 11 ||
-          activeElement.type === 12 ||
-          activeElement.type === 13 ||
-          activeElement.type === 14
-        ) {
-          newElement = {
-            ...newElement,
-            options: [
-              { id: 1, label: "Option 1", value: 0 },
-              { id: 2, label: "Option 2", value: 0 },
-              { id: 3, label: "Option 3", value: 0 },
-            ],
-          };
-        }
-
-        if (addedElementCountRef.current === newElementCountRef.current) {
-          setForms((items: any) => {
-            let arryMoveVar = [...items, newElement];
-            return arryMoveVar;
-          });
-          addedElementCountRef.current++;
-        } else {
-          if (
-            active.data.current.comp.column !== over.data.current.comp.column
-          ) {
-            changeElementColumn(
-              active.data.current.comp,
-              over.data.current.comp.column
-            );
-          }
-        }
-      } else {
-        if (active.data.current.comp.column !== over.data.current.comp.column) {
-          changeElementColumn(
-            active.data.current.comp,
-            over.data.current.comp.column
-          );
-        }
-      }
-    }
-  };
-
-  const openElementProps = (element: any) => {
-    setElementPropertise(element);
-    setOpenElementPropertise(true);
-  };
-
-  const updateFormData = (data: any) => {
-    setForm(data);
   };
 
   const updateForm = async () => {
@@ -312,90 +161,6 @@ export default function forms(props: IformsProps) {
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
   } else {
-    return (
-      <div className="form-cnt">
-        <div className="form-header">
-          <div className="left">
-            <div className="form-sec-header-left">
-              <span className="header-indicator">/</span>
-              <span className="header-text">{lang.edit_form}</span>
-            </div>
-          </div>
-
-          <div className="right">
-            <div className="btn-cnt">
-              <IconButton
-                icon="gear"
-                action={() => setOpenFormPropertise(true)}
-              />
-
-              <SecondaryButton
-                label={"cancel"}
-                action={() => router.push("/forms/" + formID)}
-              />
-
-              <PrimaryButton label={"save"} action={() => updateForm()} />
-            </div>
-          </div>
-        </div>
-
-        <DndContext
-          sensors={sensors}
-          collisionDetection={pointerWithin}
-          onDragStart={(e: any) => {
-            if (e) {
-              setActiveElement(e.active.data.current.comp);
-              setActiveElementType(e.active.data.current.type);
-            }
-          }}
-          onDragOver={(e: any) => {
-            dragOverHandeler(e);
-          }}
-          onDragEnd={(e: any) => {
-            dragEndHandeler(e);
-          }}
-        >
-          <div className="form-sec-cnt">
-            <div className="form-sec">
-              <ComponentsContainer
-                openComponentsSection={openComponentsSection}
-                setOpenComponentsSection={setOpenComponentsSection}
-              />
-
-              <FormWorkbenchCnt
-                form={forms}
-                openElementProps={openElementProps}
-              />
-
-              {openElementPropertise && (
-                <ElementPropertise
-                  elementPropertise={elementPropertise}
-                  close={() => setOpenElementPropertise(false)}
-                  updateFormElement={updateFormElement}
-                />
-              )}
-
-              {openFormPropertise && (
-                <FormPropertise
-                  formPropertise={form}
-                  close={() => setOpenFormPropertise(false)}
-                  updateFormElement={updateFormData}
-                />
-              )}
-            </div>
-          </div>
-
-          <DragOverlay
-            dropAnimation={{
-              duration: 500,
-              easing: "cubic-bezier(0.645, 0.045, 0.355, 1.000)",
-            }}
-            className="drag-overlay"
-          >
-            {activeElement && dynamicOverlay()}
-          </DragOverlay>
-        </DndContext>
-      </div>
-    );
+    return <DndPage type="edit_form" action={updateForm} />;
   }
 }

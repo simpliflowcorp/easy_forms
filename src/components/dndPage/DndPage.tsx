@@ -1,12 +1,9 @@
 "use client";
-import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
-import exp from "constants";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import META_DATAS from "@/metaData/fieldTypes.json";
 import {
   DndContext,
   DragOverlay,
@@ -25,19 +22,15 @@ import SecondaryButton from "@/components/buttons/SecondaryButton";
 import IconButton from "@/components/buttons/IconButton";
 import FormPropertise from "@/components/builderWorkbench/FormPropertise";
 import { errorHandler } from "@/helper/errorHandler";
-import { stat } from "fs";
 import { successHandler } from "@/helper/successHandler";
-import DndPage from "@/components/dndPage/DndPage";
-export interface IformsProps {}
+export interface IDndPageProps {
+  type: string;
+}
 
-export default function forms(props: IformsProps) {
+export default function DndPage(props: IDndPageProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
-
-  const [isActive, setIsActive] = React.useState("all" as string);
   const [gotData, setGotData] = React.useState(false);
-  const [data, setData] = React.useState({} as any);
-
   const [form, setForm] = React.useState({
     name: "",
     description: "",
@@ -53,48 +46,6 @@ export default function forms(props: IformsProps) {
       unique: false,
       column: 1,
       position: 1,
-    },
-    {
-      elementId: 13,
-      label: "Check",
-      type: 13,
-      required: true,
-      unique: false,
-      column: 1,
-      options: [
-        { id: 1, label: "Option 1", value: "Option 1" },
-        { id: 2, label: "Option 2", value: "Option 2" },
-        { id: 3, label: "Option 3", value: "Option 3" },
-      ],
-      position: 6,
-    },
-    {
-      elementId: 12,
-      label: "Radio",
-      type: 14,
-      required: true,
-      unique: false,
-      column: 2,
-      options: [
-        { id: 1, label: "Option 1", value: "Option 1" },
-        { id: 2, label: "Option 2", value: "Option 2" },
-        { id: 3, label: "Option 3", value: "Option 3" },
-      ],
-      position: 6,
-    },
-    {
-      elementId: 11,
-      label: "Select",
-      type: 11,
-      required: true,
-      unique: false,
-      column: 2,
-      options: [
-        { id: 1, label: "Option 1", value: "Option 1" },
-        { id: 2, label: "Option 2", value: "Option 2" },
-        { id: 3, label: "Option 3", value: "Option 3" },
-      ],
-      position: 6,
     },
   ] as any);
 
@@ -131,7 +82,11 @@ export default function forms(props: IformsProps) {
       if (activeElementType === "element") {
         return (
           <div className="drag-overlay-item">
-            <DynamicElement openElementProps={() => {}} data={activeElement} />
+            <DynamicElement
+              isPublish={false}
+              openElementProps={() => {}}
+              data={activeElement}
+            />
           </div>
         );
       } else if (activeElementType === "component") {
@@ -202,6 +157,75 @@ export default function forms(props: IformsProps) {
     setActiveElementType("");
   };
 
+  const dragOverHandeler = (e: any) => {
+    const { active, over } = e;
+    if (!active || !over) return;
+
+    if (over.data.current?.comp) {
+      if (activeElementType === "component") {
+        let newElement = {
+          id: active.id,
+          elementId: active.id,
+          label: activeElement.label + " " + newElementCountRef.current,
+          type: activeElement.type,
+          column: over.data.current.comp.column,
+          required: 0,
+          unique: 0,
+          position: 0,
+        };
+
+        if (
+          activeElement.type === 11 ||
+          activeElement.type === 12 ||
+          activeElement.type === 13 ||
+          activeElement.type === 14
+        ) {
+          newElement = {
+            ...newElement,
+            options: [
+              { id: 1, label: "Option 1", value: "Option 1" },
+              { id: 2, label: "Option 2", value: "Option 2" },
+              { id: 3, label: "Option 3", value: "Option 3" },
+            ],
+          };
+        }
+
+        if (addedElementCountRef.current === newElementCountRef.current) {
+          setForms((items: any) => {
+            let arryMoveVar = [...items, newElement];
+            return arryMoveVar;
+          });
+          addedElementCountRef.current++;
+        } else {
+          if (
+            active.data.current.comp.column !== over.data.current.comp.column
+          ) {
+            changeElementColumn(
+              active.data.current.comp,
+              over.data.current.comp.column
+            );
+          }
+        }
+      } else {
+        if (active.data.current.comp.column !== over.data.current.comp.column) {
+          changeElementColumn(
+            active.data.current.comp,
+            over.data.current.comp.column
+          );
+        }
+      }
+    }
+  };
+
+  const openElementProps = (element: any) => {
+    setElementPropertise(element);
+    setOpenElementPropertise(true);
+  };
+
+  const updateFormData = (data: any) => {
+    setForm(data);
+  };
+
   const createForm = async (form_status: number) => {
     if (form.name && form.expiry && forms.length > 0) {
       try {
@@ -235,5 +259,98 @@ export default function forms(props: IformsProps) {
     }
   };
 
-  return <DndPage type="create_form" />;
+  return (
+    <div className="form-cnt">
+      <div className="form-header">
+        <div className="left">
+          <div className="form-sec-header-left">
+            <span className="header-indicator">/</span>
+            <span className="header-text">{lang.create_form}</span>
+          </div>
+        </div>
+
+        <div className="right">
+          <div className="btn-cnt">
+            <IconButton
+              icon="gear"
+              action={() => setOpenFormPropertise(true)}
+            />
+
+            <SecondaryButton
+              label={"cancel"}
+              action={() => router.push("/forms")}
+            />
+
+            <SecondaryButton
+              label={"draft"}
+              // resetBtn={resetBtn}
+              action={() => createForm(0)}
+            />
+
+            <PrimaryButton
+              label={"save"}
+              // resetBtn={resetBtn}
+              action={() => createForm(1)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        key={dndKey} // This
+        collisionDetection={pointerWithin}
+        onDragStart={(e: any) => {
+          if (e) {
+            setActiveElement(e.active.data.current.comp);
+            setActiveElementType(e.active.data.current.type);
+          }
+        }}
+        onDragOver={(e: any) => {
+          dragOverHandeler(e);
+        }}
+        onDragEnd={(e: any) => {
+          dragEndHandeler(e);
+        }}
+      >
+        <div className="form-sec-cnt">
+          <div className="form-sec">
+            <ComponentsContainer
+              openComponentsSection={openComponentsSection}
+              setOpenComponentsSection={setOpenComponentsSection}
+            />
+
+            <FormWorkbenchCnt
+              form={forms}
+              openElementProps={openElementProps}
+            />
+            {openElementPropertise && (
+              <ElementPropertise
+                elementPropertise={elementPropertise}
+                close={() => setOpenElementPropertise(false)}
+                updateFormElement={updateFormElement}
+              />
+            )}
+
+            {openFormPropertise && (
+              <FormPropertise
+                formPropertise={form}
+                close={() => setOpenFormPropertise(false)}
+                updateFormElement={updateFormData}
+              />
+            )}
+          </div>
+        </div>
+        <DragOverlay
+          dropAnimation={{
+            duration: 500,
+            easing: "cubic-bezier(0.645, 0.045, 0.355, 1.000)",
+          }}
+          className="drag-overlay"
+        >
+          {activeElement && dynamicOverlay()}
+        </DragOverlay>
+      </DndContext>
+    </div>
+  );
 }
