@@ -1,7 +1,6 @@
 "use client";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import { useLanguageStore } from "@/store/store";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import {
@@ -21,34 +20,20 @@ import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import IconButton from "@/components/buttons/IconButton";
 import FormPropertise from "@/components/builderWorkbench/FormPropertise";
-import { errorHandler } from "@/helper/errorHandler";
-import { successHandler } from "@/helper/successHandler";
+
 export interface IDndPageProps {
   type: string;
+  action: (data: any) => void;
+  forms: any;
+  form: any;
+  setForm: (data: any) => void;
+  setForms: (data: any) => void;
+  resetBtn?: number;
 }
 
 export default function DndPage(props: IDndPageProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
-  const [gotData, setGotData] = React.useState(false);
-  const [form, setForm] = React.useState({
-    name: "",
-    description: "",
-    expiry: "",
-  } as any);
-
-  const [forms, setForms] = React.useState([
-    {
-      elementId: 1,
-      label: "First Name",
-      type: 1,
-      required: true,
-      unique: false,
-      column: 1,
-      position: 1,
-    },
-  ] as any);
-
   const [activeElement, setActiveElement] = React.useState({} as any);
   const [activeElementType, setActiveElementType] = React.useState(
     "" as string
@@ -68,8 +53,6 @@ export default function DndPage(props: IDndPageProps) {
   const [openComponentsSection, setOpenComponentsSection] = React.useState(
     "base_components" as string
   );
-
-  React.useEffect(() => {}, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -100,23 +83,23 @@ export default function DndPage(props: IDndPageProps) {
   };
 
   const updateFormElement = (element: any) => {
-    const newForm = forms.map((el: any) => {
+    const newForm = props.forms.map((el: any) => {
       if (el.elementId === element.elementId) {
         return element;
       }
       return el;
     });
-    setForms(newForm);
+    props.setForms(newForm);
   };
 
   const changeElementColumn = (element: any, column: number) => {
-    const newForm = forms.map((el: any) => {
+    const newForm = props.forms.map((el: any) => {
       if (el.elementId === element.elementId) {
         return { ...element, column: column };
       }
       return el;
     });
-    setForms(newForm);
+    props.setForms(newForm);
   };
 
   const dragEndHandeler = (e: any) => {
@@ -127,7 +110,7 @@ export default function DndPage(props: IDndPageProps) {
     const overId = over.id;
     const overType = over.data.current.type;
     if (activeId === overId) return;
-    setForms((items: any) => {
+    props.setForms((items: any) => {
       const oldIndex = items.indexOf(active.data.current.comp);
       const newIndex = items.indexOf(over.data.current.comp);
 
@@ -137,7 +120,7 @@ export default function DndPage(props: IDndPageProps) {
 
     if (activeElementType === "component") {
       let id = active.id;
-      setForms((item: any) => {
+      props.setForms((item: any) => {
         let newform = [
           ...item.map((e: any) => {
             if (e.elementId === id) {
@@ -191,7 +174,7 @@ export default function DndPage(props: IDndPageProps) {
         }
 
         if (addedElementCountRef.current === newElementCountRef.current) {
-          setForms((items: any) => {
+          props.setForms((items: any) => {
             let arryMoveVar = [...items, newElement];
             return arryMoveVar;
           });
@@ -223,40 +206,16 @@ export default function DndPage(props: IDndPageProps) {
   };
 
   const updateFormData = (data: any) => {
-    setForm(data);
+    props.setForm(data);
   };
 
-  const createForm = async (form_status: number) => {
-    if (form.name && form.expiry && forms.length > 0) {
-      try {
-        const data = {
-          name: form.name,
-          description: form.description,
-          expiry: form.expiry,
-          elements: forms,
-          status: form_status,
-        };
-        const res = await axios.post("/api/form/create", data);
-        if (res.status === 200) {
-          successHandler(res, lang);
-
-          router.push("/forms/" + res.data.data.formId);
-        }
-      } catch (error: any) {
-        setResetBtn((p) => p + 1);
-        errorHandler(error, lang);
-      }
-    } else {
-      setResetBtn((p) => p + 1);
-      errorHandler(
-        {
-          response: {
-            data: { message: "form_name_and_expiry_cannot_be_empty" },
-          },
-        },
-        lang
+  const deleteElement = (element: any) => {
+    props.setForms((items: any) => {
+      let newItems = items.filter(
+        (e: any) => e.elementId !== element.elementId
       );
-    }
+      return newItems;
+    });
   };
 
   return (
@@ -284,13 +243,13 @@ export default function DndPage(props: IDndPageProps) {
             <SecondaryButton
               label={"draft"}
               // resetBtn={resetBtn}
-              action={() => createForm(0)}
+              action={() => props.action(0)}
             />
 
             <PrimaryButton
               label={"save"}
               // resetBtn={resetBtn}
-              action={() => createForm(1)}
+              action={() => props.action(1)}
             />
           </div>
         </div>
@@ -321,8 +280,9 @@ export default function DndPage(props: IDndPageProps) {
             />
 
             <FormWorkbenchCnt
-              form={forms}
+              form={props.forms}
               openElementProps={openElementProps}
+              deleteElement={deleteElement}
             />
             {openElementPropertise && (
               <ElementPropertise
@@ -334,7 +294,7 @@ export default function DndPage(props: IDndPageProps) {
 
             {openFormPropertise && (
               <FormPropertise
-                formPropertise={form}
+                formPropertise={props.form}
                 close={() => setOpenFormPropertise(false)}
                 updateFormElement={updateFormData}
               />

@@ -17,6 +17,7 @@ type Props = {
   data: any;
   openElementProps: any;
   isPublish: boolean;
+  deleteElement: (elementId: number) => void;
 };
 
 const DynamicElement = (props: Props) => {
@@ -113,6 +114,7 @@ const DynamicElement = (props: Props) => {
             openElementProps={props.openElementProps}
             isOptionsOpen
             closePopup={closePopup}
+            deleteElement={props.deleteElement}
           />
         ) : null}
       </div>

@@ -7,6 +7,7 @@ type Props = {
   form: any;
   id: string;
   openElementProps: any;
+  deleteElement: (elementId: number) => void;
 };
 
 const FormWorkbench = (props: Props) => {
@@ -38,6 +39,7 @@ const FormWorkbench = (props: Props) => {
               openElementProps={props.openElementProps}
               key={index}
               data={element}
+              deleteElement={props.deleteElement}
             />
           );
         })}

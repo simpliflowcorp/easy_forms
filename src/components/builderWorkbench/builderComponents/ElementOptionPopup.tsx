@@ -4,6 +4,7 @@ export interface IElementOptionPopupProps {
   isOptionsOpen: boolean;
   closePopup: () => void;
   openElementProps: any;
+  deleteElement: (elementId: number) => void;
   data: any;
 }
 
@@ -45,7 +46,16 @@ export default function ElementOptionPopup(props: IElementOptionPopupProps) {
         >
           Edit
         </div>
-        <div className="opts-popup-item">Delete</div>
+        <div
+          onClick={() => {
+            console.log("Delete element", props.data);
+            props.deleteElement(props.data);
+            props.closePopup();
+          }}
+          className="opts-popup-item"
+        >
+          Delete
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
 type Props = {
   form: any;
   openElementProps: any;
+  deleteElement: (elementId: number) => void;
 };
 
 const FormWorkbenchCnt = (props: Props) => {
@@ -24,6 +25,7 @@ const FormWorkbenchCnt = (props: Props) => {
             openElementProps={props.openElementProps}
             id="left"
             form={props.form}
+            deleteElement={props.deleteElement}
           />
         </SortableContext>
         <SortableContext
@@ -36,6 +38,7 @@ const FormWorkbenchCnt = (props: Props) => {
             openElementProps={props.openElementProps}
             id="right"
             form={props.form}
+            deleteElement={props.deleteElement}
           />
         </SortableContext>
       </div>
