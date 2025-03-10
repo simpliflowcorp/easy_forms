@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // update user's form list
+    await User.updateOne(
+      { _id: CurrentUser._id },
+      { $push: { form_id: newForm._id, for} }
+    );
+
     return NextResponse.json(
       { success: true, data: newForm, message: "successfully_created_form" },
       { status: 200 }
