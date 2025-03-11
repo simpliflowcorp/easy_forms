@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     // update user's form list
     await User.updateOne(
       { _id: CurrentUser._id },
-      { $push: { form_id: newForm._id, for} }
+      { $push: { form_id: newForm._id, form_name: newForm.name } }
     );
 
     return NextResponse.json(
