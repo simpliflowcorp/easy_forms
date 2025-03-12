@@ -8,6 +8,7 @@ import User from "@/models/userModel";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Hashids from "hashids";
+import mongoose from "mongoose";
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,9 +82,16 @@ export async function POST(request: NextRequest) {
     });
 
     // update user's form list
-    await User.updateOne(
+    const updatedUser = await User.updateOne(
       { _id: CurrentUser._id },
-      { $push: { form_id: newForm._id, form_name: newForm.name } }
+      {
+        $push: {
+          forms: {
+            form_id: new mongoose.Types.ObjectId(newForm._id), // Ensure it's an ObjectId
+            form_name: newForm.name,
+          },
+        },
+      }
     );
 
     return NextResponse.json(

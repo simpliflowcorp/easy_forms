@@ -21,9 +21,8 @@ const userSchema = new mongoose.Schema({
 
   forms: [
     {
-      form_id: Number,
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Form",
+      form_id: { type: mongoose.Schema.Types.ObjectId, ref: "Form" }, // Corrected
+      form_name: String,
     },
   ],
 
