@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { PieChart, Pie, Sector, ResponsiveContainer } from "recharts";
 import generateColorShades from "@/helper/generateColorShades";
+import { useLanguageStore } from "@/store/store";
 
 type Props = {
   data: any;
@@ -10,6 +11,9 @@ export default function PieChartComp(props: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [chartData, setChartData] = useState([{}]);
 
+  const [noData, setNoData] = React.useState(false);
+  const lang = useLanguageStore((state) => state.language);
+
   const onPieEnter = useCallback(
     (_: any, index: any) => {
       setActiveIndex(index);
@@ -18,16 +22,20 @@ export default function PieChartComp(props: Props) {
   );
 
   useEffect(() => {
-    let newData = [];
-    let colors = generateColorShades("#6439FF", "#7CF5FF", props.data.length);
-    for (let i = 0; i < props.data.length; i++) {
-      newData.push({
-        fill: colors[i],
-        name: props.data[i].option,
-        value: props.data[i].value,
-      });
+    if (props.data.length > 0) {
+      let newData = [];
+      let colors = generateColorShades("#6439FF", "#7CF5FF", props.data.length);
+      for (let i = 0; i < props.data.length; i++) {
+        newData.push({
+          fill: colors[i],
+          name: props.data[i].option,
+          value: props.data[i].value,
+        });
+      }
+      setChartData(newData);
+    } else {
+      setNoData(true);
     }
-    setChartData(newData);
   }, [props.data]);
 
   const renderActiveShape = (props: any) => {
@@ -103,19 +111,27 @@ export default function PieChartComp(props: Props) {
     );
   };
 
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart width={400} height={400}>
-        <Pie
-          activeIndex={activeIndex}
-          activeShape={renderActiveShape}
-          data={chartData}
-          innerRadius={60}
-          outerRadius={80}
-          dataKey="value"
-          onMouseEnter={onPieEnter}
-        />
-      </PieChart>
-    </ResponsiveContainer>
-  );
+  if (noData) {
+    return (
+      <div className="no-data-cnt">
+        <i className="ic-inbox"></i>
+        <h3>{lang.no_data_found}</h3>
+      </div>
+    );
+  } else
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart width={400} height={400}>
+          <Pie
+            activeIndex={activeIndex}
+            activeShape={renderActiveShape}
+            data={chartData}
+            innerRadius={60}
+            outerRadius={80}
+            dataKey="value"
+            onMouseEnter={onPieEnter}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    );
 }

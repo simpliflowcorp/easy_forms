@@ -42,5 +42,17 @@
       height: 400px;
       width: 100%;
     }
+
+    .no-data-cnt {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 400px;
+
+      i {
+        font-size: 40px;
+      }
+    }
   }
 }

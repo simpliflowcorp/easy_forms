@@ -1,4 +1,5 @@
 import generateColorShades from "@/helper/generateColorShades";
+import { useLanguageStore } from "@/store/store";
 import React from "react";
 import {
   LineChart,
@@ -20,21 +21,30 @@ export default function LineChartComp(Props: Props) {
 
   const [barColorArray, setBarColorArray] = React.useState<any>([]);
 
-  React.useEffect(() => {
-    let keys = Object.keys(Props.data[0]).filter((key) => key !== Props.index);
-    setVarables(keys);
+  const [noData, setNoData] = React.useState(false);
+  const lang = useLanguageStore((state) => state.language);
 
-    let data = Props.data.map((item: any) => {
-      let date = new Date(item[Props.index] * 1).toLocaleDateString();
-      let obj: { [key: string]: any } = { name: date };
-      keys.forEach((key: any) => {
-        obj[key] = item[key];
+  React.useEffect(() => {
+    if (Props.data.length > 0) {
+      let keys = Object.keys(Props.data[0]).filter(
+        (key) => key !== Props.index
+      );
+      setVarables(keys);
+
+      let data = Props.data.map((item: any) => {
+        let date = new Date(item[Props.index] * 1).toLocaleDateString();
+        let obj: { [key: string]: any } = { name: date };
+        keys.forEach((key: any) => {
+          obj[key] = item[key];
+        });
+        return obj;
       });
-      return obj;
-    });
-    setData(data);
-    let colors = generateColorShades("#6439FF", "#7CF5FF", keys.length);
-    setBarColorArray(colors.map((color: any) => color.slice(1)));
+      setData(data);
+      let colors = generateColorShades("#6439FF", "#7CF5FF", keys.length);
+      setBarColorArray(colors.map((color: any) => color.slice(1)));
+    } else {
+      setNoData(true);
+    }
   }, []);
 
   return (

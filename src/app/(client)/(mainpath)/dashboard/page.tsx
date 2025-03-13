@@ -14,7 +14,10 @@ export interface IdashboardProps {}
 export default function dashboard(props: IdashboardProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
-  const [data, setData] = React.useState({});
+  const [data, setData] = React.useState({
+    cards: [],
+    charts: [],
+  });
   const [gotData, setGotData] = React.useState(false);
 
   // const testModel = async () => {
@@ -37,6 +40,50 @@ export default function dashboard(props: IdashboardProps) {
   };
   const barChartData = {};
 
+  let dataSample = {
+    cards: [
+      { label: "Active Forms", count: 3 },
+      { label: "Total Forms", count: 3 },
+      { label: "Total Responses", count: 10 },
+      { label: "Total Visitors", count: 30 },
+    ],
+    charts: [
+      {
+        label: "Activity Last Three Days",
+        type: "bar",
+        data: [
+          { timeStamp: "1730566926000", visited: 2, responded: 1 },
+          { timeStamp: "1730653326000", visited: 4, responded: 4 },
+          { timeStamp: "1730739726000", visited: 4, responded: 0 },
+          { timeStamp: "1730826126000", visited: 10, responded: 4 },
+          { timeStamp: "1730912526000", visited: 3, responded: 0 },
+          { timeStamp: "1730998926000", visited: 7, responded: 1 },
+        ],
+        index: "timeStamp",
+      },
+      {
+        label: "Visited Forms Last Three Days",
+        type: "pie",
+        data: [
+          { name: "Form A", value: 15 },
+          { name: "Form B", value: 6 },
+          { name: "Form C", value: 9 },
+        ],
+        index: "name",
+      },
+      {
+        label: "Responses Recorded By Forms",
+        type: "radar",
+        data: [
+          { name: "Form A", value: 6 },
+          { name: "Form B", value: 1 },
+          { name: "Form C", value: 3 },
+        ],
+        index: "name",
+      },
+    ],
+  };
+
   React.useEffect(() => {
     getDashboardData();
   }, []);
@@ -52,13 +99,22 @@ export default function dashboard(props: IdashboardProps) {
         </div>
         <div className="dashboard">
           <div className="cards-cnt">
-            <InfoCard label={lang.active_forms} count={3} />
-            <InfoCard label={lang.total_forms} count={3} />
-            <InfoCard label={lang.total_responses} count={10} />
-            <InfoCard label={lang.total_visitors} count={30} />
+            {data.cards.map((card, index) => (
+              <InfoCard key={index} label={card?.label} count={card?.count} />
+            ))}
           </div>
 
           <div className="charts-cnt">
+            {data.charts.map((chart, index) => {
+              return (
+                <ChartComponetManger
+                  label={chart.label}
+                  type={chart.type}
+                  data={chart.data}
+                  index={chart.index}
+                />
+              );
+            })}
             <ChartComponetManger
               label={lang.activity_last_three_days}
               type="bar"
