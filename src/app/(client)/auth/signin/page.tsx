@@ -1,114 +1,191 @@
-"use client";
+import { connectDB } from "@/dbConfig/dbConfig";
+import { NextResponse, NextRequest } from "next/server";
+import Form from "@/models/formModel";
+import User from "@/models/userModel";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
-import OauthButton from "@/components/buttons/OauthButton";
-import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
-import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ErroTextCnt from "@/components/Inputs/components/ErrorTextCnt";
-import EmailInput from "@/components/Inputs/EmailInput";
-import PasswordInput from "@/components/Inputs/PasswordInput";
-import TextFieldInput from "@/components/Inputs/TextFieldInput";
-import AuthPoster from "@/components/posters/AuthPoster";
-import { errorHandler } from "@/helper/errorHandler";
-import { useLanguageStore } from "@/store/store";
-import axios from "axios";
-import { signIn, useSession } from "next-auth/react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import * as React from "react";
-import toast from "react-hot-toast";
+export async function GET(request: NextRequest) {
+  try {
+    await connectDB();
 
-export interface ISignInProps {}
-
-export default function SignIn(props: ISignInProps) {
-  const router = useRouter();
-  const [data, setData] = React.useState({
-    email: "",
-    password: "",
-  });
-  const [dataIsValid, setDataIsValid] = React.useState({
-    email: false,
-    password: false,
-  });
-  const [resetBtn, setResetBtn] = React.useState(0);
-  const lang = useLanguageStore((state) => state.language);
-  const session = useSession();
-
-  const SignIn = async () => {
-    if (dataIsValid.email && dataIsValid.password) {
-      try {
-        const res = await axios.post("/api/auth/signin", data);
-        if (res.status === 200) {
-          router.push("/profile");
-        }
-      } catch (error: any) {
-        setResetBtn((p) => p + 1);
-        errorHandler(error, lang);
-      }
-    } else {
-      setResetBtn((p) => p + 1);
+    // Authentication check
+    const cookies = request.cookies as any;
+    const token = cookies.get("token");
+    if (!token) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-  };
-  const authSignIn = (auth: string) => {
-    signIn(auth);
-  };
 
-  return (
-    <div className="auth-wrapper">
-      <div className="img-cnt">
-        <AuthPoster />
-      </div>
-      <div className="cred-form">
-        <h1>{lang.sign_in}</h1>
-        <div className="inputs-wrapper">
-          <EmailInput
-            reset={resetBtn}
-            value={data.email}
-            label={lang.email}
-            updateValue={(value) => setData((p) => ({ ...p, email: value }))}
-            isRequired={true}
-            isValid={dataIsValid.email}
-            updateIsValid={(value) =>
-              setDataIsValid((p) => ({ ...p, email: value }))
-            }
-          />
+    const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
+    const currentUser = await User.findById(tokenData._id);
+    if (!currentUser) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
 
-          <PasswordInput
-            reset={resetBtn}
-            label={lang.password}
-            value={data.password}
-            updateValue={(value) => setData({ ...data, password: value })}
-            isRequired={true}
-            isValid={dataIsValid.password}
-            updateIsValid={(value) =>
-              setDataIsValid((p) => ({ ...p, password: value }))
-            }
-          />
-          <div className="link-cnt">
-            <Link className="link" href="/auth/forgotPassword">
-              {lang.forgot_password}
-            </Link>
-          </div>
+    // Get last 3 days as UTC date keys
+    const dateKeys = [...Array(3)]
+      .map((_, i) => {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() - i);
+        d.setUTCHours(0, 0, 0, 0);
+        return d.toISOString().split("T")[0];
+      })
+      .reverse();
 
-          <div className="link-cnt">
-            <span>{lang.dont_have_an_account}</span>
+    // Aggregation Query
+    const [aggregationResult] = await Form.aggregate([
+      { $match: { user: new mongoose.Types.ObjectId(currentUser._id) } },
+      {
+        $facet: {
+          activeForms: [
+            { $match: { status: 1, expiry: { $gt: new Date() } } },
+            { $count: "count" },
+          ],
+          totalForms: [{ $count: "count" }],
+          totalResponses: [
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$analytics.totalResponses" },
+              },
+            },
+          ],
+          totalVisitors: [
+            {
+              $group: { _id: null, total: { $sum: "$analytics.totalVisits" } },
+            },
+          ],
+          activityData: [
+            {
+              $unwind: {
+                path: "$analytics.dailyResponses",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $unwind: {
+                path: "$analytics.dailyVisits",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: "$analytics.dailyResponses.date",
+                  },
+                },
+                responses: { $sum: "$analytics.dailyResponses.count" },
+                visits: { $sum: "$analytics.dailyVisits.count" },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ],
+          responsesByForm: [
+            { $sort: { "analytics.totalResponses": -1 } },
+            { $limit: 5 },
+            { $project: { name: 1, responses: "$analytics.totalResponses" } },
+          ],
+          visitedForms: [
+            {
+              $unwind: {
+                path: "$analytics.dailyVisits",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: "$analytics.dailyVisits.date",
+                  },
+                },
+                visits: { $sum: "$analytics.dailyVisits.count" },
+              },
+            },
+            { $sort: { visits: -1 } },
+            { $limit: 5 },
+          ],
+        },
+      },
+    ]);
 
-            <Link className="link" href="/auth/signup">
-              {lang.sign_up}
-            </Link>
-          </div>
+    // Extracting values safely
+    const activeFormsCount = aggregationResult?.activeForms?.[0]?.count || 0;
+    const totalFormsCount = aggregationResult?.totalForms?.[0]?.count || 0;
+    const totalResponses = aggregationResult?.totalResponses?.[0]?.total || 0;
+    const totalVisitors = aggregationResult?.totalVisitors?.[0]?.total || 0;
 
-          <PrimaryActionButton
-            label="sign_in"
-            action={SignIn}
-            resetBtn={resetBtn}
-          />
-          <OauthButton
-            label="sign_in_with_google"
-            action={authSignIn}
-            auth={"google"}
-          />
-        </div>
-      </div>
-    </div>
-  );
+    // Formatting `activityData`
+    const dataMap = aggregationResult?.activityData?.reduce(
+      (acc: any, item: any) => {
+        acc[item._id] = item;
+        return acc;
+      },
+      {}
+    );
+
+    const activityData = dateKeys.map((date) => ({
+      timeStamp: new Date(date).getTime().toString(),
+      visited: dataMap?.[date]?.visits || 0,
+      responded: dataMap?.[date]?.responses || 0,
+    }));
+
+    // Formatting `visitedForms`
+    const visitedForms =
+      aggregationResult?.visitedForms?.map((form: any) => ({
+        name: form._id,
+        value: form.visits,
+      })) || [];
+
+    // Formatting `responsesByForm`
+    const responsesByForm =
+      aggregationResult?.responsesByForm?.map((form: any) => ({
+        name: form.name,
+        value: form.responses,
+      })) || [];
+
+    // Constructing final response
+    const formattedData = {
+      cards: [
+        { label: "Active Forms", count: activeFormsCount },
+        { label: "Total Forms", count: totalFormsCount },
+        { label: "Total Responses", count: totalResponses },
+        { label: "Total Visitors", count: totalVisitors },
+      ],
+      charts: [
+        {
+          label: "Activity Last Three Days",
+          type: "bar",
+          data: activityData,
+          index: "timeStamp",
+        },
+        {
+          label: "Visited Forms Last Three Days",
+          type: "pie",
+          data: visitedForms,
+          index: "name",
+        },
+        {
+          label: "Responses Recorded By Forms",
+          type: "radar",
+          data: responsesByForm,
+          index: "name",
+        },
+      ],
+    };
+
+    return NextResponse.json(
+      { success: true, data: formattedData },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    console.error("Form retrieval error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

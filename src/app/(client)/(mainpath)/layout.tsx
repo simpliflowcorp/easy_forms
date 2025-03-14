@@ -33,15 +33,17 @@ export default function AppLayout({
       setGotData(true);
     } catch (error) {
       console.error(error);
-      // router.push("/login");
+      router.push("/login");
     }
-  }, [router]);
+  }, []);
+
+  console.log(pathname);
 
   React.useEffect(() => {
     const pathSegment = window.location.pathname.split("/")[1];
     setIsActive(pathSegment);
     getUserData();
-  }, [getUserData]);
+  }, [pathname]);
 
   if (!gotData) return <FullPageLoader />;
 

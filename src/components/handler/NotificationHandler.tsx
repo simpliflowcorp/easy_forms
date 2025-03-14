@@ -20,7 +20,7 @@ export default function NotificationHandler({ userId }: { userId: string }) {
 
       try {
         const data = JSON.parse(e.data);
-        toast.success(data.message, { duration: Infinity });
+        toast.success(data.message, { duration: 3000 });
       } catch (error) {
         console.error("Invalid message format:", e.data);
       }

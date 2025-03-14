@@ -7,33 +7,34 @@ import mongoose from "mongoose";
 
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+
     // Authentication check
     const cookies = request.cookies as any;
     const token = cookies.get("token");
-
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
-
-    // Find the user
-    const CurrentUser = await User.findOne({ _id: tokenData._id });
-
-    if (!CurrentUser) {
+    const currentUser = await User.findById(tokenData._id);
+    if (!currentUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    await connectDB();
+    // Get last 3 days as UTC date keys
+    const dateKeys = [...Array(3)]
+      .map((_, i) => {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() - i);
+        d.setUTCHours(0, 0, 0, 0);
+        return d.toISOString().split("T")[0];
+      })
+      .reverse();
 
-    // Calculate `threeDaysAgo`
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    threeDaysAgo.setUTCHours(0, 0, 0, 0);
-
-    // Aggregation query
+    // Aggregation Query
     const [aggregationResult] = await Form.aggregate([
-      { $match: { user: new mongoose.Types.ObjectId(CurrentUser._id) } },
+      { $match: { user: new mongoose.Types.ObjectId(currentUser._id) } },
       {
         $facet: {
           activeForms: [
@@ -62,8 +63,9 @@ export async function GET(request: NextRequest) {
               },
             },
             {
-              $match: {
-                "analytics.dailyResponses.date": { $gte: threeDaysAgo },
+              $unwind: {
+                path: "$analytics.dailyVisits",
+                preserveNullAndEmptyArrays: true,
               },
             },
             {
@@ -93,14 +95,8 @@ export async function GET(request: NextRequest) {
               },
             },
             {
-              $match: {
-                "analytics.dailyVisits.date": { $gte: threeDaysAgo },
-              },
-            },
-            {
               $group: {
-                _id: "$_id",
-                name: { $first: "$name" },
+                _id: "$name",
                 visits: { $sum: "$analytics.dailyVisits.count" },
               },
             },
@@ -118,23 +114,27 @@ export async function GET(request: NextRequest) {
     const totalVisitors = aggregationResult?.totalVisitors?.[0]?.total || 0;
 
     // Formatting `activityData`
-    const activityData =
-      aggregationResult?.activityData?.map((item) => ({
-        timeStamp: new Date(item._id).getTime().toString(),
-        visited: item.visits || 0,
-        responded: item.responses || 0,
-      })) || [];
+    const dataMap = aggregationResult?.activityData?.reduce((acc, item) => {
+      acc[item._id] = item;
+      return acc;
+    }, {});
+
+    const activityData = dateKeys.map((date) => ({
+      timeStamp: new Date(date).getTime().toString(),
+      visited: dataMap?.[date]?.visits || 0,
+      responded: dataMap?.[date]?.responses || 0,
+    }));
 
     // Formatting `visitedForms`
     const visitedForms =
-      aggregationResult?.visitedForms?.map((form) => ({
-        name: form.name,
+      aggregationResult?.visitedForms?.map((form: any) => ({
+        name: form._id,
         value: form.visits,
       })) || [];
 
     // Formatting `responsesByForm`
     const responsesByForm =
-      aggregationResult?.responsesByForm?.map((form) => ({
+      aggregationResult?.responsesByForm?.map((form: any) => ({
         name: form.name,
         value: form.responses,
       })) || [];
@@ -171,12 +171,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: formattedData },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
     console.error("Form retrieval error:", error);
