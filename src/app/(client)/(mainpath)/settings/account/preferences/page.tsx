@@ -71,6 +71,10 @@ export default function security(props: IsecurityProps) {
     }
   };
 
+  const changeLanguage = (value: string) => {
+    setData({ ...data, language: value });
+  };
+
   React.useEffect(() => {
     getPreferences();
   }, []);
