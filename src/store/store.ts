@@ -6,10 +6,12 @@ type Language = {
 
 interface LanguageStore {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  languageKey: string;
+  setLanguage: (lang: Language, languageKey: string) => void;
 }
 
 export const useLanguageStore = create<LanguageStore>((set) => ({
   language: {},
-  setLanguage: (lang) => set({ language: lang }),
+  languageKey: "en",
+  setLanguage: (lang, languageKey) => set({ language: lang, languageKey }),
 }));
