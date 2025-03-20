@@ -71,8 +71,14 @@ export default function security(props: IsecurityProps) {
     }
   };
 
-  const changeLanguage = (value: string) => {
-    // setData({ ...data, language: value });
+  const fetchLanguageData = async (langKey: string) => {
+    try {
+      const response = await import(`../locales/${langKey}.json`);
+      return response.default;
+    } catch (error) {
+      console.error("Failed to load language file", error);
+      return {};
+    }
   };
 
   React.useEffect(() => {
