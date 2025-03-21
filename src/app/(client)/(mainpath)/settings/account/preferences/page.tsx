@@ -12,6 +12,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import countryData from "@/metaData/country.json";
+import { set } from "lodash";
 
 export interface IsecurityProps {}
 
@@ -59,12 +60,13 @@ export default function security(props: IsecurityProps) {
 
   const [resetBtn, setResetBtn] = React.useState(0);
   const [reset, setReset] = React.useState(0);
+  const [gotData, setGotData] = React.useState(false);
 
   const getPreferences = async () => {
     try {
       const res = await axios.get("/api/settings/preferences");
       console.log(res.data.data);
-
+      setGotData(true);
       setData(res.data.data);
     } catch (error: any) {
       errorHandler(error, lang);
@@ -96,57 +98,62 @@ export default function security(props: IsecurityProps) {
     }
   };
 
-  return (
-    <div className="setting-cnt">
-      <div className="setting-header">
-        <div className="left">
-          <span className="header-indicator">/</span>
-          <span className="header-text">{lang.account}</span>
+  if (!gotData) {
+    return <div className="accent-line-loader"></div>;
+  } else
+    return (
+      <div className="setting-cnt">
+        <div className="setting-header">
+          <div className="left">
+            <span className="header-indicator">/</span>
+            <span className="header-text">{lang.account}</span>
+          </div>
+          <div className="right">
+            <PrimaryActionButton
+              resetBtn={resetBtn}
+              label={"update"}
+              action={() => updatePreferences()}
+            />
+          </div>
         </div>
-        <div className="right">
-          <PrimaryActionButton
-            resetBtn={resetBtn}
-            label={"update"}
-            action={() => updatePreferences()}
-          />
-        </div>
-      </div>
-      <div className="setting-body">
-        <div className="sub-setting">
-          <span className="sub-setting-header">
-            <span
-              onClick={() => router.push("/settings/account")}
-              className="ic-caret-left sub-setting-line-icon"
-            ></span>
-            {lang.profile}
-          </span>
-          <div className="sub-setting-body">
-            <div className="sub-setting-body-profile-cnt">
-              {structureData.map((item, index) => (
-                <div key={index} className="sub-setting-body-profile-line">
-                  <DynamicFieldManger
-                    reset={reset}
-                    label={lang[item.name]}
-                    options={item.options ? item.options : []}
-                    // value={data[item.name]}
-                    value={data[item.name as keyof typeof data]}
-                    updateValue={(value: string) =>
-                      setData({ ...data, [item.name]: value })
-                    }
-                    isRequired={false}
-                    // isValid={dataIsValid[item.name]}
-                    isValid={dataIsValid[item.name as keyof typeof dataIsValid]}
-                    updateIsValid={(value: boolean) =>
-                      setDataIsValid((p) => ({ ...p, [item.name]: value }))
-                    }
-                    type={item.type}
-                  />
-                </div>
-              ))}
+        <div className="setting-body">
+          <div className="sub-setting">
+            <span className="sub-setting-header">
+              <span
+                onClick={() => router.push("/settings/account")}
+                className="ic-caret-left sub-setting-line-icon"
+              ></span>
+              {lang.profile}
+            </span>
+            <div className="sub-setting-body">
+              <div className="sub-setting-body-profile-cnt">
+                {structureData.map((item, index) => (
+                  <div key={index} className="sub-setting-body-profile-line">
+                    <DynamicFieldManger
+                      reset={reset}
+                      label={lang[item.name]}
+                      options={item.options ? item.options : []}
+                      // value={data[item.name]}
+                      value={data[item.name as keyof typeof data]}
+                      updateValue={(value: string) =>
+                        setData({ ...data, [item.name]: value })
+                      }
+                      isRequired={false}
+                      // isValid={dataIsValid[item.name]}
+                      isValid={
+                        dataIsValid[item.name as keyof typeof dataIsValid]
+                      }
+                      updateIsValid={(value: boolean) =>
+                        setDataIsValid((p) => ({ ...p, [item.name]: value }))
+                      }
+                      type={item.type}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }
