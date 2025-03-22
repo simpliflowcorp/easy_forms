@@ -12,14 +12,14 @@ const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
     let lang = localStorage.getItem("lang") || "en";
     import(`../language/${lang}.json`)
       .then((json) => {
-        setLanguage(json.default);
+        setLanguage(json.default, lang);
         setGotData(true);
       })
       .catch((error) => {
         // Handle any errors
         console.error("Error importing module:", error);
       });
-  }, [setLanguage]);
+  }, []);
 
   if (!gotData)
     return (

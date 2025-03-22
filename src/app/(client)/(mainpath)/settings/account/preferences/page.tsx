@@ -18,6 +18,7 @@ export interface IsecurityProps {}
 
 export default function security(props: IsecurityProps) {
   const lang = useLanguageStore((state) => state.language);
+  const setLanguage = useLanguageStore((state) => state.setLanguage);
   const router = useRouter();
 
   const [data, setData] = React.useState({
@@ -75,8 +76,8 @@ export default function security(props: IsecurityProps) {
 
   const fetchLanguageData = async (langKey: string) => {
     try {
-      const response = await import(`../locales/${langKey}.json`);
-      return response.default;
+      const response = await import(`../language/${langKey}.json`);
+      setLanguage(response.default, langKey);
     } catch (error) {
       console.error("Failed to load language file", error);
       return {};
