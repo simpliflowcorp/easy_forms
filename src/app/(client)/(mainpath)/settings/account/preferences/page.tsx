@@ -74,16 +74,6 @@ export default function security(props: IsecurityProps) {
     }
   };
 
-  const fetchLanguageData = async (langKey: string) => {
-    try {
-      const response = await import(`../language/${langKey}.json`);
-      setLanguage(response.default, langKey);
-    } catch (error) {
-      console.error("Failed to load language file", error);
-      return {};
-    }
-  };
-
   React.useEffect(() => {
     getPreferences();
   }, []);

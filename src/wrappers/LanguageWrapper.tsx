@@ -2,32 +2,47 @@
 
 import FullPageLoader from "@/components/Loaders/FullPageLoader";
 import { useLanguageStore } from "@/store/store";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
   const setLanguage = useLanguageStore((state) => state.setLanguage);
-  const [gotData, setGotData] = React.useState(false);
+  const [gotData, setGotData] = useState(false);
+
+  const loadLanguage = async (lang: string) => {
+    try {
+      const json = await import(`../language/${lang}.json`);
+      setLanguage(json.default, lang);
+      localStorage.setItem("lang", lang); // Ensure persistence
+      setGotData(true);
+    } catch (error) {
+      console.error("Error loading language:", error);
+      if (lang !== "en") loadLanguage("en"); // Fallback to English
+    }
+  };
 
   useEffect(() => {
-    let lang = localStorage.getItem("lang") || "en";
-    import(`../language/${lang}.json`)
-      .then((json) => {
-        setLanguage(json.default, lang);
-        setGotData(true);
-      })
-      .catch((error) => {
-        // Handle any errors
-        console.error("Error importing module:", error);
-      });
-  }, []);
+    const lang = localStorage.getItem("lang") || "en";
+    loadLanguage(lang);
+
+    // Listen for language changes across tabs
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "lang" && event.newValue) {
+        loadLanguage(event.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [setLanguage]);
 
   if (!gotData)
     return (
       <body>
-        <FullPageLoader />{" "}
+        <FullPageLoader />
       </body>
     );
-  else return <>{children}</>;
+
+  return <>{children}</>;
 };
 
 export default LanguageWrapper;
