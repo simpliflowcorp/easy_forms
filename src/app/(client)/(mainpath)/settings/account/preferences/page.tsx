@@ -18,6 +18,8 @@ export interface IsecurityProps {}
 
 export default function security(props: IsecurityProps) {
   const lang = useLanguageStore((state) => state.language);
+  const langKey = useLanguageStore((state) => state.languageKey);
+
   const setLanguage = useLanguageStore((state) => state.setLanguage);
   const router = useRouter();
 
@@ -67,6 +69,7 @@ export default function security(props: IsecurityProps) {
     try {
       const res = await axios.get("/api/settings/preferences");
       console.log(res.data.data);
+
       setGotData(true);
       setData(res.data.data);
     } catch (error: any) {
@@ -81,6 +84,10 @@ export default function security(props: IsecurityProps) {
   const updatePreferences = async () => {
     try {
       const res = await axios.post("/api/settings/preferences", data);
+      if (data.language !== langKey) {
+        // setLanguage(res.data.data.language, data.language);
+        localStorage.setItem("lang", data.language);
+      }
       successHandler(res, lang);
       setResetBtn((p) => p + 1);
     } catch (error: any) {
