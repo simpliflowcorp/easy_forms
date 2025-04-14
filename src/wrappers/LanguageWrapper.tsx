@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 
 const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
   const setLanguage = useLanguageStore((state) => state.setLanguage);
+  const langKey = useLanguageStore((state) => state.languageKey);
   const [gotData, setGotData] = useState(false);
 
   const loadLanguage = async (lang: string) => {
@@ -33,7 +34,7 @@ const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener("storage", handleStorageChange);
 
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, [setLanguage]);
+  }, [langKey]);
 
   if (!gotData)
     return (
