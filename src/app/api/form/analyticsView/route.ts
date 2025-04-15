@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
 
     let form = await Form.findOne({ formId: form_id });
 
-    console.log(form._id);
-
     if (!form) {
       return NextResponse.json({ message: "Form not found" }, { status: 404 });
     }

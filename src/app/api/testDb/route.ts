@@ -9,8 +9,6 @@ export async function GET(request: NextRequest) {
 
     const db = mongoose.connection.name;
 
-    console.log("Database Name:", db);
-
     return NextResponse.json({ message: "success" }, { status: 200 });
   } catch (error: any) {
     console.error("Error occurred:", error); // Log the error for debugging

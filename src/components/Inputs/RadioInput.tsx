@@ -33,8 +33,6 @@ export default function RadioInput(props: IRadioInputProps) {
     }
   }, [props.value, props.isValid, props.reset]);
 
-  console.log(value);
-
   return (
     <>
       <div className="input-cnt">

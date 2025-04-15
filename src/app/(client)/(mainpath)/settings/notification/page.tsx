@@ -98,8 +98,6 @@ export default function notification(props: InotificationProps) {
                 <span className="sub-setting-header">{lang[item.title]}</span>
                 <div className="sub-setting-body">
                   {item.options.map((option, index) => {
-                    console.log(data[item.value][option.value]);
-
                     return (
                       <ToogleSwitch
                         key={"op" + index}

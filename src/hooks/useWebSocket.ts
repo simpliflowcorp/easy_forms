@@ -12,22 +12,17 @@ export default function useWebSocket(userId: string | undefined) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("WebSocket connected");
       // Send authentication message
       ws.send(JSON.stringify({ type: "auth", userId }));
     };
 
-    ws.onmessage = (event) => {
-      console.log("WebSocket message:", event.data);
-    };
+    ws.onmessage = (event) => {};
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
+    ws.onclose = () => {};
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {

@@ -234,7 +234,6 @@ export default function dashboard(props: IdashboardProps) {
     try {
       let res = await axios.get("/api/form/analyticsView");
       setGotData(true);
-      console.log(res.data.data.analytics);
 
       let card = [
         {
@@ -252,9 +251,6 @@ export default function dashboard(props: IdashboardProps) {
               const visitDate = new Date(v.date).setUTCHours(0, 0, 0, 0);
               const today = new Date().setUTCHours(0, 0, 0, 0);
 
-              console.log(new Date(v.date), new Date(today));
-              console.log(visitDate === today);
-
               return visitDate === today;
             })[0]?.count | 0,
         },
@@ -264,9 +260,6 @@ export default function dashboard(props: IdashboardProps) {
             res.data.data.analytics.dailyVisits.filter((v: any) => {
               const visitDate = new Date(v.date).setUTCHours(0, 0, 0, 0);
               const today = new Date().setUTCHours(0, 0, 0, 0);
-
-              console.log(new Date(v.date), new Date(today));
-              console.log(visitDate === today);
 
               return visitDate === today;
             })[0]?.count | 0,
@@ -315,11 +308,7 @@ export default function dashboard(props: IdashboardProps) {
         },
       ];
 
-      console.log(chartData);
-
       setFormData({ cards: card, charts: graphs });
-
-      console.log(card);
 
       // setFormData(res.data.data);
     } catch (error) {

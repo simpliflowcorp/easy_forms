@@ -37,8 +37,6 @@ export default function AppLayout({
     }
   }, []);
 
-  console.log(pathname);
-
   React.useEffect(() => {
     const pathSegment = window.location.pathname.split("/")[1];
     setIsActive(pathSegment);

@@ -10,8 +10,6 @@ export async function GET(request: NextRequest) {
     //Check user exists
     let token = cookies().get("token");
 
-    console.log(token);
-
     if (!token) {
       return NextResponse.json({ message: "No token found" }, { status: 404 });
     }

@@ -24,8 +24,6 @@ export default function ToogleSwitch(props: IToogleSwitchProps) {
   //   }
   // }, [props.value, props.isValid, props.reset]);
 
-  console.log(props);
-
   return (
     <div className="toogle-switch">
       <span>{lang[props.label]}</span>

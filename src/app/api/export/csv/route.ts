@@ -74,8 +74,6 @@ export async function GET(request: NextRequest) {
     const parser = new json2csv.Parser({ fields: allKeys });
     const csv = parser.parse(csvData);
 
-    console.log(csv);
-
     // Create response
     return new NextResponse(csv, {
       headers: {

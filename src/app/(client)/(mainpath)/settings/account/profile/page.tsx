@@ -148,8 +148,6 @@ export default function security(props: IsecurityProps) {
     }
   };
 
-  console.log(data);
-
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
   } else

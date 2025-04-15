@@ -33,7 +33,6 @@ export default function dashboard(props: IdashboardProps) {
       let res = await axios.get("/api/dashboard");
       setData(res.data.data);
       setGotData(true);
-      console.log(res);
     } catch (error) {
       errorHandler(error, lang);
     }

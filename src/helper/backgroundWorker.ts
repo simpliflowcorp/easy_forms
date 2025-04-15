@@ -90,7 +90,6 @@ async function checkAndNotifyExpirations() {
 
 // 7. Schedule with node-cron (every 5 minutes)
 cron.schedule("*/5 * * * *", () => {
-  console.log("Running expiration check...");
   checkAndNotifyExpirations();
 });
 

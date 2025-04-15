@@ -154,10 +154,6 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       };
 
-      console.log("Notification Payload:", notification);
-      console.log("Form Owner ID:", formOwnerId);
-
-      console.log("Sending to SSE API...");
       // Use absolute URL with environment variable
       const baseUrl =
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -169,8 +165,6 @@ export async function POST(request: NextRequest) {
           message: notification,
         }),
       });
-
-      console.log("SSE API Response:", await sseResponse);
     } catch (notificationError) {
       console.error("Notification failed:", notificationError);
       // Don't fail the main request, just log the error

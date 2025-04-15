@@ -13,8 +13,6 @@ const ComponentsContainer = (props: Props) => {
   const lang = useLanguageStore((state) => state.language);
   // const [activeSection, setActiveSection] = React.useState("");
 
-  console.log(props.openComponentsSection);
-
   return (
     <div className="components-sec-cnt">
       <div className="components-sec">

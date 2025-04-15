@@ -56,8 +56,6 @@ const Publish = (props: Props) => {
   }, []);
 
   const submitForm = async () => {
-    console.log(data);
-
     // check is required fields are filled
     let requiredFields = forms.elements.filter(
       (element: any) => element.required
@@ -67,8 +65,6 @@ const Publish = (props: Props) => {
       return (acc =
         acc && dataIsValid[curr.label as keyof typeof dataIsValid] === true);
     }, true);
-
-    console.log({ isValid, dataIsValid });
 
     if (isValid) {
       try {
@@ -109,8 +105,6 @@ const Publish = (props: Props) => {
         return;
     }
   };
-
-  console.log(data);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;

@@ -41,7 +41,6 @@ export const blurCheck = (
 ) => {
   if (type !== "password" && type !== "array") value = value.trim();
   let validationRes = validationCheck(value, props.isRequired, type);
-  console.log(validationRes);
 
   if (validationRes === 1) {
     props.updateIsValid(true);

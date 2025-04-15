@@ -26,8 +26,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    console.log(hasVisited);
-
     if (!hasVisited) {
       const today = new Date();
       today.setUTCHours(0, 0, 0, 0);

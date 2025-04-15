@@ -68,7 +68,6 @@ export default function security(props: IsecurityProps) {
   const getPreferences = async () => {
     try {
       const res = await axios.get("/api/settings/preferences");
-      console.log(res.data.data);
 
       setGotData(true);
       setData(res.data.data);

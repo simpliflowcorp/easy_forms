@@ -63,7 +63,6 @@ export default function CheckboxInput(props: ICheckboxInputProps) {
                 onChange={(e) => {
                   let values = handleCheckboxChange(e.target.value);
                   setValue([...values]);
-                  console.log(values);
 
                   blurCheck(values, props, setIsValid, setIsNotEmpty, "array");
                 }}

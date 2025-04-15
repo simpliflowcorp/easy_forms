@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
 
     let form = await Form.findOne({ formId: form_id });
 
-    console.log(form._id);
-
     if (!form) {
       return NextResponse.json({ message: "Form not found" }, { status: 404 });
     }
@@ -54,13 +52,7 @@ export async function POST(request: NextRequest) {
 
     const totalResponses = await Response.countDocuments({ form_id: form._id });
 
-    console.log(totalResponses);
-
-    console.log({ pageNum, rowCount });
-
     const skip = (pageNum - 1) * rowCount;
-
-    console.log(skip);
 
     const responses = await Response.find({ form_id: form._id })
       .sort({ [`data.${sortBy}`]: sortOrder === "asc" ? 1 : -1 })

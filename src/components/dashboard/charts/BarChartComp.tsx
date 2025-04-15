@@ -26,8 +26,6 @@ export default function BarChartComp(props: Props) {
   const lang = useLanguageStore((state) => state.language);
 
   React.useEffect(() => {
-    console.log(props.data);
-
     if (props.data.length > 0) {
       let data = props.data.map((key: any) => {
         return { name: dateConverter(key[props.index]), ...key };

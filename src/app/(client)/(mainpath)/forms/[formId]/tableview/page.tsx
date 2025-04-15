@@ -298,7 +298,7 @@ export default function forms(props: IformsProps) {
     try {
       let res = await axios.get("/api/form/read");
       setFormData(res.data.data);
-      console.log(res);
+
       let pins = res.data.data.elements.reduce((els: any, el: any) => {
         els[el.label] = false;
         return els;
@@ -339,13 +339,9 @@ export default function forms(props: IformsProps) {
         URL.revokeObjectURL(url);
       } else blobDownloader(res.data, filename || "default_filename", type);
     } catch (error) {
-      console.log(error);
       errorHandler(error, lang);
     }
   };
-
-  console.log(responseData);
-  console.log(formData);
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;

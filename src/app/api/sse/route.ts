@@ -36,12 +36,9 @@ export async function GET(req: NextRequest) {
 
         pubSub.on("message", (channel, message) => {
           if (channel === `user:${userId}`) {
-            console.log(`🔔 Received message for ${userId}:`, message);
             controller.enqueue(encoder.encode(`data: ${message}\n\n`));
           }
         });
-
-        console.log(`✅ Subscribed to user:${userId}`);
 
         // 3. Heartbeat system
         const heartbeat = setInterval(() => {
@@ -84,15 +81,12 @@ export async function POST(req: NextRequest) {
     // Enhanced active check
     const activeValue = await kv.get(`active:${userId}`);
     const isActive = activeValue !== null;
-    console.log(`Active check for ${userId}:`, { activeValue, isActive });
 
     if (isActive && process.env.NODE_ENV === "development") {
       try {
         const pubSub = createPubSubClient();
         await pubSub.publish(`user:${userId}`, JSON.stringify(message));
         pubSub.disconnect();
-        console.log(`Real-time notification sent to ${userId}`);
-        console.log(`🔔 Publishing message to user:${userId}`, message);
       } catch (pubSubError) {
         console.error("Pub/Sub error:", pubSubError);
       }

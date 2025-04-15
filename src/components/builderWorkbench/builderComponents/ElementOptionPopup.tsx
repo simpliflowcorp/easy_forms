@@ -48,7 +48,6 @@ export default function ElementOptionPopup(props: IElementOptionPopupProps) {
         </div>
         <div
           onClick={() => {
-            console.log("Delete element", props.data);
             props.deleteElement(props.data);
             props.closePopup();
           }}

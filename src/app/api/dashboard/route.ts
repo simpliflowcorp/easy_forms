@@ -146,8 +146,6 @@ export async function GET(request: NextRequest) {
         value: form.responses || 0,
       })) || [];
 
-    console.log(activityData);
-
     // Construct final response
     const formattedData = {
       cards: [

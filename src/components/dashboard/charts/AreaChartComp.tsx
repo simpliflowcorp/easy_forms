@@ -42,7 +42,6 @@ export default function AreaChartComp(Props: Props) {
       });
       setData(data);
       let colors = generateColorShades("#6439FF", "#7CF5FF", keys.length);
-      console.log(colors);
 
       setBarColorArray(colors.map((color: any) => color.slice(1)));
     } else {
@@ -50,7 +49,6 @@ export default function AreaChartComp(Props: Props) {
     }
   }, []);
 
-  console.log(barColorArray);
   if (noData) {
     return (
       <div className="no-data-cnt">

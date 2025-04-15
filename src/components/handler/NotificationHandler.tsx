@@ -15,7 +15,6 @@ export default function NotificationHandler({ userId }: { userId: string }) {
 
     // Explicitly listen for message events
     es.addEventListener("message", (e) => {
-      console.log("SSE Event:", e.data);
       if (e.data === ":heartbeat") return;
 
       try {
@@ -27,9 +26,7 @@ export default function NotificationHandler({ userId }: { userId: string }) {
     });
 
     // Handle stream open
-    es.addEventListener("open", () => {
-      console.log("SSE Connection opened");
-    });
+    es.addEventListener("open", () => {});
 
     // Handle errors
     es.addEventListener("error", (e) => {
@@ -39,7 +36,6 @@ export default function NotificationHandler({ userId }: { userId: string }) {
     });
 
     return () => {
-      console.log("Cleaning up SSE connection");
       es.close();
     };
   }, [userId]);
