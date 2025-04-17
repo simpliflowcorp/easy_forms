@@ -36,21 +36,6 @@ const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [langKey]);
 
-  useEffect(() => {
-    const lang = localStorage.getItem("lang") || "en";
-    loadLanguage(lang);
-
-    // Listen for language changes across tabs
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "lang" && event.newValue) {
-        loadLanguage(event.newValue);
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [langKey]);
-
   if (!gotData)
     return (
       <body>
