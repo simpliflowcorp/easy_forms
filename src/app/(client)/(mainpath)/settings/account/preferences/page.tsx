@@ -84,11 +84,15 @@ export default function security(props: IsecurityProps) {
     try {
       const res = await axios.post("/api/settings/preferences", data);
       if (data.language !== langKey) {
-        // setLanguage(res.data.data.language, data.language);
+        const json = await import(`@/language/${data.language}.json`);
+        setLanguage(json.default, data.language);
         localStorage.setItem("lang", data.language);
+        successHandler(res, json.default);
+        setResetBtn((p) => p + 1);
+      } else {
+        successHandler(res, lang);
+        setResetBtn((p) => p + 1);
       }
-      successHandler(res, lang);
-      setResetBtn((p) => p + 1);
     } catch (error: any) {
       errorHandler(error, lang);
       setResetBtn((p) => p + 1);

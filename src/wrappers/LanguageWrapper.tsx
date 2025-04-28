@@ -13,11 +13,11 @@ const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
     try {
       const json = await import(`../language/${lang}.json`);
       setLanguage(json.default, lang);
-      localStorage.setItem("lang", lang); // Ensure persistence
+      localStorage.setItem("lang", lang);
       setGotData(true);
     } catch (error) {
       console.error("Error loading language:", error);
-      if (lang !== "en") loadLanguage("en"); // Fallback to English
+      if (lang !== "en") loadLanguage("en");
     }
   };
 
@@ -25,15 +25,23 @@ const LanguageWrapper = ({ children }: { children: React.ReactNode }) => {
     const lang = localStorage.getItem("lang") || "en";
     loadLanguage(lang);
 
-    // Listen for language changes across tabs
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === "lang" && event.newValue) {
         loadLanguage(event.newValue);
       }
     };
+
     window.addEventListener("storage", handleStorageChange);
 
-    return () => window.removeEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []); // <-- Empty dependency array to run only once
+
+  // Optional: If you want to **detect** when `languageKey` changes separately:
+  useEffect(() => {
+    console.log("Language changed to:", langKey);
+    // you can do something here if needed
   }, [langKey]);
 
   if (!gotData)
