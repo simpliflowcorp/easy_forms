@@ -179,5 +179,7 @@
   "profile_updated_successfully": "资料更新成功",
   "profile_update_failed": "资料更新失败",
   "update": "更新",
-  "goto_form": "前往表单"
+  "goto_form": "前往表单",
+  "account_preferences": "账户与偏好设置",
+  "sign_in_security": "登录与安全"
 }

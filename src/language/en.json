@@ -179,5 +179,7 @@
   "profile_updated_successfully": "Profile updated successfully",
   "profile_update_failed": "Profile update failed",
   "update": "Update",
-  "goto_form": "Go to form"
+  "goto_form": "Go to form",
+  "account_preferences": "Account & Preferences",
+  "sign_in_security": "Sign in & Security"
 }

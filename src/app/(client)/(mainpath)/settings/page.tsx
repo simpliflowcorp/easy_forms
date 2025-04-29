@@ -39,7 +39,7 @@ export default function settings(props: IsettingsProps) {
             }}
           >
             <div className="card">
-              <div className="card-text">Account & Preferences</div>
+              <div className="card-text">{lang.account_preferences}</div>
               <div className="card-icon">
                 <span className="ic-person"></span>
               </div>
@@ -52,7 +52,7 @@ export default function settings(props: IsettingsProps) {
             }}
           >
             <div className="card">
-              <div className="card-text">Sign in & Security</div>
+              <div className="card-text">{lang.sign_in_security}</div>
               <div className="card-icon">
                 <span className="ic-shield-lock"></span>
               </div>
@@ -65,7 +65,7 @@ export default function settings(props: IsettingsProps) {
             }}
           >
             <div className="card">
-              <div className="card-text">Notification</div>
+              <div className="card-text">{lang.notification}</div>
               <div className="card-icon">
                 <span className="ic-bell"></span>
               </div>
