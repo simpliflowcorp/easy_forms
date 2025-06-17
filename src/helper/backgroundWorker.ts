@@ -1,4 +1,4 @@
-// src/workers/form-expiration.ts
+// src\\helper\\backgroundWorker.ts
 import mongoose from "mongoose";
 import Form from "../models/formModel";
 import User from "../models/userModel";
@@ -6,7 +6,8 @@ import User from "../models/userModel";
 import { connectDB, disconnectDB } from "../dbConfig/dbConfig";
 import cron from "node-cron";
 import { sendMail } from "./mailer";
-import Notification from "@/models/notificationModel";
+import Notification from "../models/notificationModel";
+// import Notification from "@/models/notificationModel";
 
 // 2. Optimized expiration checker
 async function checkAndNotifyExpirations() {
