@@ -52,15 +52,23 @@ export async function GET(request: NextRequest) {
           total_responses: "$analytics.totalResponses",
           today_responses: {
             $sum: {
-              $filter: {
-                input: "$analytics.dailyResponses",
-                as: "response",
-                cond: {
-                  $eq: [
-                    { $dateTrunc: { date: "$$response.date", unit: "day" } },
-                    { $dateTrunc: { date: today, unit: "day" } },
-                  ],
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$analytics.dailyResponses",
+                    as: "response",
+                    cond: {
+                      $eq: [
+                        {
+                          $dateTrunc: { date: "$$response.date", unit: "day" },
+                        },
+                        { $dateTrunc: { date: today, unit: "day" } },
+                      ],
+                    },
+                  },
                 },
+                as: "filteredResponse",
+                in: "$$filteredResponse.count",
               },
             },
           },
