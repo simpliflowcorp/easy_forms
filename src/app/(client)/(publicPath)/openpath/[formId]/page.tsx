@@ -9,6 +9,7 @@ import { set } from "lodash";
 import SuccessAnimation from "@/components/Animations/SuccessAnimation";
 import { errorHandler } from "@/helper/errorHandler";
 import { useRouter } from "next/navigation";
+import ErrorAnimation from "@/components/Animations/ErrorAnimation";
 
 type Props = {};
 
@@ -26,6 +27,7 @@ const Publish = (props: Props) => {
   const [data, setData] = React.useState({});
   const [dataIsValid, setDataIsValid] = React.useState({});
   const [formSubitted, setFormSubmitted] = React.useState(false);
+  const [formExpired, setFormExpired] = React.useState(false);
 
   const getFormData = async () => {
     let formId = window.location.pathname.split("/")[2];
@@ -35,6 +37,11 @@ const Publish = (props: Props) => {
       if (res.status === 200) {
         setForms(res.data.data);
         setGotData(true);
+
+        if (res.data.data.isExpired) {
+          setFormExpired(true);
+        }
+
         const datas = res.data.data.elements.reduce(
           (accumulator: any, current: any) => {
             accumulator[current.label] = "";
@@ -42,6 +49,7 @@ const Publish = (props: Props) => {
           },
           {}
         );
+        console.log(res.data.data);
 
         setData(datas);
         setDataIsValid(datas);
@@ -76,8 +84,14 @@ const Publish = (props: Props) => {
             data: data,
           }),
         });
-        if (!response.ok) throw new Error("Submission failed");
         const result = await response.json();
+
+        if (!response.ok) {
+          console.log(result);
+          setFormExpired(true);
+          return;
+        }
+
         setFormSubmitted(true);
       } catch (error) {
         console.error("Submission error:", error);
@@ -118,7 +132,16 @@ const Publish = (props: Props) => {
             <p className="success-text">{lang.thanks_for_your_response}</p>
           </div>
         )}
-        {!formSubitted && (
+
+        {formExpired && (
+          <div className="publish-success">
+            <p className="success-text">{lang.form_expired}</p>
+            <ErrorAnimation />
+            <p className="success-text">{lang.please_contact_the_form_owner}</p>
+          </div>
+        )}
+
+        {!formSubitted && !formExpired && (
           <div className="publish-form-wrapper">
             <div className="publish-form">
               <div className="form-header">

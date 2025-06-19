@@ -166,8 +166,12 @@
   "form_url_not_copied": "Form url not copied",
   "form_url_copied": "Form url copied",
   "form_url": "Form url",
+  "form_expired": "Form expired",
+  "please_contact_the_form_owner": "Please contact the form owner",
+
   "form_created_successfully": "Form created successfully",
   "form_updated_successfully": "Form updated successfully",
+
   "form_deleted_successfully": "Form deleted successfully",
   "form_submitted_successfully": "Form submitted successfully",
   "thanks_for_your_response": "Thanks for your response",
