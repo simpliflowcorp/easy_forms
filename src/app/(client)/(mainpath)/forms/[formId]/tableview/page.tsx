@@ -326,6 +326,8 @@ export default function forms(props: IformsProps) {
       let res = await axios.get("/api/export/" + data, {
         responseType: "blob",
       });
+      console.log(res.data);
+
       if (data === "pdf" || data === "pdftest") {
         // ✅ Read response as a Blob
         const blob = res.data;
@@ -344,6 +346,7 @@ export default function forms(props: IformsProps) {
       errorHandler(error, lang);
     }
   };
+
   function csvToArray(csv: string): string[][] {
     return csv
       .trim()
@@ -360,6 +363,8 @@ export default function forms(props: IformsProps) {
 
     try {
       // 1. Create a new Google Sheet
+      let res = await axios.get("/api/export/json");
+
       const createRes = await fetch(
         "https://sheets.googleapis.com/v4/spreadsheets",
         {
@@ -380,7 +385,14 @@ export default function forms(props: IformsProps) {
       const spreadsheetId = newSheet.spreadsheetId;
 
       // 2. Convert CSV to array of arrays
-      const values = csvToArray(csvData);
+
+      const { fields, responses } = res.data; // assuming you've fetched or passed the JSON
+      const values = [
+        fields, // header row
+        ...responses.map((resp: any) =>
+          fields.map((key: any) => resp[key] || "")
+        ),
+      ];
 
       // 3. Write data to the sheet
       const updateRes = await fetch(

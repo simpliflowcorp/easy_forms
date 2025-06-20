@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
     }
     const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
 
+    await connectDB();
+
     // Find the user
     const CurrentUser = await User.findOne({ _id: tokenData._id });
 
     if (!CurrentUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
-
-    await connectDB();
 
     // getting current date
     const today = new Date();
