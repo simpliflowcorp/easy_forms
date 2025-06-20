@@ -8,6 +8,7 @@ import { errorHandler } from "@/helper/errorHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import exp from "constants";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import Select from "react-select";
@@ -20,6 +21,7 @@ interface Element {
 export default function forms(props: IformsProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const [gotData, setGotData] = React.useState(false);
   const [formData, setFormData] = React.useState({} as any);
@@ -342,6 +344,69 @@ export default function forms(props: IformsProps) {
       errorHandler(error, lang);
     }
   };
+  function csvToArray(csv: string): string[][] {
+    return csv
+      .trim()
+      .split("\n")
+      .map((row) => row.split(","));
+  }
+
+  let csvData =
+    "Name,Email,Message,Alice,alice@example.com,Hello,Bob,bob@example.com,Hi";
+
+  const handleUpload = async () => {
+    const accessToken = session?.accessToken;
+    if (!accessToken) return alert("Not authenticated");
+
+    try {
+      // 1. Create a new Google Sheet
+      const createRes = await fetch(
+        "https://sheets.googleapis.com/v4/spreadsheets",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            properties: {
+              title: "FormBuilder Submission",
+            },
+          }),
+        }
+      );
+
+      const newSheet = await createRes.json();
+      const spreadsheetId = newSheet.spreadsheetId;
+
+      // 2. Convert CSV to array of arrays
+      const values = csvToArray(csvData);
+
+      // 3. Write data to the sheet
+      const updateRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=RAW`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            values,
+          }),
+        }
+      );
+
+      const result = await updateRes.json();
+      console.log("Upload successful:", result);
+
+      alert("CSV uploaded to new Google Sheet!");
+    } catch (err) {
+      console.error("Error uploading CSV:", err);
+      alert("Failed to upload CSV");
+    }
+  };
+  // Function to convert CSV string to array of arrays
 
   if (!gotData) {
     return <div className="accent-line-loader"></div>;
@@ -376,6 +441,8 @@ export default function forms(props: IformsProps) {
               label={"export_pdf"}
               action={() => exportData("pdf", "form.pdf", "application/pdf")}
             />
+
+            <PrimaryButton label={"forms"} action={() => handleUpload()} />
           </div>
         </div>
 

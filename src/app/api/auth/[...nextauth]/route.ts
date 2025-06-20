@@ -7,6 +7,14 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import bcryptjs from "bcryptjs";
 
+import type { Session } from "next-auth";
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -29,12 +37,53 @@ const handler = NextAuth({
     }),
   ],
 
+  // callbacks: {
+  //   async signIn({ user, account, profile, email, credentials }: any) {
+  //     const crtUser = await User.findOne({ email: user.email });
+
+  //     if (!crtUser) {
+  //       //hash password
+  //       const salt = await bcryptjs.genSalt(10);
+  //       const hashedPassword = await bcryptjs.hash(user.id, salt);
+
+  //       const newUser = new User({
+  //         username: user.name,
+  //         email: user.email,
+  //         password: hashedPassword,
+  //         isVerified: true,
+  //       });
+
+  //       const savedUser = await newUser.save();
+  //       const tokenData = {
+  //         _id: savedUser._id,
+  //         username: savedUser.username,
+  //         email: savedUser.email,
+  //       };
+  //       const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
+  //       cookies().set("token", token, {
+  //         expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day,
+  //       });
+  //     } else {
+  //       const tokenData = {
+  //         _id: crtUser._id,
+  //         username: crtUser.username,
+  //         email: crtUser.email,
+  //       };
+  //       const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
+  //       cookies().set("token", token, {
+  //         expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days,
+  //       });
+  //     }
+
+  //     return true;
+  //   },
+  // },
+
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }: any) {
+    async signIn({ user, account }) {
       const crtUser = await User.findOne({ email: user.email });
 
       if (!crtUser) {
-        //hash password
         const salt = await bcryptjs.genSalt(10);
         const hashedPassword = await bcryptjs.hash(user.id, salt);
 
@@ -53,7 +102,7 @@ const handler = NextAuth({
         };
         const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
         cookies().set("token", token, {
-          expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day,
+          expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
         });
       } else {
         const tokenData = {
@@ -63,11 +112,23 @@ const handler = NextAuth({
         };
         const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
         cookies().set("token", token, {
-          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days,
+          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         });
       }
 
       return true;
+    },
+
+    async jwt({ token, account }) {
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      session.accessToken = token.accessToken as string | undefined;
+      return session;
     },
   },
 });
