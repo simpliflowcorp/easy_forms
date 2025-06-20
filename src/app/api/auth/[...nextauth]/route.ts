@@ -17,6 +17,13 @@ const handler = NextAuth({
           prompt: "select_account", // This prevents showing the consent screen repeatedly
           access_type: "offline",
           response_type: "code",
+          scope: [
+            "openid",
+            "email",
+            "profile",
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive.file",
+          ].join(" "),
         },
       },
     }),
