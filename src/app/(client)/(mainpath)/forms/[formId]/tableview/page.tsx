@@ -347,16 +347,6 @@ export default function forms(props: IformsProps) {
     }
   };
 
-  function csvToArray(csv: string): string[][] {
-    return csv
-      .trim()
-      .split("\n")
-      .map((row) => row.split(","));
-  }
-
-  let csvData =
-    "Name,Email,Message,Alice,alice@example.com,Hello,Bob,bob@example.com,Hi";
-
   const handleUpload = async () => {
     const accessToken = session?.accessToken;
     if (!accessToken) return alert("Not authenticated");
