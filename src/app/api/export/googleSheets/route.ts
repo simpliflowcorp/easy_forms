@@ -6,11 +6,8 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Response from "@/models/responseModel"; // Add this line
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const accessToken = Session?.accessToken;
-    if (!accessToken) return alert("Not authenticated");
-
     // // Authentication check start
 
     // Get session and cookies
@@ -36,8 +33,6 @@ export async function GET(request: NextRequest) {
     today.setUTCHours(0, 0, 0, 0);
 
     // Get forms id
-
-    let form_id = request.headers.get("referer")?.split("/")[4];
 
     let form = await Form.findOne({ formId: form_id });
 

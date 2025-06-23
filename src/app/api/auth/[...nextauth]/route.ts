@@ -81,6 +81,8 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
+      console.log({ user, account });
+
       const crtUser = await User.findOne({ email: user.email });
 
       if (!crtUser) {
@@ -92,6 +94,8 @@ const handler = NextAuth({
           email: user.email,
           password: hashedPassword,
           isVerified: true,
+          isGoogleAuth: true,
+          GoogleSheetAccessToken: account?.access_token,
         });
 
         const savedUser = await newUser.save();
@@ -105,6 +109,13 @@ const handler = NextAuth({
           expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
         });
       } else {
+        // If user already exists, update the Google access token
+
+        if (crtUser.isGoogleAuth) {
+          crtUser.GoogleSheetAccessToken = account?.access_token;
+          await crtUser.save();
+        }
+
         const tokenData = {
           _id: crtUser._id,
           username: crtUser.username,

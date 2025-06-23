@@ -64,7 +64,14 @@ const userSchema = new mongoose.Schema({
     timeFormat: { type: String, default: "12" },
     language: { type: String, default: "en" },
   },
-
+  isGoogleAuth: {
+    type: Boolean,
+    default: false,
+  },
+  GoogleSheetAccessToken: {
+    type: String,
+    required: false,
+  },
   notificationSettings: {
     popup: {
       formExpired: { type: Boolean, default: true },

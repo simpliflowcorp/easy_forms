@@ -39,7 +39,7 @@ async function checkAndNotifyExpirations() {
         try {
           // 4. Get user email separately
           const user = await User.findById(form.user)
-            .select("email username")
+            .select("email username isGoogleAuth googleSheetAccessToken")
             .lean();
 
           if (!user) continue;
@@ -56,7 +56,9 @@ async function checkAndNotifyExpirations() {
             );
           }
 
-          //
+          // if its google sign in user, push data to google sheet
+          if (user?.isGoogleAuth) {
+          }
 
           // 6. Update form status
           await Form.updateOne({ _id: form._id }, { $set: { status: 2 } });
