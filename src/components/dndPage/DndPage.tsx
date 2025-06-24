@@ -20,6 +20,7 @@ import ElementPropertise from "@/components/builderWorkbench/ElementPropertise";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import IconButton from "@/components/buttons/IconButton";
 import FormPropertise from "@/components/builderWorkbench/FormPropertise";
+import { insertNewElementDeepCopy } from "@/helper/insertNewElementDeepCopy";
 
 export interface IDndPageProps {
   type: string;
@@ -120,17 +121,27 @@ export default function DndPage(props: IDndPageProps) {
 
     if (activeElementType === "component") {
       let id = active.id;
-      props.setForms((item: any) => {
-        let newform = [
-          ...item.map((e: any) => {
-            if (e.elementId === id) {
-              return { ...e, elementId: newElementCountRef.current };
-            } else {
-              return e;
-            }
-          }),
-        ];
-        return newform;
+      props.setForms((items: any) => {
+        const updated = insertNewElementDeepCopy(
+          items,
+          over.data.current.comp.elementId,
+          activeElement,
+          over.data.current.comp.column,
+          () => newElementCountRef.current++
+        );
+        addedElementCountRef.current = newElementCountRef.current;
+        return updated;
+
+        // let newform = [
+        //   ...item.map((e: any) => {
+        //     if (e.elementId === id) {
+        //       return { ...e, elementId: newElementCountRef.current };
+        //     } else {
+        //       return e;
+        //     }
+        //   }),
+        // ];
+        // return newform;
       });
       newElementCountRef.current++;
       setDndKey((prev) => prev + 1);
@@ -261,6 +272,7 @@ export default function DndPage(props: IDndPageProps) {
         collisionDetection={pointerWithin}
         onDragStart={(e: any) => {
           if (e) {
+            console.log("drag start", e.active.data.current);
             setActiveElement(e.active.data.current.comp);
             setActiveElementType(e.active.data.current.type);
           }

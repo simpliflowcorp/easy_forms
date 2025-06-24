@@ -38,9 +38,15 @@ async function checkAndNotifyExpirations() {
       for (const form of forms) {
         try {
           // 4. Get user email separately
-          const user = await User.findById(form.user)
+          const user = (await User.findById(form.user)
             .select("email username isGoogleAuth googleSheetAccessToken")
-            .lean();
+            .lean()) as {
+            _id: any;
+            email: string;
+            username: string;
+            isGoogleAuth?: boolean;
+            googleSheetAccessToken?: string;
+          } | null;
 
           if (!user) continue;
 
@@ -57,7 +63,77 @@ async function checkAndNotifyExpirations() {
           }
 
           // if its google sign in user, push data to google sheet
-          if (user?.isGoogleAuth) {
+          if (user?.isGoogleAuth && user.googleSheetAccessToken) {
+            try {
+              // 1. Fetch form responses
+              const responses = await mongoose
+                .model("Response")
+                .find({ form_id: form._id })
+                .lean();
+
+              if (responses.length === 0) continue;
+
+              // 2. Extract all keys
+              const allKeys = Array.from(
+                new Set(responses.flatMap((r: any) => Object.keys(r.data)))
+              );
+
+              // 3. Prepare data array (header + rows)
+              const values = [
+                allKeys, // header
+                ...responses.map((r: any) =>
+                  allKeys.map((key) =>
+                    Array.isArray(r.data[key])
+                      ? r.data[key].join(", ")
+                      : r.data[key] ?? ""
+                  )
+                ),
+              ];
+
+              // 4. Create new spreadsheet
+              const createSheetRes = await fetch(
+                "https://sheets.googleapis.com/v4/spreadsheets",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${user.googleSheetAccessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    properties: {
+                      title: `Expired Form: ${form.name}`,
+                    },
+                  }),
+                }
+              );
+
+              const newSheet = await createSheetRes.json();
+              const spreadsheetId = newSheet.spreadsheetId;
+
+              // 5. Push data to the sheet
+              const pushRes = await fetch(
+                `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=RAW`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${user.googleSheetAccessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ values }),
+                }
+              );
+
+              const pushResult = await pushRes.json();
+              console.log(
+                `Data pushed to Google Sheets for form ${form.name}`,
+                pushResult
+              );
+            } catch (sheetError) {
+              console.error(
+                `Error pushing to Google Sheets for form ${form._id}:`,
+                sheetError
+              );
+            }
           }
 
           // 6. Update form status
