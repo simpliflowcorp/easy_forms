@@ -38,32 +38,27 @@ async function checkAndNotifyExpirations() {
       for (const form of forms) {
         try {
           // 4. Get user email separately
-          const user = (await User.findById(form.user)
-            .select("email username isGoogleAuth googleSheetAccessToken")
-            .lean()) as {
-            _id: any;
+          interface LeanUser {
+            _id: unknown;
             email: string;
             username: string;
             isGoogleAuth?: boolean;
             googleSheetAccessToken?: string;
-          } | null;
+          }
+
+          const user = await User.findById(form.user)
+            .select("email username isGoogleAuth googleSheetAccessToken")
+            .lean<LeanUser>();
 
           if (!user) continue;
 
           // 5. Send email
-
-          if (!Array.isArray(user)) {
-            await sendMail(
-              user.email,
-              user.username,
-              "formExpiry",
-              form.formId,
-              { form_name: form.name }
-            );
-          }
+          await sendMail(user.email, user.username, "formExpiry", form.formId, {
+            form_name: form.name,
+          });
 
           // if its google sign in user, push data to google sheet
-          if (user?.isGoogleAuth && user.googleSheetAccessToken) {
+          if (user.isGoogleAuth && user.googleSheetAccessToken) {
             try {
               // 1. Fetch form responses
               const responses = await mongoose
