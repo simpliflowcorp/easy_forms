@@ -9,6 +9,7 @@ import { useRouter, usePathname } from "next/navigation";
 import * as React from "react";
 import { useSession } from "next-auth/react";
 import NotificationHandler from "@/components/handler/NotificationHandler";
+import AIbar from "@/components/ActionBar/AIbar";
 
 export default function AppLayout({
   children,
@@ -48,8 +49,12 @@ export default function AppLayout({
   return (
     <>
       <SidebarMain isActive={isActive} data={{}} />
+
       <div id="select-popup-target" className="select-popup-target"></div>
-      <div className="app-wrapper">{children}</div>
+      <div className="app-cnt">
+        <div className="app-wrapper">{children}</div>
+        <AIbar />
+      </div>
       {user?.id && <NotificationHandler userId={user.id} />}
     </>
   );
