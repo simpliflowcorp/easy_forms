@@ -1,5 +1,7 @@
 {
-  "name": "easy_form",
+  "name": "easy_form_0.1.0",
+  "description": "A powerful form builder with advanced features like AI integration, PDF generation, and real-time collaboration.",
+  "author": "chromecodes",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
