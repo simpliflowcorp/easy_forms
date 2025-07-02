@@ -1,65 +1,40 @@
-// /pages/api/chat-form.ts
+import { NextRequest, NextResponse } from "next/server";
 
-import type { NextApiRequest, NextApiResponse } from "next";
+export async function POST(req: NextRequest) {
+  const { message } = await req.json();
 
-let conversationHistory: any[] = [];
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const { message } = req.body;
-
-  conversationHistory.push({ role: "user", content: message });
-
-  // Inject system prompt for JSON format rules
-  const systemPrompt = `
-You are a bilingual (English/中文) form builder assistant. The user will describe a form. 
-Your job is to respond in either natural language or structured JSON.
-If you have enough info, respond with a complete JSON form:
-{
-  "name": "",
-  "description": "",
-  "expiry": "",
-  "elements": [
-    {
-      "elementId": "string",
-      "type": "number", // e.g. 1 = text, 4 = email, 2 = number, 14 = radio, etc.
-      "label": "string",
-      "required": true,
-      "options": [],
-      "unique": false
-    }
-  ],
-  "status": 2
-}
-
-Rules:
-- If form description is missing, ask the user to provide one.
-- If no field is marked required, ask: “Which fields should be required?”
-- Always return valid JSON or a single follow-up question.
-- Support English and Chinese.
-
-Only respond with one item: either JSON or a question.
-`;
-
-  const response = await fetch("http://localhost:11434/api/chat", {
+  const res = await fetch("http://localhost:11434/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "mistral",
+      model: "llama3.2",
       messages: [
-        { role: "system", content: systemPrompt },
-        ...conversationHistory,
+        {
+          role: "system",
+          // content: `You are a bilingual (English and 中文) form builder assistant. The user will describe a form in natural language.
+          //           Your job is to respond with either:
+          //           - a follow-up question if the form is missing required fields or description
+          //           - OR a structured JSON object like this:
+          //           {
+          //             "name": "Form title",
+          //             "description": "Short description",
+          //             "expiry": "ISO date string",
+          //             "elements": [
+          //               { "elementId": "field1", "type": 1, "label": "Name", "required": true, "options": [], "unique": false }
+          //             ],
+          //             "status": 2
+          //           }
+          //           Only return either JSON or a simple follow-up question.`,
+        },
+        {
+          role: "user",
+          content: message,
+        },
       ],
       stream: false,
     }),
   });
 
-  const data = await response.json();
-  const aiMessage = data.message.content;
-
-  conversationHistory.push({ role: "assistant", content: aiMessage });
-
-  res.status(200).json({ reply: aiMessage });
+  const data = await res.json();
+  return NextResponse.json({ reply: data.message.content });
 }
