@@ -33,6 +33,7 @@ export interface IformsProps {}
 export default function forms(props: IformsProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
+  const [resetBtn, setResetBtn] = React.useState(0);
   const [form, setForm] = React.useState({
     name: "",
     description: "",

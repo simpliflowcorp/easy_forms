@@ -5,7 +5,11 @@ import type { NextRequest } from "next/server";
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
   let currentPath = request.nextUrl.pathname;
-  let token = request.cookies.get("token")?.value || "";
+  let token =
+    request.cookies.get("token")?.value ||
+    request.cookies.get("next-auth.session-token")?.value ||
+    request.cookies.get("__Secure-next-auth.session-token")?.value ||
+    "";
 
   let publicPaths = [
     "/auth/signin",

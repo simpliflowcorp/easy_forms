@@ -16,8 +16,8 @@ import ElementOptionPopup from "./ElementOptionPopup";
 type Props = {
   data: any;
   openElementProps: any;
-  isPublish: boolean;
-  deleteElement: (elementId: number) => void;
+  isPublish?: boolean;
+  deleteElement?: (elementId: number) => void;
 };
 
 const DynamicElement = (props: Props) => {

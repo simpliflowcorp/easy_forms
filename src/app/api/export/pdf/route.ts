@@ -4,6 +4,8 @@ import Response from "@/models/responseModel";
 import Form from "@/models/formModel";
 import { connectDB } from "@/dbConfig/dbConfig";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     await connectDB();

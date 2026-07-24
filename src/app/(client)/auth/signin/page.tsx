@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import toast from "react-hot-toast";
 
-export interface ISignInProps {}
+export interface ISignInProps { }
 
 export default function SignIn(props: ISignInProps) {
   const router = useRouter();

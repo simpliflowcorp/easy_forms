@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/sse/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import kv from "@/lib/redis";

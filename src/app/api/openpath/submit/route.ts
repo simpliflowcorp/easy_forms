@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import Response from "@/models/responseModel";
 import Form from "@/models/formModel";

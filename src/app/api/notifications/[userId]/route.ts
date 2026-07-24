@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import kv from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 // import kv from "@/lib/redis";

@@ -1,4 +1,4 @@
-import { successHandler } from "./successHandler";
+import toast from "react-hot-toast";
 
 export const handleCopy = async (
   textToCopy: string,
@@ -7,7 +7,7 @@ export const handleCopy = async (
 ) => {
   try {
     await navigator.clipboard.writeText(textToCopy);
-    successHandler(successText);
+    toast.success(successText);
   } catch (err) {
     console.error("Failed to copy:", err);
   }

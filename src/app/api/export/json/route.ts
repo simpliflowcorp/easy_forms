@@ -5,6 +5,8 @@ import User from "@/models/userModel";
 import jwt from "jsonwebtoken";
 import Response from "@/models/responseModel";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     // Authenticate

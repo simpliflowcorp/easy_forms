@@ -1,15 +1,15 @@
 import { connectDB } from "@/dbConfig/dbConfig";
 import User from "@/models/userModel";
 import { NextResponse, NextRequest } from "next/server";
+import * as jwt from "jsonwebtoken";
 import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { sendMail } from "@/helper/mailer";
-import { getServerSession } from "next-auth";
-import { verify } from "crypto";
-import { generateVerificationCode } from "@/helper/generateVerificationCode";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const reqBody = await request.json();
     const { verify_code } = reqBody;
 
@@ -91,5 +91,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
-
-connectDB();

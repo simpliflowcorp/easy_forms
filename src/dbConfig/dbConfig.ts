@@ -5,15 +5,8 @@ dotenv.config(); // Load environment variables
 
 export async function connectDB() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI! + "/easyform");
-    const connection = mongoose.connection;
-
-    connection.on("connected", () => {});
-
-    connection.on("error", (error) => {
-      console.error("Db connection failed", error);
-      process.exit();
-    });
+    if (mongoose.connection.readyState >= 1) return;
+    await mongoose.connect(process.env.MONGODB_URI!);
   } catch (error) {
     console.error("Db connection failed", error);
   }

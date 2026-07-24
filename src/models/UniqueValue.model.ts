@@ -22,5 +22,5 @@ UniqueValueSchema.index(
   { unique: true }
 );
 
-export default mongoose.models.UniqueValue ||
+export default mongoose.models?.UniqueValue ||
   mongoose.model("UniqueValue", UniqueValueSchema);

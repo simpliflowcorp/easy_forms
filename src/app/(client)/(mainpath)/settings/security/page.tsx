@@ -1,7 +1,7 @@
 "use client";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import ToogleSwitch from "@/components/buttons/ToogleSwitch";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
 import { useRouter } from "next/navigation";

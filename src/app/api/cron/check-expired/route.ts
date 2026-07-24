@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/cron/check-expired/route.ts
 import { NextResponse } from "next/server";
 import kv from "@/lib/redis";

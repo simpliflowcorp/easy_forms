@@ -1,10 +1,10 @@
-import NextAuth from "next-auth/next";
+export const dynamic = "force-dynamic";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { connectDB } from "@/dbConfig/dbConfig";
 import User from "@/models/userModel";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import { NextResponse, NextRequest } from "next/server";
-import { cookies } from "next/headers";
 import bcryptjs from "bcryptjs";
 
 import type { Session } from "next-auth";
@@ -41,6 +41,7 @@ const handler = NextAuth({
     async signIn({ user, account }) {
       console.log({ user, account });
 
+      await connectDB();
       const crtUser = await User.findOne({ email: user.email });
 
       if (!crtUser) {
@@ -63,19 +64,9 @@ const handler = NextAuth({
           email: savedUser.email,
         };
         const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
-        cookies().set("token", token, {
-          expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-        });
+        // User created
       } else {
-        const tokenData = {
-          _id: crtUser._id,
-          username: crtUser.username,
-          email: crtUser.email,
-        };
-        const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!);
-        cookies().set("token", token, {
-          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        });
+        // User exists
       }
 
       return true;
@@ -105,6 +96,5 @@ const handler = NextAuth({
     },
   },
 });
-connectDB();
 
 export { handler as GET, handler as POST };

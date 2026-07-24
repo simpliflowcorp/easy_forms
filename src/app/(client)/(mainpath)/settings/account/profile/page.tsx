@@ -1,7 +1,7 @@
 "use client";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import ToogleSwitch from "@/components/buttons/ToogleSwitch";
 import DynamicFieldManger from "@/components/Inputs/DynamicFieldManger";
 import PasswordInput from "@/components/Inputs/PasswordInput";
 import TextFieldInput from "@/components/Inputs/TextFieldInput";
@@ -181,8 +181,7 @@ export default function security(props: IsecurityProps) {
                 {structureData.map((item, index) => (
                   <div key={index} className="sub-setting-body-profile-line">
                     <DynamicFieldManger
-                      // options={item?.options ? item?.options : []}
-                      options={item?.options ?? []}
+                      options={[]}
                       reset={reset}
                       label={lang[item.name]}
                       // value={data[item.name]}

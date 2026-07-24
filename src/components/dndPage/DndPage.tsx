@@ -157,7 +157,7 @@ export default function DndPage(props: IDndPageProps) {
 
     if (over.data.current?.comp) {
       if (activeElementType === "component") {
-        let newElement = {
+        let newElement: any = {
           id: active.id,
           elementId: active.id,
           label: activeElement.label + " " + newElementCountRef.current,

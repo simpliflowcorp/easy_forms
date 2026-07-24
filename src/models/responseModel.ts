@@ -47,6 +47,6 @@ const ResponseSchema = new mongoose.Schema(
 ResponseSchema.index({ form_id: 1, submitted_at: -1 });
 
 const Response =
-  mongoose.models.response || mongoose.model("response", ResponseSchema);
+  mongoose.models?.response || mongoose.model("response", ResponseSchema);
 
 export default Response;

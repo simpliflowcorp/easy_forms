@@ -14,7 +14,10 @@ export interface IdashboardProps {}
 export default function dashboard(props: IdashboardProps) {
   const lang = useLanguageStore((state) => state.language);
   const router = useRouter();
-  const [data, setData] = React.useState({
+  const [data, setData] = React.useState<{
+    cards: { label?: string; count?: number }[];
+    charts: any[];
+  }>({
     cards: [],
     charts: [],
   });
@@ -99,7 +102,11 @@ export default function dashboard(props: IdashboardProps) {
         <div className="dashboard">
           <div className="cards-cnt">
             {data.cards.map((card, index) => (
-              <InfoCard key={index} label={card?.label} count={card?.count} />
+              <InfoCard
+                key={index}
+                label={card?.label || ""}
+                count={card?.count || 0}
+              />
             ))}
           </div>
 

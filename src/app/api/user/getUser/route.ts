@@ -1,22 +1,39 @@
+export const dynamic = "force-dynamic";
 import { connectDB } from "@/dbConfig/dbConfig";
 import User from "@/models/userModel";
 import { NextResponse, NextRequest } from "next/server";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    //Check user exists
-    let token = cookies().get("token");
+    await connectDB();
+    let token = request.cookies.get("token")?.value;
+    let email: string | undefined;
 
-    if (!token) {
-      return NextResponse.json({ message: "No token found" }, { status: 404 });
+    if (token) {
+      try {
+        let user: any = jwt.verify(token, process.env.TOKEN_SECRET!);
+        email = user?.email;
+      } catch (err) {}
     }
 
-    let user: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
+    if (!email) {
+      const session = await getServerSession();
+      if (session?.user?.email) {
+        email = session.user.email;
+      }
+    }
 
-    const userData = await User.findOne({ email: user.email });
+    if (!email) {
+      return NextResponse.json({ message: "No token found" }, { status: 401 });
+    }
+
+    const userData = await User.findOne({ email });
+    if (!userData) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
 
     let data = {
       id: userData?._id,
@@ -31,5 +48,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
-
-connectDB();

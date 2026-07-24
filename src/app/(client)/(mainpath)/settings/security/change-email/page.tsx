@@ -3,7 +3,7 @@ import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryActionButton from "@/components/buttons/SecondaryActionButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import ToogleSwitch from "@/components/buttons/ToogleSwitch";
 import EmailInput from "@/components/Inputs/EmailInput";
 import PasswordInput from "@/components/Inputs/PasswordInput";
 import VerificationCodeModel from "@/components/models/VerificationCodeModel";
@@ -12,9 +12,6 @@ import { generateVerificationCode } from "@/helper/generateVerificationCode";
 import { successHandler } from "@/helper/successHandler";
 import { useLanguageStore } from "@/store/store";
 import axios from "axios";
-import { log } from "console";
-import { verify } from "crypto";
-import Email from "next-auth/providers/email";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 

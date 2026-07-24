@@ -2,7 +2,6 @@ import React from "react";
 import TextFieldInput from "./TextFieldInput";
 import NumberFieldInput from "./NumberFieldInput";
 import DecimalNumberFieldInput from "./DecimalNumberFieldInput";
-import Email from "next-auth/providers/email";
 import EmailInput from "./EmailInput";
 import PasswordInput from "./PasswordInput";
 import SelectFieldInput from "./SelectFieldInput";

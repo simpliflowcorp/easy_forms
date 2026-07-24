@@ -1,7 +1,7 @@
 "use client";
 import PrimaryActionButton from "@/components/buttons/PrimaryActionButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ToogleSwitch from "@/components/buttons/toogleSwitch";
+import ToogleSwitch from "@/components/buttons/ToogleSwitch";
 import { errorHandler } from "@/helper/errorHandler";
 import { successHandler } from "@/helper/successHandler";
 import { useLanguageStore } from "@/store/store";

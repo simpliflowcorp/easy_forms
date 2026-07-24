@@ -6,6 +6,8 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Response from "@/models/responseModel"; // Add this line
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const json2csv = require("json2csv");
   try {
