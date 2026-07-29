@@ -14,6 +14,7 @@ export function middleware(request: NextRequest) {
   let publicPaths = [
     "/",
     "/privacy",
+    "/policy",
     "/terms",
     "/auth/signin",
     "/auth/signup",
