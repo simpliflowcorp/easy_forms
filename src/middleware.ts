@@ -12,6 +12,9 @@ export function middleware(request: NextRequest) {
     "";
 
   let publicPaths = [
+    "/",
+    "/privacy",
+    "/terms",
     "/auth/signin",
     "/auth/signup",
     "/auth/forgotPassword",
@@ -26,7 +29,14 @@ export function middleware(request: NextRequest) {
 
   let isPublicPath = publicPaths.includes(currentPath);
 
-  if (isPublicPath && token) {
+  let authPages = [
+    "/auth/signin",
+    "/auth/signup",
+    "/auth/forgotPassword",
+    "/auth/resetPassword",
+  ];
+
+  if (authPages.includes(currentPath) && token) {
     return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
   }
 
