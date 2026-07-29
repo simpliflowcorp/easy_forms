@@ -23,6 +23,7 @@
     "@types/pdfkit": "^0.17.6",
     "@types/redis": "^4.0.11",
     "@vercel/kv": "^3.0.0",
+    "@xyflow/react": "^12.11.2",
     "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
     "buffer-equal-constant-time": "1.0.1",

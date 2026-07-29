@@ -1,6 +1,24 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { AgentState, ExecutionTraceStep, PersonaStage } from "@/agent/types";
+import { ReactFlow, Background, MarkerType, Handle, Position } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+const PersonaNode = ({ data }: any) => {
+  return (
+    <div className={`p-4 rounded-xl border text-center transition-all duration-500 w-48 ${data.className}`}>
+      <Handle type="target" position={Position.Left} id="left" className="!bg-slate-700 !w-2 !h-2 !border-none" />
+      <Handle type="target" position={Position.Bottom} id="bottom-target" className="!bg-slate-700 !w-2 !h-2 !border-none" style={{ left: '30%' }} />
+      
+      <div className="text-3xl mb-2 drop-shadow-md">{data.icon}</div>
+      <div className="text-xs font-black font-mono tracking-wide">{data.label}</div>
+      <div className="text-[10px] opacity-80 mt-1.5 font-medium leading-tight whitespace-pre-line">{data.desc}</div>
+      
+      <Handle type="source" position={Position.Right} id="right" className="!bg-slate-700 !w-2 !h-2 !border-none" />
+      <Handle type="source" position={Position.Bottom} id="bottom-source" className="!bg-slate-700 !w-2 !h-2 !border-none" style={{ left: '70%' }} />
+    </div>
+  );
+};
 
 interface AgentVisualizerProps {
   agentState: AgentState | null;
@@ -49,10 +67,87 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
   const getPersonaNodeClass = (nodePersona: PersonaStage) => {
     if (!agentState) return "bg-slate-900 border-slate-800 text-slate-500 opacity-60";
     if (agentState.activePersona === nodePersona) {
-      return "bg-cyan-950 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/20 scale-105 animate-pulse font-bold";
+      return "bg-cyan-950 border-cyan-400 text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.4)] scale-105 font-bold";
     }
     return "bg-slate-900/90 border-slate-800 text-slate-400 opacity-80";
   };
+
+  const nodeTypes = useMemo(() => ({ persona: PersonaNode }), []);
+
+  const nodes = useMemo(() => [
+    {
+      id: 'drafter',
+      type: 'persona',
+      position: { x: 0, y: 50 },
+      data: {
+        icon: '🔍',
+        label: '1. DRAFTER',
+        desc: 'Prompt Digestion\n& Intent Check',
+        className: getPersonaNodeClass("DRAFTER")
+      }
+    },
+    {
+      id: 'planner',
+      type: 'persona',
+      position: { x: 260, y: 50 },
+      data: {
+        icon: '📝',
+        label: '2. PLANNER',
+        desc: 'Action Plan\nCompiler',
+        className: getPersonaNodeClass("PLANNER")
+      }
+    },
+    {
+      id: 'executor',
+      type: 'persona',
+      position: { x: 520, y: 50 },
+      data: {
+        icon: '⚙️',
+        label: '3. EXECUTOR',
+        desc: 'Isolated Sandbox\nTool Run',
+        className: getPersonaNodeClass("EXECUTOR_SANDBOX")
+      }
+    },
+    {
+      id: 'evaluator',
+      type: 'persona',
+      position: { x: 780, y: 50 },
+      data: {
+        icon: '🧪',
+        label: '4. EVALUATOR',
+        desc: 'QA Check &\nLoop Control',
+        className: getPersonaNodeClass("EVALUATOR")
+      }
+    }
+  ], [agentState?.activePersona]);
+
+  const edges = useMemo(() => [
+    {
+      id: 'e1-2', source: 'drafter', sourceHandle: 'right', target: 'planner', targetHandle: 'left',
+      animated: agentState?.activePersona === "PLANNER",
+      style: { stroke: agentState?.activePersona === "PLANNER" ? '#22d3ee' : '#334155', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: agentState?.activePersona === "PLANNER" ? '#22d3ee' : '#334155' }
+    },
+    {
+      id: 'e2-3', source: 'planner', sourceHandle: 'right', target: 'executor', targetHandle: 'left',
+      animated: agentState?.activePersona === "EXECUTOR_SANDBOX",
+      style: { stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#22d3ee' : '#334155', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#22d3ee' : '#334155' }
+    },
+    {
+      id: 'e3-4', source: 'executor', sourceHandle: 'right', target: 'evaluator', targetHandle: 'left',
+      animated: agentState?.activePersona === "EVALUATOR",
+      style: { stroke: agentState?.activePersona === "EVALUATOR" ? '#22d3ee' : '#334155', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: agentState?.activePersona === "EVALUATOR" ? '#22d3ee' : '#334155' }
+    },
+    {
+      id: 'e4-3', source: 'evaluator', sourceHandle: 'bottom-source', target: 'executor', targetHandle: 'bottom-target',
+      type: 'smoothstep',
+      animated: agentState?.activePersona === "EXECUTOR_SANDBOX",
+      style: { stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#fbbf24' : '#334155', strokeWidth: 2, strokeDasharray: '5,5' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#fbbf24' : '#334155' }
+    }
+  ], [agentState?.activePersona]);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6 space-y-6 text-slate-100 font-sans">
@@ -157,77 +252,34 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       </div>
 
       {/* Visual Persona Flow Graph */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 relative overflow-hidden h-[360px]">
         {/* Background ambient glow based on active persona */}
         <div className={`absolute -top-24 -left-24 w-64 h-64 bg-cyan-500/10 blur-3xl rounded-full transition-all duration-1000 ${
           agentState?.activePersona === "DRAFTER" ? "opacity-100 translate-x-0" :
-          agentState?.activePersona === "PLANNER" ? "opacity-100 translate-x-[300px]" :
-          agentState?.activePersona === "EXECUTOR_SANDBOX" ? "opacity-100 translate-x-[600px]" :
-          agentState?.activePersona === "EVALUATOR" ? "opacity-100 translate-x-[900px]" : "opacity-0"
+          agentState?.activePersona === "PLANNER" ? "opacity-100 translate-x-[260px]" :
+          agentState?.activePersona === "EXECUTOR_SANDBOX" ? "opacity-100 translate-x-[520px]" :
+          agentState?.activePersona === "EVALUATOR" ? "opacity-100 translate-x-[780px]" : "opacity-0"
         }`} />
 
-        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2 relative z-10 mb-8">
-          <span>⚡</span> Agent Loop Visualization Pipeline
+        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2 relative z-10 mb-2">
+          <span>⚡</span> Realtime Agent Flow Map
         </h3>
 
-        <div className="relative w-full max-w-4xl mx-auto z-10 pb-4">
-          {/* Loop Back Arrow (Evaluator -> Executor) */}
-          <svg className="absolute top-[-20px] left-[62%] w-[25%] h-8 -translate-x-1/2 z-0 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
-            <path d="M 90,50 C 90,0 10,0 10,50" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5" 
-              className={`transition-colors duration-500 ${agentState?.activePersona === "EVALUATOR" ? "text-amber-400 animate-[dash_20s_linear_infinite]" : "text-slate-800"}`} />
-            <polygon points="5,45 10,55 15,45" fill="currentColor" 
-              className={`transition-colors duration-500 ${agentState?.activePersona === "EVALUATOR" ? "text-amber-400" : "text-slate-800"}`} />
-          </svg>
-
-          <div className="flex flex-col md:flex-row items-center justify-between gap-2 relative">
-            
-            {/* Node 1: Drafter */}
-            <div className={`relative z-10 w-full md:w-48 p-4 rounded-xl border text-center transition-all duration-500 ${getPersonaNodeClass("DRAFTER")}`}>
-              <div className="text-3xl mb-2 drop-shadow-md">🔍</div>
-              <div className="text-xs font-black font-mono tracking-wide">1. DRAFTER</div>
-              <div className="text-[10px] opacity-80 mt-1.5 font-medium leading-tight">Prompt Digestion<br/>& Intent Check</div>
-            </div>
-
-            {/* Arrow 1 -> 2 */}
-            <div className="hidden md:flex flex-1 items-center justify-center -mx-4 z-0">
-              <div className={`h-1 w-full rounded-full transition-all duration-500 ${agentState?.activePersona === "DRAFTER" ? "bg-gradient-to-r from-cyan-400 to-transparent animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-slate-800"}`} />
-              <div className={`-ml-2 border-t-4 border-t-transparent border-l-[6px] border-b-4 border-b-transparent transition-colors duration-500 ${agentState?.activePersona === "DRAFTER" ? "border-l-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "border-l-slate-800"}`} />
-            </div>
-
-            {/* Node 2: Planner */}
-            <div className={`relative z-10 w-full md:w-48 p-4 rounded-xl border text-center transition-all duration-500 ${getPersonaNodeClass("PLANNER")}`}>
-              <div className="text-3xl mb-2 drop-shadow-md">📝</div>
-              <div className="text-xs font-black font-mono tracking-wide">2. PLANNER</div>
-              <div className="text-[10px] opacity-80 mt-1.5 font-medium leading-tight">Action Plan<br/>Compiler</div>
-            </div>
-
-            {/* Arrow 2 -> 3 */}
-            <div className="hidden md:flex flex-1 items-center justify-center -mx-4 z-0">
-              <div className={`h-1 w-full rounded-full transition-all duration-500 ${agentState?.activePersona === "PLANNER" ? "bg-gradient-to-r from-cyan-400 to-transparent animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-slate-800"}`} />
-              <div className={`-ml-2 border-t-4 border-t-transparent border-l-[6px] border-b-4 border-b-transparent transition-colors duration-500 ${agentState?.activePersona === "PLANNER" ? "border-l-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "border-l-slate-800"}`} />
-            </div>
-
-            {/* Node 3: Executor */}
-            <div className={`relative z-10 w-full md:w-48 p-4 rounded-xl border text-center transition-all duration-500 ${getPersonaNodeClass("EXECUTOR_SANDBOX")}`}>
-              <div className="text-3xl mb-2 drop-shadow-md">⚙️</div>
-              <div className="text-xs font-black font-mono tracking-wide">3. EXECUTOR</div>
-              <div className="text-[10px] opacity-80 mt-1.5 font-medium leading-tight">Isolated Sandbox<br/>Tool Run</div>
-            </div>
-
-            {/* Arrow 3 -> 4 */}
-            <div className="hidden md:flex flex-1 items-center justify-center -mx-4 z-0">
-              <div className={`h-1 w-full rounded-full transition-all duration-500 ${agentState?.activePersona === "EXECUTOR_SANDBOX" ? "bg-gradient-to-r from-cyan-400 to-transparent animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-slate-800"}`} />
-              <div className={`-ml-2 border-t-4 border-t-transparent border-l-[6px] border-b-4 border-b-transparent transition-colors duration-500 ${agentState?.activePersona === "EXECUTOR_SANDBOX" ? "border-l-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "border-l-slate-800"}`} />
-            </div>
-
-            {/* Node 4: Evaluator */}
-            <div className={`relative z-10 w-full md:w-48 p-4 rounded-xl border text-center transition-all duration-500 ${getPersonaNodeClass("EVALUATOR")}`}>
-              <div className="text-3xl mb-2 drop-shadow-md">🧪</div>
-              <div className="text-xs font-black font-mono tracking-wide">4. EVALUATOR</div>
-              <div className="text-[10px] opacity-80 mt-1.5 font-medium leading-tight">QA Check &<br/>Loop Control</div>
-            </div>
-
-          </div>
+        <div className="absolute inset-0 top-12 z-10">
+          <ReactFlow 
+            nodes={nodes} 
+            edges={edges} 
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            proOptions={{ hideAttribution: true }}
+            className="react-flow-custom"
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+          >
+            <Background color="#334155" gap={20} size={1} />
+          </ReactFlow>
         </div>
       </div>
 
