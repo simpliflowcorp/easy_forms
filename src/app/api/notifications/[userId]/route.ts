@@ -5,10 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
+  const { userId } = await context.params;
   const notifications = await kv.lrange(
-    `notifications:${params.userId}`,
+    `notifications:${userId}`,
     0,
     -1
   );
@@ -17,8 +18,9 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
-  await kv.del(`notifications:${params.userId}`);
+  const { userId } = await context.params;
+  await kv.del(`notifications:${userId}`);
   return NextResponse.json({ success: true });
 }

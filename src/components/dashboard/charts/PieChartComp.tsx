@@ -123,13 +123,15 @@ export default function PieChartComp(props: Props) {
       <ResponsiveContainer width="100%" height="100%">
         <PieChart width={400} height={400}>
           <Pie
-            activeIndex={activeIndex}
-            activeShape={renderActiveShape}
-            data={chartData}
-            innerRadius={60}
-            outerRadius={80}
-            dataKey="value"
-            onMouseEnter={onPieEnter}
+            {...{
+              activeIndex,
+              activeShape: renderActiveShape,
+              data: chartData,
+              innerRadius: 60,
+              outerRadius: 80,
+              dataKey: "value",
+              onMouseEnter: onPieEnter,
+            } as any}
           />
         </PieChart>
       </ResponsiveContainer>

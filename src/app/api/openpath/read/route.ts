@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Check if the user has already visited
     const cookieName = `form_${form_id}`;
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const hasVisited = cookieStore.get(cookieName);
 
     // Fetch the form

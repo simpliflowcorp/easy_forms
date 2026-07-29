@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "form_management": true,
+    "data_analytics": true,
+    "destructive_actions": false,
+    "allowed_tools": [
+      "create_form",
+      "update_form",
+      "read_form",
+      "query_responses",
+      "generate_analytics",
+      "create_custom_view",
+      "get_custom_views",
+      "update_custom_view"
+    ]
+  }
+}

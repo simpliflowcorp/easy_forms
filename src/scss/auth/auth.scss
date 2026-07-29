@@ -1,4 +1,7 @@
-@import "signup.scss", "signin.scss", "forgotPassword.scss", "verifyEmail.scss";
+@use "signup.scss";
+@use "signin.scss";
+@use "forgotPassword.scss";
+@use "verifyEmail.scss";
 
 .auth-wrapper {
   padding: 20px;

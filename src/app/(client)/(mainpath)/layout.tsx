@@ -13,10 +13,8 @@ import AIbar from "@/components/ActionBar/AIbar";
 
 export default function AppLayout({
   children,
-  header,
 }: Readonly<{
   children: React.ReactNode;
-  header: React.ReactNode;
 }>) {
   const router = useRouter();
   const pathname = usePathname();

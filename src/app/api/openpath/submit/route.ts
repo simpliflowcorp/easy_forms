@@ -12,7 +12,7 @@ import axios from "axios";
 
 const schema = z.object({
   form_id: z.any(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   user_id: z.string().optional(),
 });
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       await session.abortTransaction();
       return NextResponse.json(
-        { error: validation.error.errors },
+        { error: validation.error.issues },
         { status: 400 }
       );
     }

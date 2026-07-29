@@ -1,12 +1,21 @@
-@import "variables.scss";
-@import "global.scss", "loaders.scss", "icons.scss";
+@use "variables.scss";
+@use "global.scss";
+@use "loaders.scss";
+@use "icons.scss";
 
-@import "auth/auth.scss", "inputComponents.scss", "buttonComponents.scss",
-  "mainHeader.scss", "sidebar.scss";
-@import "dashboard/dashboard.scss", "dashboard/dashboardComponents.scss";
-@import "forms/forms.scss", "forms/formCreate.scss",
-  "forms/elementPropertise.scss", "forms/publishPage.scss";
+@use "auth/auth.scss";
+@use "inputComponents.scss";
+@use "buttonComponents.scss";
+@use "mainHeader.scss";
+@use "sidebar.scss";
+@use "dashboard/dashboard.scss";
+@use "dashboard/dashboardComponents.scss";
+@use "forms/forms.scss";
+@use "forms/formCreate.scss";
+@use "forms/elementPropertise.scss";
+@use "forms/publishPage.scss";
 
-@import "sortablelist.scss";
-@import "setting/setting.scss", "setting/profileSetting.scss";
-@import "components/models/verificationCode.scss";
+@use "sortablelist.scss";
+@use "setting/setting.scss";
+@use "setting/profileSetting.scss";
+@use "components/models/verificationCode.scss";
