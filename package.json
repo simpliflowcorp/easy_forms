@@ -6,7 +6,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "next dev",
+    "dev": "docker run -d --name easyforms-redis -p 6379:6379 redis:alpine 2>/dev/null || docker start easyforms-redis 2>/dev/null; next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

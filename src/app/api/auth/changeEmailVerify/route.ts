@@ -4,6 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 import * as jwt from "jsonwebtoken";
 import bcryptjs from "bcryptjs";
 import { sendMail } from "@/helper/mailer";
+import { getAuthUser } from "@/helper/getAuthUser";
 
 export const dynamic = "force-dynamic";
 
@@ -13,21 +14,10 @@ export async function POST(request: NextRequest) {
     const reqBody = await request.json();
     const { verify_code } = reqBody;
 
-    // Get session and cookies
-    const cookies = request.cookies as any;
-    const token = cookies.get("token");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
-    // Find the user
-
-    const CurrentUser = await User.findOne({ _id: tokenData._id });
+    const CurrentUser = await getAuthUser(request);
 
     if (!CurrentUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // verify code

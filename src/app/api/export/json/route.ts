@@ -5,26 +5,16 @@ import User from "@/models/userModel";
 import jwt from "jsonwebtoken";
 import Response from "@/models/responseModel";
 
+import { getAuthUser } from "@/helper/getAuthUser";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate
-    const cookies = request.cookies as any;
-    const token = cookies.get("token");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const tokenData: any = jwt.verify(token.value!, process.env.TOKEN_SECRET!);
-
-    // Connect to DB and find current user
-    await connectDB();
-    const currentUser = await User.findOne({ _id: tokenData._id });
+    const currentUser = await getAuthUser(request);
 
     if (!currentUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Extract form ID from referrer URL

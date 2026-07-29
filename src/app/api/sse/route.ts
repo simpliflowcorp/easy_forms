@@ -5,9 +5,11 @@ import kv from "@/lib/redis";
 const createPubSubClient = () => {
   if (process.env.NODE_ENV === "development") {
     // Only use duplicate() in development (ioredis)
-    return (kv.client as import("ioredis").Redis).duplicate();
+    const pubSub = (kv.client as import("ioredis").Redis).duplicate();
+    pubSub.on("error", () => {});
+    return pubSub;
   }
-  throw new Error("Pub/Sub is not supported with Vercel KV.");
+  return null;
 };
 
 export async function GET(req: NextRequest) {
@@ -29,17 +31,19 @@ export async function GET(req: NextRequest) {
       }
       await kv.set(`active:${userId}`, "true", { ex: 60 });
       try {
-        // Create dedicated pub/sub connection
-        const pubSub = createPubSubClient(); // No need to connect()
+        // Create dedicated pub/sub connection if supported
+        const pubSub = createPubSubClient();
 
-        // Subscribe to user channel
-        await pubSub.subscribe(`user:${userId}`);
+        if (pubSub) {
+          // Subscribe to user channel
+          await pubSub.subscribe(`user:${userId}`);
 
-        pubSub.on("message", (channel, message) => {
-          if (channel === `user:${userId}`) {
-            controller.enqueue(encoder.encode(`data: ${message}\n\n`));
-          }
-        });
+          pubSub.on("message", (channel, message) => {
+            if (channel === `user:${userId}`) {
+              controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+            }
+          });
+        }
 
         // 3. Heartbeat system
         const heartbeat = setInterval(() => {
@@ -50,8 +54,10 @@ export async function GET(req: NextRequest) {
         req.signal.onabort = async () => {
           clearInterval(heartbeat);
           isConnected = false;
-          await pubSub.unsubscribe();
-          await pubSub.quit();
+          if (pubSub) {
+            await pubSub.unsubscribe();
+            await pubSub.quit();
+          }
           controller.close();
         };
       } catch (error) {
@@ -86,8 +92,10 @@ export async function POST(req: NextRequest) {
     if (isActive && process.env.NODE_ENV === "development") {
       try {
         const pubSub = createPubSubClient();
-        await pubSub.publish(`user:${userId}`, JSON.stringify(message));
-        pubSub.disconnect();
+        if (pubSub) {
+          await pubSub.publish(`user:${userId}`, JSON.stringify(message));
+          pubSub.disconnect();
+        }
       } catch (pubSubError) {
         console.error("Pub/Sub error:", pubSubError);
       }

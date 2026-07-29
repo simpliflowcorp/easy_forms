@@ -7,24 +7,14 @@ import Response from "@/models/responseModel";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+import { getAuthUser } from "@/helper/getAuthUser";
+
 export async function GET(request: NextRequest) {
   try {
-    // // Authentication check start
-
-    // Get session and cookies
-    const cookies = request.cookies as any;
-    const token = cookies.get("token");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-    const tokenData: any = jwt.verify(token?.value!, process.env.TOKEN_SECRET!);
-
-    // Find the user
-    const CurrentUser = await User.findOne({ _id: tokenData._id });
+    const CurrentUser = await getAuthUser(request);
 
     if (!CurrentUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();

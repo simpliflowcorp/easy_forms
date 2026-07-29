@@ -5,21 +5,14 @@ import Form from "@/models/formModel";
 import User from "@/models/userModel";
 import jwt from "jsonwebtoken";
 import mongoose, { PipelineStage } from "mongoose";
+import { getAuthUser } from "@/helper/getAuthUser";
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
+    const currentUser = await getAuthUser(request);
 
-    // Authentication check
-    const token = request.cookies.get("token")?.value;
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const tokenData: any = jwt.verify(token, process.env.TOKEN_SECRET!);
-    const currentUser = await User.findById(tokenData._id);
     if (!currentUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Date calculation for last 3 days

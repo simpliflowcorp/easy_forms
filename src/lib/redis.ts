@@ -8,7 +8,21 @@ type RedisInstance = Redis | ReturnType<typeof createClient>;
 let kvClient: RedisInstance;
 
 if (process.env.NODE_ENV === "development") {
-  kvClient = new Redis(process.env.KV_URL!);
+  const client = new Redis(process.env.KV_URL!, {
+    maxRetriesPerRequest: 1,
+    retryStrategy(times) {
+      return Math.min(times * 1000, 5000);
+    },
+  });
+  client.on("error", (err: any) => {
+    // Suppress unhandled crash when Redis server is offline
+    if (err && err.code === "ECONNREFUSED") {
+      // Quietly log connection attempt failure
+    } else {
+      console.error("Redis Error:", err);
+    }
+  });
+  kvClient = client;
 } else {
   kvClient = createClient({
     url: process.env.KV_REST_API_URL!,
