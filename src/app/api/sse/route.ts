@@ -17,48 +17,70 @@ export async function GET(req: NextRequest) {
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
   const encoder = new TextEncoder();
-  let isConnected = true;
+  let isClosed = false;
 
   const stream = new ReadableStream({
     async start(controller) {
-      // 1. Send existing notifications first
-      const pending = await kv.lrange(`notifications:${userId}`, 0, -1);
-      if (pending.length > 0) {
-        pending.forEach((msg) => {
-          controller.enqueue(encoder.encode(`data: ${msg}\n\n`));
-        });
-        await kv.del(`notifications:${userId}`);
-      }
-      await kv.set(`active:${userId}`, "true", { ex: 60 });
       try {
-        // Create dedicated pub/sub connection if supported
+        // 1. Send existing notifications first (if KV is configured)
+        if (process.env.KV_REST_API_URL || process.env.EASY_FORM_KV_REST_API_URL || process.env.NODE_ENV === "development") {
+          try {
+            const pending = await kv.lrange(`notifications:${userId}`, 0, -1);
+            if (pending && pending.length > 0) {
+              pending.forEach((msg) => {
+                if (!isClosed) controller.enqueue(encoder.encode(`data: ${msg}\n\n`));
+              });
+              await kv.del(`notifications:${userId}`);
+            }
+            await kv.set(`active:${userId}`, "true", { ex: 60 });
+          } catch (kvError) {
+            console.error("SSE KV fetch error:", kvError);
+          }
+        }
+
+        // 2. Create dedicated pub/sub connection if supported
         const pubSub = createPubSubClient();
 
         if (pubSub) {
-          // Subscribe to user channel
           await pubSub.subscribe(`user:${userId}`);
 
           pubSub.on("message", (channel, message) => {
-            if (channel === `user:${userId}`) {
-              controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+            if (channel === `user:${userId}` && !isClosed) {
+              try {
+                controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+              } catch (err) {}
             }
           });
         }
 
         // 3. Heartbeat system
         const heartbeat = setInterval(() => {
-          controller.enqueue(encoder.encode(":heartbeat\n\n"));
+          if (!isClosed) {
+            try {
+              controller.enqueue(encoder.encode(":heartbeat\n\n"));
+            } catch (err) {
+              clearInterval(heartbeat);
+            }
+          } else {
+            clearInterval(heartbeat);
+          }
         }, 15000);
 
         // 4. Cleanup on disconnect
         req.signal.onabort = async () => {
           clearInterval(heartbeat);
-          isConnected = false;
           if (pubSub) {
-            await pubSub.unsubscribe();
-            await pubSub.quit();
+            try {
+              await pubSub.unsubscribe();
+              await pubSub.quit();
+            } catch (err) {}
           }
-          controller.close();
+          if (!isClosed) {
+            isClosed = true;
+            try {
+              controller.close();
+            } catch (err) {}
+          }
         };
       } catch (error) {
         console.error("SSE Connection Error:", error);

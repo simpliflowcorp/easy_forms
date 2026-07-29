@@ -24,9 +24,12 @@ if (process.env.NODE_ENV === "development") {
   });
   kvClient = client;
 } else {
+  const url = process.env.KV_REST_API_URL || process.env.EASY_FORM_KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.EASY_FORM_KV_REST_API_TOKEN;
+
   kvClient = createClient({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!,
+    url: url || "",
+    token: token || "",
   });
 }
 
