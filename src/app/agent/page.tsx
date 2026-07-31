@@ -71,7 +71,7 @@ export default function AgentTestingPage() {
         agentState={agentState}
         isLoading={isLoading}
         onSendPrompt={(p) => handleRunPrompt(p)}
-        onMerge={() => handleRunPrompt("", true)}
+        onMerge={() => handleRunPrompt("", true, agentState?.ticket?.ticketId)}
         onResume={(ticketId) => handleRunPrompt(agentState?.prompt || "", false, ticketId)}
       />
     </div>

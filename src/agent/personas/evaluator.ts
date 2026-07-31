@@ -168,49 +168,12 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
   // AWAITING_USER_APPROVAL when the plan mutated state — NOT the
   // Communicator. Previously the Communicator stole this job (#1, #14).
   if (verdict.isComplete && planRequiresMergeApproval(state)) {
-    let changeHistoryReport = undefined;
-    if (state.ticket.stage === "STAGE_2") {
-      try {
-        const historyPrompt = `You are an AI generating an audit log report for a form update.
-Based on the user's prompt and the executed plan, generate a highly detailed JSON report of what was done.
-
-OUTPUT SCHEMA (JSON ONLY - ALL FIELDS MUST BE STRINGS EXCEPT ACTION):
-{
-  "source": "<string> The original user prompt",
-  "action": ["<string> Detailed step 1", "<string> Detailed step 2"],
-  "changes": "<string> Exactly what was modified in the form (DO NOT output a nested object)",
-  "effects": "<string> How these changes affect the deployed form schema and analytics (DO NOT output a nested object)",
-  "result": "<string> How the outcome was successfully achieved"
-}`;
-        const summaryPayload = state.actionPlan.map((a) => ({
-          tool: a.tool,
-          params: redactPII(a.params),
-          result: redactPII(a.result),
-        }));
-        
-        const histResponse = await retryLLM(
-          [
-            { role: "system", content: historyPrompt },
-            { role: "user", content: `Prompt: ${state.prompt}\n\nPlan Results:\n${JSON.stringify(summaryPayload, null, 2)}` }
-          ],
-          { response_format: { type: "json_object" } }
-        );
-        changeHistoryReport = safeJSON(histResponse?.content || "");
-        if (!changeHistoryReport) {
-          console.error("HISTORY REPORT GENERATION FAILED. Content:", histResponse?.content);
-        }
-      } catch (e) {
-        console.warn("Failed to generate change history report", e);
-      }
-    }
-
     return {
       ...state,
       activePersona: "AWAITING_USER_APPROVAL",
       isComplete: true,
       evaluatorFeedback: feedback,
       llmRawOutput: rawContent,
-      ...(changeHistoryReport && { changeHistoryReport }),
     };
   }
 

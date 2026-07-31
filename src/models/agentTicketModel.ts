@@ -18,7 +18,10 @@ const AgentTicketSchema = new mongoose.Schema(
     reply: { type: String, default: "" },
     isComplete: { type: Boolean, default: false },
     isQuestion: { type: Boolean, default: false },
-    changeHistoryReport: { type: mongoose.Schema.Types.Mixed },
+    resumedPrompt: { type: String },
+    drafterMessage: { type: String },
+    evaluatorFeedback: { type: String },
+    llmRawOutput: { type: String },
   },
   { timestamps: true }
 );

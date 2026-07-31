@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import Form from "../src/models/formModel";
 import User from "../src/models/userModel";
 import AgentTicketModel from "../src/models/agentTicketModel";
+import AgentAuditEvent from "../src/models/agentAuditEventModel";
 import { agentRedis } from "../src/agent/sandbox/agentRedis";
 
 dotenv.config({ path: ".env.local" });
@@ -33,6 +34,7 @@ async function runTests() {
   
   console.log("🧹 Clearing old test data...");
   await AgentTicketModel.deleteMany({ userId });
+  await AgentAuditEvent.deleteMany({ userId });
   await Form.deleteMany({ user: userId });
 
   let currentTicketId = "";
@@ -56,19 +58,11 @@ async function runTests() {
     currentTicketId = stage1State.ticket.ticketId;
     const finalSandbox = await agentRedis.getState(currentTicketId);
     console.log(`✅ Sandbox forms created: ${Object.keys(finalSandbox?.forms || {}).length}`);
-    console.log(`✅ ChangeHistoryReport generated:`, !!stage1State.changeHistoryReport);
-    
-    if (!stage1State.changeHistoryReport) {
-      throw new Error("changeHistoryReport is missing from state!");
-    }
 
     // Verify Mongo persistence
     const dbTicket = await AgentTicketModel.findOne({ ticketId: currentTicketId }).lean();
     if (!dbTicket) throw new Error("Ticket not saved to MongoDB");
-    if (!(dbTicket as any).changeHistoryReport) {
-      throw new Error("changeHistoryReport not saved to MongoDB Ticket Model");
-    }
-    console.log("✅ State persisted to MongoDB with History Report.");
+    console.log("✅ State persisted to MongoDB.");
 
     // ==========================================
     // STAGE 2: Merge & History
@@ -89,13 +83,13 @@ async function runTests() {
     const form = mergedForms[0];
     console.log(`✅ Production form found: ${form.name}`);
     
-    if (!form.changeHistory || form.changeHistory.length === 0) {
-      throw new Error("Change history array is empty on the merged form!");
+    const auditEvents = await AgentAuditEvent.find({ ticketId: currentTicketId, userId }).lean();
+    if (auditEvents.length === 0) {
+      throw new Error("No AgentAuditEvent found for the merged ticket!");
     }
     
-    const historyEntry = form.changeHistory[0];
-    console.log("✅ Change History Entry:");
-    console.log(JSON.stringify(historyEntry, null, 2));
+    console.log("✅ Audit Event Entry:");
+    console.log(JSON.stringify(auditEvents[0], null, 2));
 
     // ==========================================
     // STAGE 3: Analytics (Read-Only)

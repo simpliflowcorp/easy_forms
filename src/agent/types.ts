@@ -12,13 +12,7 @@ export type PersonaStage =
 
 export type TicketStage = "STAGE_1" | "STAGE_2" | "STAGE_3";
 
-export interface ChangeHistoryReport {
-  source: string;
-  action: any; // String or Array of steps
-  changes: string;
-  effects: string;
-  result: string;
-}
+
 
 export interface AgentTicket {
   ticketId: string;
@@ -156,5 +150,4 @@ export interface AgentState {
   isQuestion?: boolean;
   reply?: string;
   isComplete?: boolean;
-  changeHistoryReport?: ChangeHistoryReport;
 }

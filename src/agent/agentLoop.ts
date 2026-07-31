@@ -5,6 +5,7 @@ import { runExecutor } from "./personas/executor";
 import { runEvaluator } from "./personas/evaluator";
 import { runCommunicator } from "./personas/communicator";
 import { sandboxStore } from "./sandbox/sandboxStore";
+import { sandboxRedisStore } from "./sandbox/sandboxRedisStore";
 import { agentRedis } from "./sandbox/agentRedis";
 import { acquireAgentLock, AgentLockHandle } from "./sandbox/agentLock";
 import { newTicketId, newTraceId } from "./helper/id";
@@ -142,6 +143,15 @@ export async function runAgentLoop(
       const dbTicket = await AgentTicketModel.findOne({ ticketId: resumeTicketId, userId }).lean();
       if (!dbTicket || (dbTicket as any).activePersona !== "AWAITING_USER_APPROVAL") {
         throw new Error("Invalid or expired ticket for merge approval.");
+      }
+      if (!(dbTicket as any).isComplete) {
+        throw new Error("Merge rejected: ticket is not marked as complete.");
+      }
+      
+      // Check if action digest / sandbox has expired in Redis
+      const store = await sandboxRedisStore.get(userId, resumeTicketId);
+      if (!store || (Object.keys(store.forms).length === 0 && store.updates.length === 0 && store.deletes.length === 0 && Object.keys(store.customViews).length === 0)) {
+        throw new Error("Merge rejected: approval session expired or no pending actions.");
       }
 
       // Acquire the lock even for mergeApproved so two simultaneous confirmations

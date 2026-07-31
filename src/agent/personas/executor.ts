@@ -151,7 +151,7 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
           act.result = cached;
           act.status = "done";
         } else {
-          const { executeAgentTool } = await import("@/lib/agentTools");
+          const { executeAgentTool } = await import("../../lib/agentTools");
           const res = await executeAgentTool(act.tool, act.params, state.userId);
           act.result = res;
           await sandboxRedisStore.setQueryResult(state.userId, state.ticket.ticketId, act.id, res);

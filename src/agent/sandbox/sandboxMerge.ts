@@ -29,7 +29,7 @@ import Form from "@/models/formModel";
 import CustomView from "@/models/customViewModel";
 import mongoose from "mongoose";
 import { sandboxRedisStore } from "./sandboxRedisStore.js";
-import AgentTicketModel from "@/models/agentTicketModel";
+import AgentAuditEvent from "@/models/agentAuditEventModel";
 
 export interface MergeStats {
   mergedForms: number;
@@ -45,9 +45,6 @@ async function mergeFormsAndIntents(
   stats: MergeStats,
 ): Promise<void> {
   const store = await sandboxRedisStore.get(userId, ticketId);
-  const ticket = await AgentTicketModel.findOne({ ticketId }).session(session).lean();
-  const changeHistoryReport = ticket ? (ticket as any).changeHistoryReport : null;
-  const pushHistory = changeHistoryReport ? { $push: { changeHistory: changeHistoryReport } } : {};
 
   // 1. Create drafts.
   for (const draft of Object.values(store.forms)) {
@@ -67,11 +64,20 @@ async function mergeFormsAndIntents(
           // Strip any draft-shaped IDs so a fresh ObjectId/_id is generated.
           _id: undefined,
         },
-        ...pushHistory
       },
       { upsert: true, session, new: true },
     );
-    if (draft.idempotencyKey) stats.mergedForms++;
+    if (draft.idempotencyKey) {
+      stats.mergedForms++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(draft._id || "NEW_FORM"),
+        action: "create_form",
+        serverDiff: rest,
+        outcome: "success"
+      }], { session });
+    }
   }
 
   // 2. Updates — apply with optimistic concurrency.
@@ -83,9 +89,19 @@ async function mergeFormsAndIntents(
     if (upd.expectedUpdatedAt) {
       filter.updatedAt = upd.expectedUpdatedAt;
     }
-    const updateOp = { $set: upd.updates, ...pushHistory };
+    const updateOp = { $set: upd.updates };
     const res = await Form.updateOne(filter, updateOp, { session });
-    if (res.matchedCount > 0) stats.updatesApplied++;
+    if (res.matchedCount > 0) {
+      stats.updatesApplied++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(upd.id),
+        action: "update_form",
+        serverDiff: upd.updates,
+        outcome: "success"
+      }], { session });
+    }
     // If matchedCount === 0 and the user expected this update to apply,
     // the optimistic-concurrency check failed (someone edited the form
     // between sandbox snapshot and merge). We do NOT raise — we log via
@@ -102,7 +118,17 @@ async function mergeFormsAndIntents(
       filter.updatedAt = del.expectedUpdatedAt;
     }
     const res = await Form.deleteOne(filter, { session });
-    if (res.deletedCount > 0) stats.deletesApplied++;
+    if (res.deletedCount > 0) {
+      stats.deletesApplied++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(del.id),
+        action: "delete_form",
+        serverDiff: null,
+        outcome: "success"
+      }], { session });
+    }
   }
 }
 

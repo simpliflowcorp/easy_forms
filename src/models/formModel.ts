@@ -70,17 +70,7 @@ const FormAnalyticsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const FormChangeHistorySchema = new mongoose.Schema(
-  {
-    source: { type: String, required: true },
-    action: { type: mongoose.Schema.Types.Mixed }, // String or Array
-    changes: { type: String },
-    effects: { type: String },
-    result: { type: String },
-    createdAt: { type: Date, default: Date.now },
-  },
-  { _id: false }
-);
+
 
 const formSchema = new mongoose.Schema(
   {
@@ -115,7 +105,6 @@ const formSchema = new mongoose.Schema(
       type: FormAnalyticsSchema,
       default: () => ({}),
     },
-    changeHistory: [FormChangeHistorySchema],
     metadataSettings: {
       ip: { type: Boolean, default: false },
       userAgent: { type: Boolean, default: false },
@@ -138,7 +127,6 @@ const formSchema = new mongoose.Schema(
      */
     agentIdempotencyKey: {
       type: String,
-      index: { unique: true, sparse: true },
       default: null,
     },
   },
@@ -153,6 +141,7 @@ const formSchema = new mongoose.Schema(
 formSchema.index({ user: 1, status: 1 });
 formSchema.index({ "elements.elementId": 1 });
 formSchema.index({ expiry: 1, status: 1 }); // Compound index
+formSchema.index({ user: 1, agentIdempotencyKey: 1 }, { unique: true, sparse: true });
 
 // Virtual for form expiration status
 formSchema.virtual("isExpired").get(function () {
