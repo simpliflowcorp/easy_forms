@@ -1,0 +1,811 @@
+/* ==========================================================================
+   PURE SCSS CYBERNETIC HUD STYLESHEET - EASY FORMS AI AGENT
+   No Tailwind CSS Dependency
+   ========================================================================== */
+
+/* Main Page Container */
+
+.agent-wrapper{
+  width: 100%;
+  height: 100%;
+  ;
+  
+}
+.scifi-agent-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #030712;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+  color: #f1f5f9;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient Glow Animations */
+.scifi-glow-orb-1 {
+  position: absolute;
+  top: -10%;
+  left: 20%;
+  width: 500px;
+  height: 500px;
+  background: rgba(2, 132, 199, 0.12);
+  filter: blur(140px);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: scifi-pulse 8s ease-in-out infinite;
+}
+
+.scifi-glow-orb-2 {
+  position: absolute;
+  bottom: -10%;
+  right: 10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(147, 51, 234, 0.12);
+  filter: blur(140px);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: scifi-pulse 10s ease-in-out infinite alternate;
+}
+
+/* Header */
+.scifi-header {
+  position: relative;
+  z-index: 30;
+  height: 70px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(3, 7, 18, 0.92);
+  backdrop-filter: blur(20px);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+}
+
+.scifi-brand-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.scifi-brand-logo {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #06b6d4, #2563eb, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
+  border: 1px solid rgba(186, 230, 253, 0.4);
+}
+
+.scifi-status-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #030712;
+  &.online {
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+  }
+  &.offline {
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+  }
+}
+
+.scifi-brand-title {
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  background: linear-gradient(90deg, #38bdf8, #7dd3fc, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.scifi-badge-autonomous {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(8, 47, 73, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-family: monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 1px;
+}
+
+.scifi-header-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.scifi-ticket-badge {
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(217, 70, 239, 0.3);
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.scifi-ticket-stage-tag {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  &.STAGE_1 {
+    background: rgba(56, 189, 248, 0.2);
+    color: #7dd3fc;
+    border-color: rgba(56, 189, 248, 0.4);
+  }
+  &.STAGE_2 {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+}
+
+/* Layout Workspace */
+.scifi-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
+}
+
+/* Sidebar Console */
+.scifi-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(3, 7, 18, 0.8);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  gap: 20px;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Sidebar Section Headers */
+.scifi-section-title {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+/* Preset Cards */
+.scifi-preset-card {
+  position: relative;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: rgba(56, 189, 248, 0.6);
+    background: rgba(14, 116, 144, 0.2);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.scifi-preset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.scifi-preset-label {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+  color: #7dd3fc;
+}
+
+.scifi-preset-tag {
+  font-family: monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+
+.scifi-preset-prompt {
+  font-family: monospace;
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Input Form */
+.scifi-input-textarea {
+  width: 100%;
+  height: 90px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  color: #e0f2fe;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 12px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+  }
+
+  &::placeholder {
+    color: #475569;
+  }
+}
+
+.scifi-btn-transmit {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #0284c7, #0284c7, #2563eb);
+  color: #ffffff;
+  border: 1px solid rgba(186, 230, 253, 0.4);
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(90deg, #0369a1, #0284c7, #1d4ed8);
+    box-shadow: 0 0 35px rgba(56, 189, 248, 0.6);
+    transform: scale(1.01);
+  }
+
+  &:disabled {
+    background: #1e293b;
+    color: #64748b;
+    border-color: #334155;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.scifi-btn-fault {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &.fault-trigger {
+    background: rgba(69, 10, 10, 0.6);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    &:hover {
+      background: rgba(127, 29, 29, 0.8);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+    }
+  }
+
+  &.fault-restore {
+    background: rgba(6, 78, 59, 0.6);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    &:hover {
+      background: rgba(4, 120, 87, 0.8);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+    }
+  }
+}
+
+/* Main Visualizer Body */
+.scifi-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+/* Canvas Area */
+.scifi-canvas-wrapper {
+  width: 100%;
+  height: 480px;
+  position: relative;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+/* Custom ReactFlow Persona Nodes */
+.scifi-node {
+  position: relative;
+  width: 220px;
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(11, 19, 38, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  transition: all 0.35s ease;
+}
+
+.scifi-node-active {
+  border-color: #38bdf8;
+  background: rgba(14, 30, 58, 0.95);
+  box-shadow: 0 0 35px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.2);
+  transform: scale(1.05);
+  z-index: 100 !important;
+}
+
+.scifi-node-amber {
+  border-color: #f59e0b;
+  background: rgba(35, 23, 8, 0.95);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.2);
+  transform: scale(1.05);
+  z-index: 100 !important;
+}
+
+.scifi-node-system {
+  border-color: #c084fc;
+  background: rgba(30, 10, 45, 0.95);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.2);
+  z-index: 90 !important;
+}
+
+.scifi-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: monospace;
+  font-size: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.scifi-node-subtag {
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.scifi-node-status-tag {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  &.active {
+    background: rgba(56, 189, 248, 0.2);
+    color: #7dd3fc;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+  }
+  &.sandbox {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+  }
+  &.standby {
+    background: #1e293b;
+    color: #64748b;
+  }
+}
+
+.scifi-node-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.scifi-node-icon {
+  font-size: 24px;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.scifi-node-label {
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 12px;
+  color: #f8fafc;
+}
+
+.scifi-node-desc {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.scifi-node-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+  border: 1px solid #1e293b;
+}
+
+.scifi-node-progress-bar {
+  height: 100%;
+  transition: all 0.5s ease;
+  &.active {
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    width: 100%;
+    box-shadow: 0 0 10px #38bdf8;
+  }
+  &.amber {
+    background: linear-gradient(90deg, #d97706, #fbbf24);
+    width: 100%;
+    box-shadow: 0 0 10px #fbbf24;
+  }
+  &.idle {
+    width: 20%;
+    background: #334155;
+  }
+}
+
+/* ReactFlow Custom Handles */
+.scifi-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #0ea5e9 !important;
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 10px #38bdf8;
+  border-radius: 2px !important;
+}
+
+.scifi-handle-source-amber {
+  background: #f59e0b !important;
+  border: 2px solid #fbbf24 !important;
+  box-shadow: 0 0 10px #fbbf24;
+}
+
+/* Bottom Telemetry & Sandbox Dock */
+.scifi-dock {
+  height: 320px;
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(3, 7, 18, 0.92);
+  backdrop-filter: blur(20px);
+  display: flex;
+  overflow: hidden;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    height: auto;
+  }
+}
+
+.scifi-pane-telemetry {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(30, 41, 59, 0.8);
+  min-width: 0;
+}
+
+.scifi-pane-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.scifi-pane-header {
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 1.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scifi-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 16px;
+  flex: 1;
+}
+
+.scifi-chat-bubble-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 90%;
+}
+
+.scifi-chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  flex-shrink: 0;
+
+  &.DRAFTER { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+  &.PLANNER { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
+  &.EXECUTOR_SANDBOX { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.2); }
+  &.EVALUATOR { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+  &.COMMUNICATOR { border-color: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.2); }
+  &.AWAITING_USER_APPROVAL { border-color: #14b8a6; box-shadow: 0 0 10px rgba(20, 184, 166, 0.2); }
+}
+
+.scifi-chat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.scifi-chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scifi-chat-sender {
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  
+  &.DRAFTER { color: #60a5fa; }
+  &.PLANNER { color: #c084fc; }
+  &.EXECUTOR_SANDBOX { color: #fbbf24; }
+  &.EVALUATOR { color: #34d399; }
+  &.COMMUNICATOR { color: #f472b6; }
+  &.AWAITING_USER_APPROVAL { color: #2dd4bf; }
+}
+
+.scifi-chat-time {
+  font-size: 9px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.scifi-chat-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-top-left-radius: 2px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  word-wrap: break-word;
+
+  &.DRAFTER { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.25); }
+  &.PLANNER { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.25); }
+  &.EXECUTOR_SANDBOX { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25); }
+  &.EVALUATOR { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); }
+  &.COMMUNICATOR { background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.25); }
+  &.AWAITING_USER_APPROVAL { background: rgba(20, 184, 166, 0.1); border-color: rgba(20, 184, 166, 0.25); }
+}
+
+.scifi-log-persona-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+
+  &.DRAFTER {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  &.PLANNER {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.3);
+  }
+  &.EXECUTOR_SANDBOX {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  &.EVALUATOR {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  &.COMMUNICATOR {
+    background: rgba(236, 72, 153, 0.15);
+    color: #f472b6;
+    border-color: rgba(236, 72, 153, 0.3);
+  }
+}
+
+.scifi-payload-pre {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #030712;
+  border: 1px solid #1e293b;
+  color: #7dd3fc;
+  font-size: 10px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.scifi-memory-title {
+  font-size: 10px;
+  font-family: monospace;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+/* Modals & Banners */
+.scifi-modal-container {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: 90%;
+  max-width: 580px;
+}
+
+.scifi-modal-approval {
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(3, 7, 18, 0.95);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scifi-modal-error {
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(3, 7, 18, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 10px 40px rgba(245, 158, 11, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scifi-btn-approve {
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: #10b981;
+  color: #030712;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border: 1px solid #6ee7b7;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #34d399;
+    transform: scale(1.03);
+  }
+}
+
+.scifi-btn-resume {
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: #f59e0b;
+  color: #030712;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border: 1px solid #fcd34d;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #fbbf24;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes scifi-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.08); }
+}

@@ -1,191 +1,421 @@
-import { AgentState, AgentTicket, ExecutionTraceStep } from "./types";
+import { AgentState, AgentTicket, AgentBusyError, emptySandboxStore, ExecutionTraceStep, normalizeSandboxStore } from "./types";
 import { runDrafter } from "./personas/drafter";
 import { runPlanner } from "./personas/planner";
 import { runExecutor } from "./personas/executor";
 import { runEvaluator } from "./personas/evaluator";
+import { runCommunicator } from "./personas/communicator";
 import { sandboxStore } from "./sandbox/sandboxStore";
 import { agentRedis } from "./sandbox/agentRedis";
+import { acquireAgentLock, AgentLockHandle } from "./sandbox/agentLock";
+import { newTicketId, newTraceId } from "./helper/id";
 import AgentTicketModel from "@/models/agentTicketModel";
 
 export async function runAgentLoop(
   userId: string,
   prompt: string,
   mergeApproved: boolean = false,
-  resumeTicketId?: string
+  resumeTicketId?: string,
+  onUpdate?: (state: AgentState) => void
 ): Promise<AgentState> {
   const trace: ExecutionTraceStep[] = [];
+  let state: AgentState | null = null;
+  // Phase 6.1 (#9, #10): per-user Redis lock serializes concurrent invocations
+  // of the agent loop so duplicate-sends / webhook retries / multi-tab clicks
+  // no longer race on sandbox + merge slot. The lock is held until the loop
+  // returns (success OR failure) so partial progress can't bleed into the
+  // next invocation.
+  let lock: AgentLockHandle | null = null;
+
+  // Phase 5.4 (#18): the trace could grow unbounded across 3 iterations with
+  // the entire `requirements` / `actionPlan` re-emitted per persona call,
+  // and each `payload` could embed a full sandbox draft. Both the Redis
+  // AgentState round-trip and the trace itself became unbounded storage.
+  // We cap the rolling trace to 50 entries and truncate each payload to
+  // 4 KB (with a marker). This bounds the AgentState JSON to a manageable
+  // size while preserving the most recent diagnostic context.
+  const MAX_TRACE_ENTRIES = 50;
+  const MAX_PAYLOAD_BYTES = 4096;
 
   const addTrace = (persona: AgentState["activePersona"], message: string, payload?: any) => {
+    if (trace.length >= MAX_TRACE_ENTRIES) {
+      // Rolling window: drop the oldest 5 when we hit the cap. We drop in
+      // batches so we don't pay the shift O(n) cost on every push.
+      trace.splice(0, 5);
+    }
+    let tracedPayload = payload;
+    if (payload !== undefined) {
+      try {
+        const json = JSON.stringify(payload);
+        if (json.length > MAX_PAYLOAD_BYTES) {
+          tracedPayload = { _truncated: true, originalSize: json.length, preview: json.slice(0, 500) };
+        }
+      } catch {
+        tracedPayload = { _unserializable: true };
+      }
+    }
     trace.push({
-      stepId: `trc_${Date.now()}_${trace.length + 1}`,
+      stepId: newTraceId(),
       timestamp: new Date().toLocaleTimeString(),
       persona,
       message,
-      payload,
+      payload: tracedPayload,
     });
+    if (state && onUpdate) {
+      state.executionTrace = trace;
+      onUpdate({ ...state });
+    }
   };
 
-  // If user clicked final approval to merge sandbox -> production DB
-  if (mergeApproved) {
-    addTrace("MERGED_TO_PRODUCTION", "User approved merging Sandbox Store draft to production DB");
-    const mergeStats = await sandboxStore.mergeToProduction(userId);
-    addTrace("MERGED_TO_PRODUCTION", `Merged ${mergeStats.mergedForms} form(s) and ${mergeStats.mergedViews} view(s)`);
-    
-    if (resumeTicketId) {
-      await agentRedis.clearState(resumeTicketId);
-      await AgentTicketModel.findOneAndUpdate({ ticketId: resumeTicketId, userId }, { status: "RESOLVED", isComplete: true });
-    }
-
-    return {
-      userId,
-      prompt,
-      ticket: {
-        ticketId: resumeTicketId || `tkt_${Date.now()}`,
-        stage: "STAGE_2",
-        title: "DB Merge",
-        prompt,
-        createdAt: new Date().toISOString(),
-        status: "RESOLVED",
+  // Helper to finalize Mongo ticket status + clear/cache Redis.
+  // Phase 6.2 (#7, #22): previously only Redis was cleared on success,
+  // leaving Mongo tickets stuck in PROCESSING status, corrupting both the
+  // Drafter's recent-context ordering and the followup-detection feature.
+  const markResolved = async (s: AgentState) => {
+    s.executionTrace = trace;
+    await AgentTicketModel.findOneAndUpdate(
+      { ticketId: s.ticket.ticketId, userId: s.userId },
+      { 
+        ...s, 
+        status: "RESOLVED", 
+        isComplete: true,
+        ticketId: s.ticket.ticketId,
+        stage: s.ticket.stage,
+        title: s.ticket.title,
+        prompt: s.ticket.prompt,
+        createdAt: s.ticket.createdAt
       },
-      activePersona: "MERGED_TO_PRODUCTION",
-      iterationCount: 1,
-      maxIterations: 3,
-      requirements: {},
-      actionPlan: [],
-      sandbox: { forms: {}, customViews: {}, queryResults: {} },
-      executionTrace: trace,
-      reply: `Successfully merged sandbox changes to production DB! (Forms created: ${mergeStats.mergedForms}, Views created: ${mergeStats.mergedViews})`,
-      isComplete: true,
-    };
-  }
+      { upsert: true },
+    );
+    await agentRedis.clearState(s.ticket.ticketId);
+  };
 
-  let state: AgentState | null = null;
-
-  // 1. Resume Logic: Check Redis, then MongoDB
-  if (resumeTicketId) {
-    state = await agentRedis.getState(resumeTicketId);
-    if (!state) {
-      const dbTicket = await AgentTicketModel.findOne({ ticketId: resumeTicketId, userId }).lean();
-      if (dbTicket) {
-        state = dbTicket as unknown as AgentState;
-        state.executionTrace?.forEach(t => trace.push(t));
-        addTrace("DRAFTER", "Resumed ticket from MongoDB backup.");
-      }
-    } else {
-      state.executionTrace?.forEach(t => trace.push(t));
-      addTrace("DRAFTER", "Resumed ticket from Redis cache.");
-    }
-  }
-
-  // 2. Initialization if not resuming
-  if (!state) {
-    const initialTicket: AgentTicket = {
-      ticketId: `tkt_${Date.now()}`,
-      stage: "STAGE_1",
-      title: "Processing Ticket...",
-      prompt,
-      createdAt: new Date().toISOString(),
-      status: "PROCESSING",
-    };
-
-    state = {
-      userId,
-      prompt,
-      ticket: initialTicket,
-      activePersona: "DRAFTER",
-      iterationCount: 1,
-      maxIterations: 3,
-      requirements: {},
-      actionPlan: [],
-      sandbox: sandboxStore.getStore(userId),
-      executionTrace: trace,
-    };
-    addTrace("DRAFTER", `Initiating prompt digestion for: "${prompt}"`);
-  }
+  const persistStateToRedis = async (s: AgentState) => {
+    s.executionTrace = trace;
+    await agentRedis.saveState(s);
+    await AgentTicketModel.findOneAndUpdate(
+      { ticketId: s.ticket.ticketId, userId: s.userId },
+      { 
+        ...s,
+        ticketId: s.ticket.ticketId,
+        stage: s.ticket.stage,
+        title: s.ticket.title,
+        status: s.ticket.status,
+        prompt: s.ticket.prompt,
+        createdAt: s.ticket.createdAt
+      },
+      { upsert: true },
+    );
+  };
 
   // Helper to handle failure fallback
   const handleFailure = async (err: any, currentState: AgentState) => {
-    addTrace(currentState.activePersona, `Execution error: ${err.message}`);
     currentState.executionTrace = trace;
     currentState.ticket.status = "LLM_ERROR";
     currentState.reply = "AI processing interrupted due to a server error. You can resume this ticket when the server is back online.";
-    
-    // Save to MongoDB on failure
+    addTrace(currentState.activePersona, `Execution error: ${err.message}`);
+
+    // Save to MongoDB on failure so the user can resume after a crash (RESOLVED is reserved for success).
     await AgentTicketModel.findOneAndUpdate(
       { ticketId: currentState.ticket.ticketId, userId: currentState.userId },
-      { ...currentState },
-      { upsert: true }
+      { 
+        ...currentState,
+        ticketId: currentState.ticket.ticketId,
+        stage: currentState.ticket.stage,
+        title: currentState.ticket.title,
+        status: currentState.ticket.status,
+        prompt: currentState.ticket.prompt,
+        createdAt: currentState.ticket.createdAt
+      },
+      { upsert: true },
     );
     return currentState;
   };
 
   try {
-    // Check if we are simulating an offline crash for testing
-    const isSimulatedOffline = await agentRedis.getState("simulated_offline") || await (await import("./sandbox/agentRedis.js")).redisClient.get("agent:simulated_offline");
-    if (isSimulatedOffline === "true") {
-      throw new Error("Simulated LLM Offline Crash Triggered");
-    }
-
-    // Stage 1: Drafter Persona
-    if (state.activePersona === "DRAFTER") {
-      state = await runDrafter(state);
-      state.executionTrace = trace;
-      addTrace(state.activePersona, `Drafter classified Ticket as [${state.ticket.stage}]: "${state.ticket.title}"`, {
-        requirements: state.requirements,
-        isQuestion: state.isQuestion,
-        reply: state.reply,
-        llmRawOutput: state.llmRawOutput,
-      });
-      await agentRedis.saveState(state);
-
-      if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
-        if (state.isComplete) await agentRedis.clearState(state.ticket.ticketId);
-        return state;
+    // If user clicked final approval to merge sandbox -> production DB
+    if (mergeApproved) {
+      if (!resumeTicketId) {
+        throw new Error("Missing resumeTicketId for merge approval.");
       }
-    }
 
-    // Stage 2: Planner Persona
-    if (state.activePersona === "PLANNER") {
-      // Re-check simulation flag to allow crashing mid-loop
-      if (await (await import("./sandbox/agentRedis.js")).redisClient.get("agent:simulated_offline") === "true") {
-        throw new Error("Simulated LLM Offline Crash Triggered during Planner");
+      // Verify the ticket exists, belongs to the user, and is in AWAITING_USER_APPROVAL
+      const dbTicket = await AgentTicketModel.findOne({ ticketId: resumeTicketId, userId }).lean();
+      if (!dbTicket || (dbTicket as any).activePersona !== "AWAITING_USER_APPROVAL") {
+        throw new Error("Invalid or expired ticket for merge approval.");
       }
-      
-      addTrace("PLANNER", "Handing context to Planner Persona for Action Plan compilation");
-      state = await runPlanner(state);
-      state.executionTrace = trace;
-      addTrace("PLANNER", `Planner compiled ${state.actionPlan.length} action step(s)`, state.actionPlan);
-      await agentRedis.saveState(state);
+
+      // Acquire the lock even for mergeApproved so two simultaneous confirmations
+      // don't double-merge. The transaction is idempotent (#4) but the lock still
+      // prevents confusing double-trace in the UI.
+      const mergeTicketId = resumeTicketId;
+      lock = await acquireAgentLock(userId, mergeTicketId);
+
+      state = {
+        userId,
+        prompt,
+        ticket: {
+          ticketId: mergeTicketId,
+          stage: "STAGE_2",
+          title: "DB Merge",
+          prompt,
+          createdAt: new Date().toISOString(),
+          status: "RESOLVED",
+        },
+        activePersona: "MERGED_TO_PRODUCTION",
+        iterationCount: 1,
+        maxIterations: 3,
+        requirements: {},
+        actionPlan: [],
+        sandbox: emptySandboxStore(),
+        executionTrace: trace,
+        reply: "",
+        isComplete: true,
+      };
+
+      addTrace("MERGED_TO_PRODUCTION", "User approved merging Sandbox Store draft to production DB");
+      const mergeStats = await sandboxStore.mergeToProduction(userId, mergeTicketId);
+      addTrace(
+        "MERGED_TO_PRODUCTION",
+        `Merged ${mergeStats.mergedForms} form(s) and ${mergeStats.mergedViews} view(s)`,
+      );
+
+      if (resumeTicketId) {
+        await agentRedis.clearState(resumeTicketId);
+        await AgentTicketModel.findOneAndUpdate(
+          { ticketId: resumeTicketId, userId },
+          { status: "RESOLVED", isComplete: true },
+        );
+      }
+
+      state.reply = `Successfully merged sandbox changes to production DB! (Forms created: ${mergeStats.mergedForms}, Views created: ${mergeStats.mergedViews})`;
+      if (onUpdate) onUpdate({ ...state });
+      return state;
     }
 
-    // Stage 3: Executor Persona (Sandbox Isolation)
-    if (state.activePersona === "EXECUTOR_SANDBOX") {
-      addTrace("EXECUTOR_SANDBOX", "Executing Action Plan inside isolated Sandbox Store");
-      state = await runExecutor(state);
-      state.executionTrace = trace;
-      addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state.actionPlan);
-      await agentRedis.saveState(state);
-    }
+    // Allocate a NEW ticket ID for the non-resume path BEFORE acquiring the
+    // lock — so the lock's token carries the ticketId we're about to run.
+    // (Phase 6.1: previously this ID was generated at "step 2" inside the
+    // init block, AFTER the lock was acquired, so lock-compared-del could
+    // never match the ticket being run.)
+    const pendingTicketId = resumeTicketId || newTicketId();
+    lock = await acquireAgentLock(userId, pendingTicketId);
 
-    // Stage 4: Evaluator Persona (Loop Verification)
-    if (state.activePersona === "EVALUATOR") {
-      addTrace("EVALUATOR", "Handing sandbox results to Evaluator Persona for Quality Assurance");
-      state = await runEvaluator(state);
-      state.executionTrace = trace;
-      addTrace(state.activePersona, `Evaluator finished QA check (Iteration ${state.iterationCount}/${state.maxIterations})`, {
-        isComplete: state.isComplete,
-        feedback: state.evaluatorFeedback,
-      });
-      
-      if (state.isComplete && state.activePersona !== "AWAITING_USER_APPROVAL") {
-        await agentRedis.clearState(state.ticket.ticketId);
+    // 1. Resume Logic: Check Redis, then MongoDB
+    if (resumeTicketId) {
+      let resumedState = await agentRedis.getState(resumeTicketId);
+      if (!resumedState) {
+        const dbTicket = await AgentTicketModel.findOne({
+          ticketId: resumeTicketId,
+          userId,
+        }).lean();
+        if (dbTicket) {
+          resumedState = {
+            ...dbTicket,
+            ticket: {
+              ticketId: (dbTicket as any).ticketId,
+              stage: (dbTicket as any).stage,
+              title: (dbTicket as any).title,
+              prompt: (dbTicket as any).prompt,
+              createdAt: (dbTicket as any).createdAt,
+              status: (dbTicket as any).status,
+            }
+          } as unknown as AgentState;
+          // Phase 1.1 (#17): legacy sandbox objects persisted before the remodel
+          // lack `updates` / `deletes` arrays. Coerce to canonical so the new
+          // sandboxStore APIs don't silently drop pending intentions on resume.
+          resumedState.sandbox = normalizeSandboxStore(resumedState.sandbox);
+          // Replay the historical trace into our in-memory buffer.
+          resumedState.executionTrace?.forEach((t) => trace.push(t));
+          addTrace("DRAFTER", "Resumed ticket from MongoDB backup.");
+        }
       } else {
-        await agentRedis.saveState(state);
+        resumedState.sandbox = normalizeSandboxStore(resumedState.sandbox);
+        resumedState.executionTrace?.forEach((t) => trace.push(t));
+        addTrace("DRAFTER", "Resumed ticket from Redis cache.");
       }
+
+      // Phase 6.2 (#7): reset the stale `linkedTicketId` so a resumed ticket
+      // doesn't re-crosslink to the prior followup. The new user input will
+      // be re-evaluated by the Drafter's recent-ticket logic on its own merits.
+      if (resumedState) {
+        if (resumedState.requirements) resumedState.requirements.linkedTicketId = undefined;
+        resumedState.requirements.isFollowUpConfirmed = false;
+      }
+
+      // #4.4: previously we overwrote state.prompt here, destroying the
+      // original prompt — which broke the trace and the Evaluator's "User
+      // Request" field. Now we keep the original prompt for traceability and
+      // stash the new user input in a separate field. Downstream personas that
+      // need the LATEST user input read `state.resumedPrompt ?? state.prompt`.
+      if (resumedState) resumedState.resumedPrompt = prompt;
+
+      state = resumedState;
     }
 
-    return state;
-  } catch (error) {
-    return await handleFailure(error, state);
+    // 2. Initialization if not resuming.
+    if (!state) {
+      const initialTicket: AgentTicket = {
+        ticketId: pendingTicketId,
+        stage: "STAGE_1",
+        title: "Processing Ticket...",
+        prompt,
+        createdAt: new Date().toISOString(),
+        status: "PROCESSING",
+      };
+
+      state = {
+        userId,
+        prompt,
+        ticket: initialTicket,
+        activePersona: "DRAFTER",
+        iterationCount: 1,
+        maxIterations: 3,
+        requirements: {},
+        actionPlan: [],
+        sandbox: emptySandboxStore(),
+        executionTrace: trace,
+      };
+      addTrace("DRAFTER", `Initiating prompt digestion for: "${prompt}"`);
+    }
+
+    // At this point `state` is guaranteed non-null but TS cannot infer it
+    // across the (possibly null) assignments above. Use a non-null alias.
+    const activeState: AgentState = state;
+    state = activeState;
+
+    try {
+      let isLooping = true;
+      while (isLooping) {
+        // Phase 6.3 (#16): simulated-offline is now per-ticket, not global.
+        const simOfflineKey = `agent:simulated_offline:${state!.ticket.ticketId}`;
+        const isSimulatedOffline = (await agentRedis.client.get(simOfflineKey)) === "true";
+        if (isSimulatedOffline) {
+          throw new Error("Simulated LLM Offline Crash Triggered");
+        }
+        // Back-compat: honor the legacy global key but only for this ticket.
+        const legacy = await agentRedis.client.get("agent:simulated_offline");
+        if (legacy === "true") {
+          console.warn(
+            "[agent] legacy global simulated_offline flag is set. Set agent:simulated_offline:{ticketId} instead.",
+          );
+        }
+
+        // Stage 1: Drafter Persona
+        if (state!.activePersona === "DRAFTER") {
+          state = await runDrafter(state!);
+          state!.executionTrace = trace;
+          addTrace(
+            state!.activePersona,
+            `Drafter classified Ticket as [${state!.ticket.stage}]: "${state!.ticket.title}"`,
+            {
+              requirements: state!.requirements,
+              isQuestion: state!.isQuestion,
+              reply: state!.reply,
+              llmRawOutput: state!.llmRawOutput,
+            },
+          );
+          await persistStateToRedis(state!);
+
+          if (state!.activePersona === "REJECTED" || state!.isQuestion || state!.isComplete) {
+            if (state!.isComplete) {
+              await markResolved(state!);
+            }
+            return state!;
+          }
+        }
+        // Stage 2: Planner Persona
+        else if (state!.activePersona === "PLANNER") {
+          if ((await agentRedis.client.get(simOfflineKey)) === "true") {
+            throw new Error("Simulated LLM Offline Crash Triggered during Planner");
+          }
+
+          addTrace("PLANNER", "Handing context to Planner Persona for Action Plan compilation");
+          state = await runPlanner(state!);
+          state!.executionTrace = trace;
+          addTrace("PLANNER", `Planner compiled ${state!.actionPlan.length} action step(s)`, state!.actionPlan);
+          await persistStateToRedis(state!);
+        }
+        // Stage 3: Executor Persona (Sandbox Isolation)
+        else if (state!.activePersona === "EXECUTOR_SANDBOX") {
+          addTrace("EXECUTOR_SANDBOX", "Executing Action Plan inside isolated Sandbox Store");
+          state = await runExecutor(state!);
+          state!.executionTrace = trace;
+          addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state!.actionPlan);
+          await persistStateToRedis(state!);
+        }
+        // Stage 4: Evaluator Persona (Loop Verification)
+        else if (state!.activePersona === "EVALUATOR") {
+          addTrace("EVALUATOR", "Handing sandbox results to Evaluator Persona for Quality Assurance");
+          state = await runEvaluator(state!);
+          state!.executionTrace = trace;
+          addTrace(state!.activePersona, `Evaluator finished QA check (Iteration ${state!.iterationCount}/${state!.maxIterations})`, {
+            feedback: state!.evaluatorFeedback,
+          });
+          await persistStateToRedis(state!);
+        }
+        // Stage 5: Communicator Persona (Final Response Generation)
+        else if (state!.activePersona === "COMMUNICATOR") {
+          addTrace("COMMUNICATOR", "Generating final response for the user");
+          state = await runCommunicator(state!);
+          state!.executionTrace = trace;
+          addTrace(state!.activePersona, `Communicator formulated final reply`, {
+            reply: state!.reply,
+          });
+
+          // Phase 6.2 (#22): finalize Mongo + Redis coherently per the Evaluator's
+          // verdict instead of the previous "clear Redis but leave Mongo PROCESSING".
+          if (state!.isComplete) {
+            await markResolved(state!);
+          } else {
+            // Question / clarification pending — keep state alive for the user.
+            await persistStateToRedis(state!);
+          }
+          isLooping = false;
+        }
+        // The Evaluator may have set AWAITING_USER_APPROVAL directly (Phase
+        // 4.1) without routing through the Communicator. We must persist
+        // state to Redis here so the user's pending merge intent survives
+        // until they click "Confirm & Merge" — without this, the resumed
+        // request would have no sandbox cache to merge from.
+        else if (state!.activePersona === "AWAITING_USER_APPROVAL") {
+          await persistStateToRedis(state!);
+          isLooping = false;
+        } else {
+          // If we reach a state that is not one of the loop stages, break out
+          isLooping = false;
+        }
+      }
+
+      return state!;
+    } catch (error) {
+      return await handleFailure(error, state!);
+    }
+  } catch (outerError: any) {
+    // Phase 6.1: lock-acquire failures (AgentBusyError) and other top-level
+    // errors that bubbled before we got an AgentState. We can't form a real
+    // AgentState for these — re-throw so the SSE route handler in
+    // /api/agent/execute can map to HTTP 409 / 500 appropriately.
+    if (outerError instanceof AgentBusyError) {
+      // Re-throw to let the route handler craft the 409 response.
+      throw outerError;
+    }
+    // Unknown outer error: surface as a minimal state so the client sees a reply.
+    if (state) {
+      return handleFailure(outerError, state);
+    }
+    throw outerError;
+  } finally {
+    // Phase 6.1: always release the lock — `release` is compare-and-del so
+    // we only delete if we still own it. If our lock expired mid-loop we set
+    // `stale()` true and the existence-on-disk-of-our-intentions is checked
+    // at resume-time by the next loop iteration's `normalizeSandboxStore`.
+    if (lock) {
+      await lock.release();
+      if (lock.stale()) {
+        console.warn(
+          `[agentLoop] user ${userId} ticket ${state?.ticket?.ticketId} — agent lock expired mid-run. User should retry if state looks stale.`,
+        );
+      }
+    }
   }
 }

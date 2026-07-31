@@ -70,6 +70,18 @@ const FormAnalyticsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const FormChangeHistorySchema = new mongoose.Schema(
+  {
+    source: { type: String, required: true },
+    action: { type: mongoose.Schema.Types.Mixed }, // String or Array
+    changes: { type: String },
+    effects: { type: String },
+    result: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const formSchema = new mongoose.Schema(
   {
     user: {
@@ -103,6 +115,7 @@ const formSchema = new mongoose.Schema(
       type: FormAnalyticsSchema,
       default: () => ({}),
     },
+    changeHistory: [FormChangeHistorySchema],
     metadataSettings: {
       ip: { type: Boolean, default: false },
       userAgent: { type: Boolean, default: false },
@@ -116,6 +129,17 @@ const formSchema = new mongoose.Schema(
         const hashids = new Hashids("salt", 6);
         return hashids.encode(new Date().getTime());
       },
+    },
+    /**
+     * Idempotency key written by the agent merge step so a re-merge of the
+     * same sandbox draft never creates a duplicate production form.
+     * Sparse + unique so legacy/normal creates (which leave it unset) are
+     * still allowed to have many nulls.
+     */
+    agentIdempotencyKey: {
+      type: String,
+      index: { unique: true, sparse: true },
+      default: null,
     },
   },
   {

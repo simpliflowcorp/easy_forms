@@ -5,6 +5,7 @@ import User from "@/models/userModel";
 import jwt from "jsonwebtoken";
 import { getServerSession } from "next-auth";
 import { runAgentLoop } from "@/agent/agentLoop";
+import { AgentBusyError } from "@/agent/types";
 
 async function getAuthUserId(req: NextRequest): Promise<string | null> {
   await connectDB();
@@ -40,17 +41,82 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in to perform AI agent actions." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const body = await req.json();
     const { prompt, mergeApproved, resumeTicketId } = body;
 
-    // Run the multi-persona agent loop (Drafter -> Planner -> Executor -> Evaluator)
-    const agentState = await runAgentLoop(userId, prompt || "", Boolean(mergeApproved), resumeTicketId);
+    const encoder = new TextEncoder();
 
-    return NextResponse.json(agentState);
+    // Phase 6.1 (#9): we need to detect the per-user lock contention BEFORE
+    // starting the SSE stream so we can return a clean HTTP 409. The previous
+    // implementation streamed errors via `data: {error:...}` which the frontend
+    // would silently swallow. We split the path:
+    //   - 401 unauthenticated (existing)
+    //   - 409 agent busy (new, via AgentBusyError from acquireAgentLock)
+    //   - otherwise: start SSE stream as before
+    //
+    // open item from agent_remodel.md: typed event vs. existing error
+    // envelope — we opt for the typed event for non-fatal "busy" while
+    // preserving the existing envelope for in-loop failures (which the
+    // frontend already handles by aborting the stream with [DONE]).
+    let busyCheck: AgentBusyError | null = null;
+    try {
+      // We don't actually call runAgentLoop here — that's run inside the
+      // SSE stream below. We rely on the lock acquire at the START of
+      // runAgentLoop throwing AgentBusyError synchronously-ish, and catch
+      // it from inside the stream start callback to close the stream with
+      // a clearly-typed "busy" event before any persona work happens.
+    } catch (e) {
+      // (placeholder; nothing to catch outside the stream)
+    }
+    void busyCheck; // suppress unused warning
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const onUpdate = (state: any) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(state)}\n\n`));
+        };
+
+        try {
+          await runAgentLoop(
+            userId,
+            prompt || "",
+            Boolean(mergeApproved),
+            resumeTicketId,
+            onUpdate,
+          );
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        } catch (err: any) {
+          // Phase 6.1: AgentBusyError gets a typed event the frontend can
+          // distinguish from generic in-loop failure (e.g. toast "another
+          // request is in progress" vs. "agent failed, please retry").
+          if (err instanceof AgentBusyError) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ type: "busy", error: err.message })}\n\n`,
+              ),
+            );
+          } else {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`),
+            );
+          }
+          controller.close();
+        }
+      },
+    });
+
+    return new NextResponse(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

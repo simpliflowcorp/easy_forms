@@ -39,13 +39,12 @@ const SidebarMain = (props: Props) => {
     <div className="sidebar-main">
       <div className="header-sec">
         <div className="header-img">
-          <Image
+          <img
             src="/logos/logo_dark_fillet_750.png"
             alt="logo"
             width={40}
             height={40}
             className="logo"
-            priority
           />
         </div>
         <div className="control-pannel">

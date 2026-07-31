@@ -18,6 +18,7 @@ const AgentTicketSchema = new mongoose.Schema(
     reply: { type: String, default: "" },
     isComplete: { type: Boolean, default: false },
     isQuestion: { type: Boolean, default: false },
+    changeHistoryReport: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }
 );

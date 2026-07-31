@@ -21,12 +21,43 @@ export default function AgentTestingPage() {
         }),
       });
 
-      const stateData: AgentState = await res.json();
-      setIsLoading(false);
-      setAgentState(stateData);
+      if (!res.body) throw new Error("No response body");
 
-      if (stateData.reply) {
-        toast.success(stateData.reply, { duration: 4000 });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalState: AgentState | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (part.startsWith("data: ")) {
+            const dataStr = part.slice(6);
+            if (dataStr === "[DONE]") {
+              break;
+            }
+            try {
+              const stateData = JSON.parse(dataStr);
+              if (stateData.error) {
+                toast.error(stateData.error);
+              } else {
+                setAgentState(stateData);
+                finalState = stateData;
+              }
+            } catch (e) { }
+          }
+        }
+      }
+
+      setIsLoading(false);
+      if (finalState?.reply) {
+        toast.success(finalState.reply, { duration: 4000 });
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -35,7 +66,7 @@ export default function AgentTestingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 py-8 px-4">
+    <div className="agent-wrapper">
       <AgentVisualizer
         agentState={agentState}
         isLoading={isLoading}

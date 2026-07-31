@@ -30,37 +30,15 @@ export const agentToolsSchema = [
   {
     type: "function",
     function: {
-      name: "count_forms",
-      description: "Retrieve the total count and active count of forms for the user. Used when the user asks how many forms they have.",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: []
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "query_responses",
-      description: "Filter and query form submissions.",
+      name: "update_form",
+      description: "Update an existing form schema or properties",
       parameters: {
         type: "object",
         properties: {
-          formId: { type: "string", description: "The ID of the form to query" },
-          filters: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                field: { type: "string" },
-                operator: { type: "string" },
-                value: { type: "string" }
-              }
-            }
-          }
+          formId: { type: "string", description: "The ID of the form to update" },
+          updates: { type: "object", description: "The fields to update (e.g., name, description, elements, status)" }
         },
-        required: ["formId"]
+        required: ["formId", "updates"]
       }
     }
   },
@@ -75,6 +53,23 @@ export const agentToolsSchema = [
           formId: { type: "string", description: "The ID of the form to delete" }
         },
         required: ["formId"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "run_database_query",
+      description: "Run a read-only MongoDB query to retrieve or count data. The query is strictly isolated to the current user's data.",
+      parameters: {
+        type: "object",
+        properties: {
+          collection: { type: "string", description: "The database collection to query (Form, Response, CustomView)" },
+          operation: { type: "string", description: "The Mongoose operation to run: 'find', 'findOne', 'countDocuments', or 'aggregate'" },
+          query: { type: "object", description: "The MongoDB filter/query object (e.g., { status: 1 } to find active forms)" },
+          options: { type: "object", description: "Optional query options (e.g. limit, sort). Do not use this for aggregate." }
+        },
+        required: ["collection", "operation", "query"]
       }
     }
   }

@@ -30,9 +30,7 @@ export default function NotificationHandler({ userId }: { userId: string }) {
 
     // Handle errors
     es.addEventListener("error", (e) => {
-      console.error("SSE Error:", e);
-      es.close();
-      setTimeout(() => window.location.reload(), 5000);
+      console.error("SSE Error - The browser will automatically attempt to reconnect.", e);
     });
 
     return () => {

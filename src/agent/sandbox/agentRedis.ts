@@ -1,11 +1,13 @@
 import Redis from "ioredis";
-import { AgentState } from "../types";
+import { AgentState } from "../types.js";
 
 // Initialize Redis client (defaults to localhost:6379 which matches our docker setup)
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 export const redisClient = new Redis(redisUrl);
 
 export const agentRedis = {
+  client: redisClient,
+
   /**
    * Save the current state of an agent ticket to Redis.
    * Expires automatically after 1 hour to prevent cache bloat.
