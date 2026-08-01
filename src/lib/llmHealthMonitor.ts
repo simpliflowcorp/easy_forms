@@ -34,7 +34,14 @@ export const startLlmHealthMonitor = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-      const apiKey = process.env.NVIDIA_API_KEY || "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";
+      const apiKey = process.env.NVIDIA_API_KEY;
+      if (!apiKey) {
+        if (global._llmHealthLastStatus !== "unknown") {
+          global._llmHealthLastStatus = "unknown";
+          await pubClient.publish("agent:llm_health", JSON.stringify({ status: "unknown", reason: "NVIDIA_API_KEY not configured" }));
+        }
+        return;
+      }
       const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
         headers: { "Authorization": `Bearer ${apiKey}` },
         signal: controller.signal,
@@ -62,5 +69,5 @@ export const startLlmHealthMonitor = () => {
 };
 
 export const getCachedHealthStatus = () => {
-  return global._llmHealthLastStatus || "online";
+  return global._llmHealthLastStatus || "unknown";
 };

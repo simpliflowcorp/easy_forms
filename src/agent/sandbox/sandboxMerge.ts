@@ -22,29 +22,33 @@
  *
  * Cutover note: requires Mongo replica set (or a sharded cluster) so that
  * sessions are available. If the production MONGODB_URI points to a
- * standalone, the transaction is going to fail at runtime; we surface the
- * failure as a thrown error to agentLoop which marks the ticket LLM_ERROR.
+ * standalone, the transaction is going to fail at runtime; we fall back to
+ * a two-phase merge via the `PendingMerge` collection for idempotent safety.
  */
 import Form from "@/models/formModel";
 import CustomView from "@/models/customViewModel";
 import mongoose from "mongoose";
 import { sandboxRedisStore } from "./sandboxRedisStore.js";
 import AgentAuditEvent from "@/models/agentAuditEventModel";
+import PendingMerge from "@/models/PendingMerge";
 
 export interface MergeStats {
   mergedForms: number;
   mergedViews: number;
   updatesApplied: number;
+  updatesMissed: number;
   deletesApplied: number;
+  deletesMissed: number;
 }
 
 async function mergeFormsAndIntents(
   userId: string,
   ticketId: string,
+  snapshot: Awaited<ReturnType<typeof sandboxRedisStore.get>>,
   session: mongoose.ClientSession,
   stats: MergeStats,
 ): Promise<void> {
-  const store = await sandboxRedisStore.get(userId, ticketId);
+  const store = snapshot;
 
   // 1. Create drafts.
   for (const draft of Object.values(store.forms)) {
@@ -101,11 +105,19 @@ async function mergeFormsAndIntents(
         serverDiff: upd.updates,
         outcome: "success"
       }], { session });
+    } else {
+      // Optimistic-concurrency check failed: form was modified between
+      // sandbox snapshot and merge. Track as missed and audit.
+      stats.updatesMissed++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(upd.id),
+        action: "update_form",
+        serverDiff: upd.updates,
+        outcome: "concurrency_miss"
+      }], { session });
     }
-    // If matchedCount === 0 and the user expected this update to apply,
-    // the optimistic-concurrency check failed (someone edited the form
-    // between sandbox snapshot and merge). We do NOT raise — we log via
-    // the stats return value and let the caller decide.
   }
 
   // 3. Deletes.
@@ -128,6 +140,18 @@ async function mergeFormsAndIntents(
         serverDiff: null,
         outcome: "success"
       }], { session });
+    } else {
+      // Optimistic-concurrency check failed: form was modified between
+      // sandbox snapshot and merge. Track as missed and audit.
+      stats.deletesMissed++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(del.id),
+        action: "delete_form",
+        serverDiff: null,
+        outcome: "concurrency_miss"
+      }], { session });
     }
   }
 }
@@ -135,13 +159,14 @@ async function mergeFormsAndIntents(
 async function mergeViews(
   userId: string,
   ticketId: string,
+  snapshot: Awaited<ReturnType<typeof sandboxRedisStore.get>>,
   session: mongoose.ClientSession,
   stats: MergeStats,
 ): Promise<void> {
-  const store = await sandboxRedisStore.get(userId, ticketId);
+  const store = snapshot;
   for (const draft of Object.values(store.customViews)) {
     const { isSandboxDraft: _omit, _id: _dropDraftId, ...rest } = draft as any;
-    await CustomView.findOneAndUpdate(
+    const doc = await CustomView.findOneAndUpdate(
       {
         user: userId,
         agentIdempotencyKey: draft.idempotencyKey,
@@ -155,26 +180,198 @@ async function mergeViews(
       },
       { upsert: true, session, new: true },
     );
-    stats.mergedViews++;
+    
+    if (draft.idempotencyKey) {
+      stats.mergedViews++;
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(doc?._id || "NEW_VIEW"),
+        action: "create_view",
+        serverDiff: rest,
+        outcome: "success"
+      }], { session });
+    }
+  }
+}
+
+/**
+ * Standalone MongoDB fallback: two-phase merge using PendingMerge collection.
+ * Used when replica set is not available (transactions not supported).
+ * Provides idempotency via unique index on (ticketId, userId).
+ */
+async function mergeSandboxToProductionStandalone(
+  userId: string,
+  ticketId: string,
+): Promise<{ mergedForms: number; mergedViews: number; updatesApplied: number; updatesMissed: number; deletesApplied: number; deletesMissed: number }> {
+  const stats: MergeStats = { mergedForms: 0, mergedViews: 0, updatesApplied: 0, updatesMissed: 0, deletesApplied: 0, deletesMissed: 0 };
+  
+  const snapshot = await sandboxRedisStore.get(userId, ticketId);
+  
+  // Phase 1: Reserve merge slot with idempotency
+  const existing = await PendingMerge.findOneAndUpdate(
+    { ticketId, userId },
+    { 
+      $setOnInsert: { 
+        ticketId, 
+        userId, 
+        snapshot,
+        status: "PROCESSING"
+      }
+    },
+    { upsert: true, new: true }
+  ).lean();
+  
+  // If another merge already completed, return its stats
+  if (existing && existing.status === "COMPLETED") {
+    return existing.snapshot as any; // cached stats
+  }
+  
+  // If another merge is in progress, wait or fail
+  if (existing && existing.status === "PROCESSING") {
+    throw new Error("Merge already in progress for this ticket");
+  }
+  
+  try {
+    // Phase 2: Execute merge without transaction (best effort)
+    // Note: without transactions, partial failure can leave inconsistent state
+    // but idempotency keys prevent duplicates on retry
+    
+    // 1. Create drafts
+    for (const draft of Object.values(snapshot.forms)) {
+      const { isSandboxDraft: _omit, _id: _dropDraftId, ...rest } = draft as any;
+      await Form.findOneAndUpdate(
+        { user: userId, agentIdempotencyKey: draft.idempotencyKey },
+        { $setOnInsert: { ...rest, user: userId, _id: undefined } },
+        { upsert: true, new: true }
+      );
+      if (draft.idempotencyKey) {
+        stats.mergedForms++;
+        await AgentAuditEvent.create([{
+          ticketId, userId,
+          resourceId: String(draft._id || "NEW_FORM"),
+          action: "create_form",
+          serverDiff: rest,
+          outcome: "success"
+        }]);
+      }
+    }
+    
+    // 2. Updates
+    for (const upd of snapshot.updates) {
+      const filter: Record<string, any> = {
+        _id: new mongoose.Types.ObjectId(upd.id),
+        user: userId,
+      };
+      if (upd.expectedUpdatedAt) filter.updatedAt = upd.expectedUpdatedAt;
+      const res = await Form.updateOne(filter, { $set: upd.updates });
+      if (res.matchedCount > 0) {
+        stats.updatesApplied++;
+        await AgentAuditEvent.create([{ ticketId, userId, resourceId: String(upd.id), action: "update_form", serverDiff: upd.updates, outcome: "success" }]);
+      } else {
+        stats.updatesMissed++;
+        await AgentAuditEvent.create([{ ticketId, userId, resourceId: String(upd.id), action: "update_form", serverDiff: upd.updates, outcome: "concurrency_miss" }]);
+      }
+    }
+    
+    // 3. Deletes
+    for (const del of snapshot.deletes) {
+      const filter: Record<string, any> = {
+        _id: new mongoose.Types.ObjectId(del.id),
+        user: userId,
+      };
+      if (del.expectedUpdatedAt) filter.updatedAt = del.expectedUpdatedAt;
+      const res = await Form.deleteOne(filter);
+      if (res.deletedCount > 0) {
+        stats.deletesApplied++;
+        await AgentAuditEvent.create([{ ticketId, userId, resourceId: String(del.id), action: "delete_form", serverDiff: null, outcome: "success" }]);
+      } else {
+        stats.deletesMissed++;
+        await AgentAuditEvent.create([{ ticketId, userId, resourceId: String(del.id), action: "delete_form", serverDiff: null, outcome: "concurrency_miss" }]);
+      }
+    }
+    
+    // 4. Custom Views
+    for (const draft of Object.values(snapshot.customViews)) {
+      const { isSandboxDraft: _omit, _id: _dropDraftId, ...rest } = draft as any;
+      const doc = await CustomView.findOneAndUpdate(
+        { user: userId, agentIdempotencyKey: draft.idempotencyKey },
+        { $setOnInsert: { ...rest, user: userId, _id: undefined } },
+        { upsert: true, new: true }
+      );
+      
+      if (draft.idempotencyKey) {
+        stats.mergedViews++;
+        await AgentAuditEvent.create([{
+          ticketId,
+          userId,
+          resourceId: String(doc?._id || "NEW_VIEW"),
+          action: "create_view",
+          serverDiff: rest,
+          outcome: "success"
+        }]);
+      }
+    }
+    
+    // Mark merge as completed
+    await PendingMerge.findOneAndUpdate(
+      { ticketId, userId },
+      { 
+        $set: { 
+          status: "COMPLETED",
+          snapshot: {
+            mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+            mergedViews: stats.mergedViews,
+            updatesApplied: stats.updatesApplied,
+            updatesMissed: stats.updatesMissed,
+            deletesApplied: stats.deletesApplied,
+            deletesMissed: stats.deletesMissed,
+          }
+        }
+      }
+    );
+    
+    await sandboxRedisStore.resetStore(userId, ticketId);
+    
+    return {
+      mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+      mergedViews: stats.mergedViews,
+      updatesApplied: stats.updatesApplied,
+      updatesMissed: stats.updatesMissed,
+      deletesApplied: stats.deletesApplied,
+      deletesMissed: stats.deletesMissed,
+    };
+  } catch (err: any) {
+    await PendingMerge.findOneAndUpdate(
+      { ticketId, userId },
+      { $set: { status: "FAILED", error: err?.message || String(err) } }
+    );
+    throw new Error(`mergeSandboxToProductionStandalone failed: ${err?.message || err}. Sandbox preserved for retry.`);
   }
 }
 
 export async function mergeSandboxToProduction(
   userId: string,
   ticketId: string,
-): Promise<{ mergedForms: number; mergedViews: number; updatesApplied?: number; deletesApplied?: number }> {
-  const stats: MergeStats = { mergedForms: 0, mergedViews: 0, updatesApplied: 0, deletesApplied: 0 };
+): Promise<{ mergedForms: number; mergedViews: number; updatesApplied: number; updatesMissed: number; deletesApplied: number; deletesMissed: number }> {
+  const stats: MergeStats = { mergedForms: 0, mergedViews: 0, updatesApplied: 0, updatesMissed: 0, deletesApplied: 0, deletesMissed: 0 };
 
-  // Note: this is invoked via the sandboxStore façade in agentLoop's
+  // Read the sandbox snapshot ONCE before the transaction to avoid drift from
+  // a concurrent sandbox write mid-transaction and remove a Redis round-trip
+  // from the critical section.
+  const snapshot = await sandboxRedisStore.get(userId, ticketId);
+
+  // Note: this is invoked directly in agentLoop's
   // `mergeApproved` branch. We intentionally surface a richer stats object
   // than the signature claims — agentLoop only reads mergedForms / mergedViews
   // for its reply text, so the extra keys are informational and ignored.
+  
+  // Try transactional merge first (requires replica set)
   const session = await mongoose.startSession();
-
   try {
     await session.withTransaction(async () => {
-      await mergeFormsAndIntents(userId, ticketId, session, stats);
-      await mergeViews(userId, ticketId, session, stats);
+      await mergeFormsAndIntents(userId, ticketId, snapshot, session, stats);
+      await mergeViews(userId, ticketId, snapshot, session, stats);
     });
     // Commit succeeded — now safe to clear the sandbox.
     await sandboxRedisStore.resetStore(userId, ticketId);
@@ -183,15 +380,34 @@ export async function mergeSandboxToProduction(
       mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
       mergedViews: stats.mergedViews,
       updatesApplied: stats.updatesApplied,
+      updatesMissed: stats.updatesMissed,
       deletesApplied: stats.deletesApplied,
+      deletesMissed: stats.deletesMissed,
     };
   } catch (err: any) {
+    // Check if error is due to standalone MongoDB (no replica set)
+    const isStandaloneError = 
+      err?.message?.includes("Transaction") ||
+      err?.message?.includes("replica set") ||
+      err?.message?.includes("not supported") ||
+      err?.code === 20 || // IllegalOperation
+      err?.codeName === "IllegalOperation";
+    
+    if (isStandaloneError) {
+      console.warn("[sandboxMerge] Transaction failed, falling back to standalone merge:", err.message);
+      await session.endSession();
+      // Fall back to standalone two-phase merge
+      return mergeSandboxToProductionStandalone(userId, ticketId);
+    }
+    
     // Do not reset the sandbox — the user can retry.
     // Re-throw so agentLoop's handler marks the ticket LLM_ERROR.
     throw new Error(
       `mergeSandboxToProduction failed: ${err?.message || err}. Sandbox preserved for retry.`,
     );
   } finally {
-    await session.endSession();
+    if (session) {
+      await session.endSession();
+    }
   }
 }

@@ -6,6 +6,7 @@ import User from "../src/models/userModel";
 import AgentTicketModel from "../src/models/agentTicketModel";
 import AgentAuditEvent from "../src/models/agentAuditEventModel";
 import { agentRedis } from "../src/agent/sandbox/agentRedis";
+import { sandboxRedisStore } from "../src/agent/sandbox/sandboxRedisStore";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -56,7 +57,7 @@ async function runTests() {
     }
 
     currentTicketId = stage1State.ticket.ticketId;
-    const finalSandbox = await agentRedis.getState(currentTicketId);
+    const finalSandbox = await sandboxRedisStore.get(userId, currentTicketId);
     console.log(`✅ Sandbox forms created: ${Object.keys(finalSandbox?.forms || {}).length}`);
 
     // Verify Mongo persistence

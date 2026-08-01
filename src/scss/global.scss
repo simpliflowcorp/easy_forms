@@ -40,6 +40,7 @@ body {
     overflow: auto;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
 
   .app-wrapper {
@@ -48,6 +49,7 @@ body {
   }
 
   .ai-bar {
+    height: 66px;
     padding: 12px 16px;
     background-color: var(--teritary-bg);
     border-top: var(--common-border);

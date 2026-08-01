@@ -115,7 +115,8 @@ function describeTool(tool: string, params: any): string {
 }
 
 export async function runPlanner(state: AgentState): Promise<AgentState> {
-  const { prompt, drafterMessage } = state;
+  const { prompt, resumedPrompt, drafterMessage } = state;
+  const currentPrompt = resumedPrompt ?? prompt;
   const actions: AgentAction[] = [];
 
   // #4.2 / #23 prep: on retry, surface the Evaluator's feedback so the LLM
@@ -145,7 +146,11 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
         },
         {
           role: "user",
-          content: `${feedbackPreamble}User Request: ${prompt}\nDrafter Context: ${
+          content: `${feedbackPreamble}User Request: ${currentPrompt}\n\nUSER PREFERENCES AND PROFILE:\n${JSON.stringify(
+            state.userContext || {},
+            null,
+            2,
+          )}\n\nDrafter Context: ${
             drafterMessage || ""
           }\nExtracted Requirements: ${JSON.stringify(state.requirements || {}, null, 2)}`,
         },

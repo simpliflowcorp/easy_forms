@@ -8,35 +8,28 @@ const pubClient = new Redis(redisUrl);
  * Phase 6.3 (#16): simulated-offline is now per-ticket, not global.
  *
  * Request body:
- *   { simulateOffline: true,  ticketId?: "<current ticket>" }
- *   { simulateOffline: false, ticketId?: "<current ticket>" }
+ *   { simulateOffline: true,  ticketId: "<current ticket>" }
+ *   { simulateOffline: false, ticketId: "<current ticket>" }
  *
- * If `ticketId` is provided, the per-ticket flag `agent:simulated_offline:{ticketId}`
- * is toggled — only the loop for that ticket will crash, not every agent
- * invocation across the deployment.
- *
- * If `ticketId` is omitted, the legacy global key `agent:simulated_offline`
- * is toggled for back-compat. agentLoop logs a deprecation warning when the
- * global key is honored.
+ * `ticketId` is required — the legacy global key `agent:simulated_offline`
+ * is no longer supported.
  */
 export async function POST(req: NextRequest) {
   try {
     const { simulateOffline, ticketId } = await req.json();
 
-    if (ticketId && typeof ticketId === "string") {
-      const key = `agent:simulated_offline:${ticketId}`;
-      if (simulateOffline) {
-        await pubClient.set(key, "true");
-      } else {
-        await pubClient.del(key);
-      }
+    if (!ticketId || typeof ticketId !== "string") {
+      return NextResponse.json(
+        { error: "ticketId required" },
+        { status: 400 }
+      );
+    }
+
+    const key = `agent:simulated_offline:${ticketId}`;
+    if (simulateOffline) {
+      await pubClient.set(key, "true");
     } else {
-      // Legacy global key behavior preserved for older test clients.
-      if (simulateOffline) {
-        await pubClient.set("agent:simulated_offline", "true");
-      } else {
-        await pubClient.del("agent:simulated_offline");
-      }
+      await pubClient.del(key);
     }
 
     // Health-broadcast retains the public channel semantics so the existing UI
@@ -46,7 +39,7 @@ export async function POST(req: NextRequest) {
       JSON.stringify({ status: simulateOffline ? "offline" : "online" }),
     );
 
-    return NextResponse.json({ success: true, simulateOffline, ticketId: ticketId ?? null });
+    return NextResponse.json({ success: true, simulateOffline, ticketId });
   } catch (error) {
     return NextResponse.json({ error: "Failed to toggle simulation" }, { status: 500 });
   }

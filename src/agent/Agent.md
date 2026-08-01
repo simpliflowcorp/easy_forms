@@ -151,9 +151,10 @@ This section documents divergences between the prompt texts above (which are ill
 - Hallucinated `delete_forms` (plural) is no longer silently captured by the mutation-intercept list; the allow-list gates it cleanly with a message naming the allowed tools.
 
 ### Evaluator
-- Two-pass: deterministic pre-check on `failedActions` short-circuits to **EXECUTOR_SANDBOX** (NOT Planner) — re-runs the failed tool with the same params, consuming exactly one iteration.
+- Two-pass: deterministic pre-check on `failedActions` short-circuits to **EXECUTOR_SANDBOX** — re-runs the failed tool with the same params + feedback, consuming exactly one iteration.
 - Then LLM-based semantic QA returns `{isComplete, shouldRetry, feedback}` via `safeJSON`. LLM signoff → `AWAITING_USER_APPROVAL` OR `COMMUNICATOR` based on whether the plan mutated state. The **Evaluator** owns the `AWAITING_USER_APPROVAL` transition, not the Communicator.
 - On `shouldRetry && budget remain` → EXECUTOR_SANDBOX with `evaluatorFeedback` so the next execution knows what to fix.
+- Both deterministic and LLM-driven retries route to EXECUTOR_SANDBOX with prior plan + feedback intact. Planner is re-engaged only on a fresh ticket (post-Drafter) or an explicit `[replan]` signal.
 - `redactPII` strips `ip_address` / `user_agent` from anything sent to the LLM.
 
 ### Communicator
@@ -166,5 +167,5 @@ This section documents divergences between the prompt texts above (which are ill
 - `sandbox:sandboxMerge.ts#mergeSandboxToProduction` runs the whole merge inside `session.withTransaction` with `$setOnInsert` keyed on `(user, agentIdempotencyKey)` — a double-click on "Confirm & Merge" is a no-op. Updates/deletes use `expectedUpdatedAt` for optimistic concurrency. `resetStore` runs only AFTER transaction commit; on throw, the sandbox is preserved for retry.
 
 ### Simulated offline
-- Per-ticket, not global. `agent:simulated_offline:{ticketId}` only crashes the loop for the ticket under test; the global key still logs a deprecation warning for back-compat.
+- Per-ticket, not global. `agent:simulated_offline:{ticketId}` only crashes the loop for the ticket under test; the global key is no longer supported.
 

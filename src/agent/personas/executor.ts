@@ -1,5 +1,4 @@
 import { AgentState } from "../types";
-import { sandboxStore } from "../sandbox/sandboxStore";
 import { sandboxRedisStore } from "../sandbox/sandboxRedisStore";
 import { ALLOWED_TOOLS, checkToolPermission } from "../policy/permissions";
 import { newIdempotencyKey } from "../helper/id";
@@ -70,10 +69,15 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
             try { elements = JSON.parse(elements); } catch (e) { elements = []; }
           }
           const idempotencyKey = act.params.idempotencyKey || newIdempotencyKey();
+          
+          // Use act.params.expiryDays if provided, else default to 30
+          const lifetimeDays = act.params.expiryDays ? Number(act.params.expiryDays) : 30;
+
           const normalizedParams = {
             ...act.params,
+            formId: act.id, // Tie the draft ID to the action ID to prevent duplicates on iteration retries
             idempotencyKey,
-            expiry: act.params.expiry || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            expiry: new Date(Date.now() + lifetimeDays * 24 * 60 * 60 * 1000),
             elements: elements.map((el: any, idx: number) => ({
               elementId: el.elementId || `field_${Date.now()}_${idx}`,
               type: el.type ?? 1,
@@ -85,7 +89,7 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
               column: el.column ?? 1,
             })),
           };
-          const draftForm = await sandboxStore.saveDraftForm(state.userId, state.ticket.ticketId, normalizedParams);
+          const draftForm = await sandboxRedisStore.saveDraftForm(state.userId, state.ticket.ticketId, normalizedParams);
           act.result = { form: draftForm, isSandbox: true, idempotencyKey };
           act.status = "done";
         } else {
@@ -151,7 +155,7 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
           act.result = cached;
           act.status = "done";
         } else {
-          const { executeAgentTool } = await import("../../lib/agentTools");
+          const { executeAgentTool } = await import("../../lib/agentTools.js");
           const res = await executeAgentTool(act.tool, act.params, state.userId);
           act.result = res;
           await sandboxRedisStore.setQueryResult(state.userId, state.ticket.ticketId, act.id, res);

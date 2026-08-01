@@ -15,3 +15,13 @@ export const useLanguageStore = create<LanguageStore>((set) => ({
   languageKey: "en",
   setLanguage: (lang, languageKey) => set({ language: lang, languageKey }),
 }));
+
+interface AgentStore {
+  isSidebarOpen: boolean;
+  setSidebarOpen: (isOpen: boolean) => void;
+}
+
+export const useAgentStore = create<AgentStore>((set) => ({
+  isSidebarOpen: false,
+  setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+}));

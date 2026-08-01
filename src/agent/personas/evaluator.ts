@@ -1,6 +1,7 @@
 import { AgentState } from "../types";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
-import { safeJSON } from "../helper/jsonParse";
+import { parsePersona, EvaluatorOutputSchema } from "../helper/validate";
+import { redactPII } from "../helper/redact";
 
 const EVALUATOR_SYSTEM_PROMPT = `You are the EVALUATOR PERSONA of the Easy Forms AI Agent System.
 
@@ -10,8 +11,9 @@ You perform Quality Assurance on the sandbox output against the user's initial p
 RULES:
 1. Compare sandbox output results against requirements.
 2. If actions succeeded and match user goals: Set "isComplete": true. DO NOT defer this decision to a human. You must make the decision yourself based on the results.
-3. If an action failed and loop budget remains (iterations < maxIterations): Set "shouldRetry": true and put specific, actionable feedback in "feedback".
-4. If max iterations (3) reached without full match: Set "isComplete": false and "shouldRetry": false with feedback explaining the recovery needed.
+3. CRITICAL: If a database query returns an empty array '[]', this is a valid successful result! It simply means no records matched the filters (e.g. there are no active forms). DO NOT set "shouldRetry" just because results are empty. Set "isComplete": true and let the Communicator tell the user there were no results.
+4. If an action failed with an error message (like a JSON parse error or unauthorized error) and loop budget remains (iterations < maxIterations): Set "shouldRetry": true and put specific, actionable feedback in "feedback".
+5. If max iterations (3) reached without full match: Set "isComplete": false and "shouldRetry": false with feedback explaining the recovery needed.
 
 OUTPUT FORMAT (JSON ONLY):
 {
@@ -37,11 +39,7 @@ function planRequiresMergeApproval(state: AgentState): boolean {
 
 export async function runEvaluator(state: AgentState): Promise<AgentState> {
   // Pass 1: deterministic pre-checks. If any action errored, we don't even
-  // need the LLM — short-circuit to retry against Executor (NOT Planner per
-  // Agent.md:100-119). Previously this code routed back to PLANNER which
-  // dropped the original plan and asked the Planner to re-compile from
-  // scratch — burning iterations on a recompile that almost never changed
-  // anything because the *parameters* were already right (#1, #23).
+  // need the LLM — short-circuit to retry against Executor.
   const failedActions = state.actionPlan.filter((a) => a.status === "error");
   if (failedActions.length > 0) {
     const feedback = failedActions
@@ -51,7 +49,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       return {
         ...state,
         iterationCount: state.iterationCount + 1,
-        activePersona: "PLANNER",
+        activePersona: "EXECUTOR_SANDBOX",
         evaluatorFeedback: feedback,
       };
     }
@@ -89,7 +87,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
         {
           role: "user",
           content:
-            `User Request: ${state.prompt}\n\n` +
+            `User Request: ${state.resumedPrompt ?? state.prompt}\n\n` +
             `Drafter Requirements: ${JSON.stringify(state.requirements || {}, null, 2)}\n\n` +
             `Iteration: ${state.iterationCount}/${state.maxIterations}\n\n` +
             `Tool Execution Results:\n${JSON.stringify(summaryPayload, null, 2)}`,
@@ -98,7 +96,8 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       { response_format: { type: "json_object" } },
     );
     rawContent = response?.content || "";
-    verdict = safeJSON<EvaluatorVerdict>(rawContent) || {};
+    const parsedVerdict = parsePersona(rawContent, EvaluatorOutputSchema);
+    verdict = parsedVerdict || {};
   } catch (err: any) {
     // Network failures during the QA pass should not silently approve. If we
     // can't contact the LLM we treat the QA as inconclusive: route back to
@@ -143,7 +142,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
     return {
       ...state,
       iterationCount: state.iterationCount + 1,
-      activePersona: "PLANNER",
+      activePersona: "EXECUTOR_SANDBOX",
       evaluatorFeedback: feedback,
       llmRawOutput: rawContent,
     };
@@ -186,21 +185,4 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
     evaluatorFeedback: feedback,
     llmRawOutput: rawContent,
   };
-}
-
-/** Light-weight PII redactor — strips ip_address / user_agent from a payload
- *  before it's sent to the LLM. Defends against the Evaluator leaking those
- *  fields into its reply or its trace export (#6.4 prep). */
-function redactPII<T>(payload: T): T {
-  if (!payload || typeof payload !== "object") return payload;
-  try {
-    return JSON.parse(
-      JSON.stringify(payload, (key, value) => {
-        if (key === "ip_address" || key === "user_agent") return "[redacted]";
-        return value;
-      }),
-    ) as T;
-  } catch {
-    return payload;
-  }
 }

@@ -6,6 +6,48 @@ import jwt from "jsonwebtoken";
 import { getServerSession } from "next-auth";
 import { runAgentLoop } from "@/agent/agentLoop";
 import { AgentBusyError } from "@/agent/types";
+import Redis from "ioredis";
+
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const rateLimitClient = new Redis(redisUrl);
+
+// Per-user rate limit (requests per minute)
+const AGENT_RATE_LIMIT_PER_MIN = parseInt(process.env.AGENT_RATE_LIMIT_PER_MIN || "10", 10);
+// Optional daily cap
+const AGENT_RATE_LIMIT_PER_DAY = parseInt(process.env.AGENT_RATE_LIMIT_PER_DAY || "200", 10);
+
+async function checkRateLimit(userId: string, isMergeApproved: boolean): Promise<{ allowed: boolean; error?: string }> {
+  // Don't count mergeApproved resumes against the limit
+  if (isMergeApproved) {
+    return { allowed: true };
+  }
+
+  const minuteKey = `agent:ratelimit:${userId}:min`;
+  const dayKey = `agent:ratelimit:${userId}:day`;
+
+  const [minuteCount, dayCount] = await Promise.all([
+    rateLimitClient.incr(minuteKey),
+    rateLimitClient.incr(dayKey),
+  ]);
+
+  // Set expiry on first request
+  if (minuteCount === 1) {
+    await rateLimitClient.expire(minuteKey, 60);
+  }
+  if (dayCount === 1) {
+    await rateLimitClient.expire(dayKey, 86400);
+  }
+
+  if (minuteCount > AGENT_RATE_LIMIT_PER_MIN) {
+    return { allowed: false, error: "Too many agent requests, please slow down." };
+  }
+
+  if (dayCount > AGENT_RATE_LIMIT_PER_DAY) {
+    return { allowed: false, error: "Daily agent request limit exceeded. Please try again tomorrow." };
+  }
+
+  return { allowed: true };
+}
 
 async function getAuthUserId(req: NextRequest): Promise<string | null> {
   await connectDB();
@@ -17,7 +59,10 @@ async function getAuthUserId(req: NextRequest): Promise<string | null> {
       let decoded: any = jwt.verify(token, process.env.TOKEN_SECRET!);
       if (decoded?._id) return decoded._id.toString();
       email = decoded?.email;
-    } catch (err) {}
+    } catch (err: any) {
+      // Log JWT verification failure for observability (don't throw, fall through to session)
+      console.warn("[agent] JWT verification failed", err?.name, err?.message);
+    }
   }
 
   if (!email) {
@@ -32,10 +77,12 @@ async function getAuthUserId(req: NextRequest): Promise<string | null> {
     if (u) return u._id.toString();
   }
 
+  // Both JWT and session auth failed
+  console.warn("[agent] no auth identity resolved");
   return null;
 }
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const userId = await getAuthUserId(req);
     if (!userId) {
@@ -45,8 +92,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { prompt, mergeApproved, resumeTicketId } = body;
+    const { searchParams } = new URL(req.url);
+    const prompt = searchParams.get("prompt") || "";
+    const mergeApproved = searchParams.get("mergeApproved") === "true";
+    const resumeTicketId = searchParams.get("resumeTicketId") || undefined;
+    const sessionId = searchParams.get("sessionId") || undefined;
+
+    // Check per-user rate limit before opening SSE stream
+    const rateLimitResult = await checkRateLimit(userId, mergeApproved);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: 429 },
+      );
+    }
 
     const encoder = new TextEncoder();
 
@@ -86,6 +145,7 @@ export async function POST(req: NextRequest) {
             prompt || "",
             Boolean(mergeApproved),
             resumeTicketId,
+            sessionId,
             onUpdate,
           );
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));

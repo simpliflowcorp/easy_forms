@@ -2,6 +2,8 @@
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 
+import { useAgentStore } from "@/store/store";
+
 export default function NotificationHandler({ userId }: { userId: string }) {
   useEffect(() => {
     if (!userId) return;
@@ -19,7 +21,9 @@ export default function NotificationHandler({ userId }: { userId: string }) {
 
       try {
         const data = JSON.parse(e.data);
-        toast.success(data.message, { duration: 3000 });
+        if (!useAgentStore.getState().isSidebarOpen) {
+          toast.success(data.message, { duration: 3000 });
+        }
       } catch (error) {
         console.error("Invalid message format:", e.data);
       }

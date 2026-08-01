@@ -4,21 +4,28 @@ import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import AgentTicketModel from "@/models/agentTicketModel";
 import Form from "@/models/formModel";
 import { checkPermission } from "../policy/permissions";
-import { safeJSON } from "../helper/jsonParse";
+import { parsePersona, DrafterOutputSchema } from "../helper/validate";
 
 export async function runDrafter(state: AgentState): Promise<AgentState> {
-  const { prompt, userId } = state;
+  const { userId } = state;
+  const prompt = state.resumedPrompt ?? state.prompt;
 
   // Fetch recent tickets for context (#4.4):
   //   - Exclude the current ticket AND tickets that are no longer recoverable
   //     (REJECTED, LLM_ERROR) so the LLM doesn't try to follow up on dead work.
   //   - Cap to 3 most recent; the previous code bundled all 5 raw entries
   //     which doubled the prompt size AND leaked the user's error history.
-  const recentTickets = await AgentTicketModel.find({
+  const query: any = {
     userId,
     ticketId: { $ne: state.ticket.ticketId },
     status: { $nin: ["REJECTED", "LLM_ERROR"] },
-  })
+  };
+
+  if (state.ticket.sessionId) {
+    query.sessionId = state.ticket.sessionId;
+  }
+
+  const recentTickets = await AgentTicketModel.find(query)
     .sort({ createdAt: -1 })
     .limit(3)
     .lean();
@@ -27,6 +34,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     ticketId: t.ticketId,
     title: t.title,
     originalPrompt: t.prompt,
+    agentReply: t.reply || "No reply yet",
     status: t.status,
   }));
 
@@ -44,7 +52,11 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
         { role: "system", content: DRAFTER_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `EXISTING FORMS: [${formNames}]\n\nRECENT TICKETS CONTEXT:\n${JSON.stringify(
+          content: `CURRENT LOCAL TIME: ${new Date().toLocaleString()}\n\nEXISTING FORMS: [${formNames}]\n\nUSER PREFERENCES AND PROFILE:\n${JSON.stringify(
+            state.userContext || {},
+            null,
+            2,
+          )}\n\nRECENT TICKETS CONTEXT:\n${JSON.stringify(
             recentContext,
             null,
             2,
@@ -59,11 +71,8 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     rawContent = message?.content || "";
     console.log("LLM Raw Output:", rawContent);
 
-    // Phase 3.1: greedy /\{[\s\S]*\}/ matched across any nested braces and
-    // caused JSON.parse to throw on any output with code samples — the whole
-    // ticket would then bounce as "Semantic parsing failed". safeJSON uses a
-    // balanced-brace scan and never throws; callers control the failure mode.
-    llmAnalysis = safeJSON<any>(rawContent);
+    // Validate LLM output against Drafter schema
+    llmAnalysis = parsePersona(rawContent, DrafterOutputSchema);
   } catch (err: any) {
     // #21: propagate offline/auth errors with typed status so the loop can
     // write `LLM_ERROR` to Mongo and the user can resume. Previously every
@@ -128,8 +137,26 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   };
   state.ticket = updatedTicket;
 
-  // Handle Product Guide / FAQ questions.
-  if (llmAnalysis.skill === "product_guide") {
+  if (llmAnalysis.isTopicChange || llmAnalysis.isCancellation) {
+    state.requirements.linkedTicketId = undefined;
+    state.requirements.isFollowUpConfirmed = false;
+  }
+
+  // If the user explicitly cancelled the previous task without a new directive,
+  // we should just acknowledge and stop here, rather than treating it as vague.
+  if (llmAnalysis.isCancellation) {
+    return {
+      ...state,
+      activePersona: "COMMUNICATOR",
+      isQuestion: true,
+      isComplete: true,
+      reply: llmAnalysis.guideResponse || "No problem, we can skip that. What would you like to do instead?",
+      llmRawOutput: rawContent,
+    };
+  }
+
+  // Handle Product Guide / FAQ questions & General Chat.
+  if (llmAnalysis.skill === "product_guide" || llmAnalysis.skill === "general_chat") {
     return {
       ...state,
       // Mark complete so agentLoop clears Redis state (#6.2 prep) instead of
@@ -140,8 +167,8 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       reply:
         [llmAnalysis.guideResponse, llmAnalysis.clarifyingQuestion]
           .filter(Boolean)
-          .join("\n\n") ||
-        "I'm here to help you understand Easy Forms! How can I assist?",
+          .join(" ") ||
+        "Hello! I am your Easy Forms AI agent. How can I assist you today?",
       llmRawOutput: rawContent,
     };
   }
@@ -153,6 +180,24 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       activePersona: "DRAFTER",
       isQuestion: true,
       reply: llmAnalysis.clarifyingQuestion || "Hello! How can I assist you with Easy Forms today?",
+      llmRawOutput: rawContent,
+    };
+  }
+
+  // If prompt is vague (e.g. user wants to build a form but provided no
+  // fields), ask a clarifying question. This also covers the case where the
+  // LLM flagged the prompt as a follow-up that needs clarification.
+  if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed)) {
+    return {
+      ...state,
+      activePersona: "DRAFTER",
+      isQuestion: true,
+      reply:
+        llmAnalysis.clarifyingQuestion ||
+        "I can help you build a form! To gather all required parameters per guidelines.md, please specify:\n" +
+          "1. Form Title\n" +
+          "2. What specific fields to include (e.g. Full Name, Email, Star Rating, Comments)\n" +
+          "3. Which fields are mandatory",
       llmRawOutput: rawContent,
     };
   }
@@ -176,6 +221,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     return {
       ...state,
       activePersona: "PLANNER",
+      isQuestion: false,
       drafterMessage: `Drafter Persona digested prompt intent as Read Query. Requirements ready for Planner.`,
       llmRawOutput: rawContent,
     };
@@ -196,23 +242,6 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     };
   }
 
-  // If prompt is vague (e.g. user wants to build a form but provided no
-  // fields), ask a clarifying question. This also covers the case where the
-  // LLM flagged the prompt as a follow-up that needs clarification.
-  if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed)) {
-    return {
-      ...state,
-      activePersona: "DRAFTER",
-      isQuestion: true,
-      reply:
-        llmAnalysis.clarifyingQuestion ||
-        "I can help you build a form! To gather all required parameters per guidelines.md, please specify:\n" +
-          "1. Form Title\n" +
-          "2. What specific fields to include (e.g. Full Name, Email, Star Rating, Comments)\n" +
-          "3. Which fields are mandatory",
-      llmRawOutput: rawContent,
-    };
-  }
 
   // Store digested requirements.
   // #19: removed the hardcoded `[Full Name, Email Address]` fallback. The
@@ -248,7 +277,8 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   return {
     ...state,
     activePersona: "PLANNER",
-    drafterMessage: `Drafter Persona digested prompt intent. Requirements ready for Planner.`,
+    isQuestion: false,
+    drafterMessage: `Drafter Persona digested prompt intent as ${llmAnalysis.skill}. Requirements ready for Planner.`,
     llmRawOutput: rawContent,
   };
 }

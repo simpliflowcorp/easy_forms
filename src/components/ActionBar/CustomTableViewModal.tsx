@@ -163,12 +163,57 @@ export const CustomTableViewModal: React.FC<CustomTableViewModalProps> = ({
             <p className="text-xs text-slate-400">Total Submissions: {total} (Responses are strictly read-only)</p>
           </div>
 
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-lg transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (!responses.length) return toast.error("No data to export");
+                
+                // Extract only actual field data, skipping mongoose internals
+                const flatData = responses.map(r => {
+                  if (r.data) return r.data; // Response collection structure
+                  const { _id, form_id, __v, normalized_data, user, ...rest } = r;
+                  return rest; // Fallback for other collections
+                });
+                
+                if (flatData.length === 0) return toast.error("No exportable fields found");
+                
+                const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
+                const csvRows = [headers.join(",")];
+                
+                for (const row of flatData) {
+                  const values = headers.map(header => {
+                    const val = row[header];
+                    const str = val !== null && val !== undefined ? String(val) : "";
+                    // escape quotes and wrap in quotes
+                    return `"${str.replace(/"/g, '""')}"`;
+                  });
+                  csvRows.push(values.join(","));
+                }
+                
+                const csvString = csvRows.join("\n");
+                const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", `export_${formId}_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-300 text-xs font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download CSV
+            </button>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Custom Views Bar & Filter Controls */}

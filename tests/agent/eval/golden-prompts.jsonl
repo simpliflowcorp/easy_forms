@@ -1,0 +1,15 @@
+{"prompt": "How many forms do I have?", "expectedSkills": ["run_database_query"], "expectedTools": ["run_database_query"], "maxIterations": 1, "category": "read_query"}
+{"prompt": "Show me all my active forms", "expectedSkills": ["run_database_query"], "expectedTools": ["run_database_query"], "maxIterations": 1, "category": "read_query"}
+{"prompt": "Count responses for form abc123", "expectedSkills": ["run_database_query"], "expectedTools": ["run_database_query"], "maxIterations": 1, "category": "read_query"}
+{"prompt": "What are the analytics for form xyz789?", "expectedSkills": ["generate_analytics_skill"], "expectedTools": ["run_database_query"], "maxIterations": 1, "category": "read_query"}
+{"prompt": "List my custom views", "expectedSkills": ["manage_custom_views"], "expectedTools": ["run_database_query"], "maxIterations": 1, "category": "read_query"}
+{"prompt": "Create a contact form with name, email, and message fields", "expectedSkills": ["build_form"], "expectedTools": ["create_form"], "maxIterations": 3, "category": "build_form"}
+{"prompt": "Build a feedback form with rating (1-5) and comments", "expectedSkills": ["build_form"], "expectedTools": ["create_form"], "maxIterations": 3, "category": "build_form"}
+{"prompt": "Make a registration form with required fields: full name, email, phone", "expectedSkills": ["build_form"], "expectedTools": ["create_form"], "maxIterations": 3, "category": "build_form"}
+{"prompt": "Update form abc123 to add a new dropdown field for department", "expectedSkills": ["edit_form"], "expectedTools": ["update_form"], "maxIterations": 3, "category": "edit_form"}
+{"prompt": "Delete form xyz789", "expectedSkills": ["delete_form_skill"], "expectedTools": ["delete_form"], "maxIterations": 3, "category": "delete_form"}
+{"prompt": "Show me responses for form abc123 from last week", "expectedSkills": ["filter_responses"], "expectedTools": ["run_database_query"], "maxIterations": 2, "category": "read_query"}
+{"prompt": "Create a custom view for form abc123 showing only pending responses", "expectedSkills": ["manage_custom_views"], "expectedTools": ["create_custom_view"], "maxIterations": 3, "category": "manage_views"}
+{"prompt": "What can you help me with?", "expectedSkills": ["product_guide"], "expectedTools": [], "maxIterations": 1, "category": "product_guide"}
+{"prompt": "I want to build a form but I'm not sure what fields", "expectedSkills": ["build_form"], "expectedTools": [], "maxIterations": 1, "category": "vague_clarification"}
+{"prompt": "Yes, that's the form I want", "expectedSkills": ["build_form"], "expectedTools": ["create_form"], "maxIterations": 3, "category": "followup_confirm"}

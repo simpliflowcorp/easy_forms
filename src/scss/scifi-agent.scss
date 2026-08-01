@@ -71,6 +71,191 @@
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
 }
 
+/* Chat Overlay & Agentic Stream */
+.scifi-chat-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: calc(100% - 66px);
+  width: 40%;
+  min-width: 350px;
+  z-index: 50;
+  background: var(--model-bg);
+  backdrop-filter: blur(30px);
+  border-left: var(--common-border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.scifi-chat-container {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  position: relative;
+}
+
+.scifi-chat-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 8px;
+  color: var(--light-dark);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  transition: var(--universal-transition);
+
+  &:hover {
+    color: var(--font-color);
+  }
+  
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.scifi-chat-empty {
+  text-align: center;
+  font-family: monospace;
+  color: var(--primary-placeholder);
+  font-size: 14px;
+  margin-top: 40px;
+  animation: scifi-pulse 2s infinite;
+}
+
+/* Agentic Thought Stream (ChatGPT Style) */
+.scifi-thought-stream {
+  margin-bottom: 16px;
+  align-self: flex-start;
+  width: 100%;
+}
+
+.scifi-thinking-dropdown {
+  background: transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.scifi-thinking-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light-dark);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: var(--common-border);
+  background: var(--secondary-bg);
+  transition: var(--universal-transition);
+  user-select: none;
+  font-weight: 500;
+}
+
+.scifi-thinking-summary:hover {
+  background: var(--terinary-bg);
+}
+
+.scifi-thinking-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.scifi-thinking-content {
+  margin-top: 12px;
+  padding-left: 20px;
+  border-left: 2px solid var(--primary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--light-dark);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.scifi-thought-step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scifi-thought-message strong {
+  color: var(--primary);
+}
+
+.scifi-thought-process {
+  color: var(--light-dark);
+  white-space: pre-wrap;
+  background: var(--secondary-bg);
+  padding: 8px;
+  border-radius: var(--element-border-radius);
+  border: var(--common-border);
+}
+
+/* Chat Rows & Bubbles (ChatGPT Style) */
+.scifi-chat-row {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scifi-chat-row-user {
+  justify-content: flex-end;
+}
+
+.scifi-chat-row-assistant {
+  justify-content: flex-start;
+}
+
+.scifi-chat-avatar-gpt {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: var(--common-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--secondary-bg);
+}
+
+.scifi-chat-bubble {
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.scifi-chat-user {
+  background: var(--terinary-bg);
+  border: var(--common-border);
+  color: var(--font-color);
+  border-radius: 20px;
+}
+
+.scifi-chat-assistant {
+  background: transparent;
+  color: var(--font-color);
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 5px;
+  max-width: 100%;
+}
+
+
 .scifi-brand-area {
   display: flex;
   align-items: center;
@@ -591,86 +776,6 @@
   flex: 1;
 }
 
-.scifi-chat-bubble-wrapper {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  max-width: 90%;
-}
-
-.scifi-chat-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(30, 41, 59, 0.8);
-  flex-shrink: 0;
-
-  &.DRAFTER { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
-  &.PLANNER { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
-  &.EXECUTOR_SANDBOX { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.2); }
-  &.EVALUATOR { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-  &.COMMUNICATOR { border-color: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.2); }
-  &.AWAITING_USER_APPROVAL { border-color: #14b8a6; box-shadow: 0 0 10px rgba(20, 184, 166, 0.2); }
-}
-
-.scifi-chat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.scifi-chat-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.scifi-chat-sender {
-  font-size: 10px;
-  font-family: monospace;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  
-  &.DRAFTER { color: #60a5fa; }
-  &.PLANNER { color: #c084fc; }
-  &.EXECUTOR_SANDBOX { color: #fbbf24; }
-  &.EVALUATOR { color: #34d399; }
-  &.COMMUNICATOR { color: #f472b6; }
-  &.AWAITING_USER_APPROVAL { color: #2dd4bf; }
-}
-
-.scifi-chat-time {
-  font-size: 9px;
-  color: #64748b;
-  font-family: monospace;
-}
-
-.scifi-chat-bubble {
-  padding: 10px 14px;
-  border-radius: 12px;
-  border-top-left-radius: 2px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(30, 41, 59, 0.8);
-  font-size: 12px;
-  color: #e2e8f0;
-  line-height: 1.5;
-  transition: all 0.2s ease;
-  word-wrap: break-word;
-
-  &.DRAFTER { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.25); }
-  &.PLANNER { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.25); }
-  &.EXECUTOR_SANDBOX { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25); }
-  &.EVALUATOR { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); }
-  &.COMMUNICATOR { background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.25); }
-  &.AWAITING_USER_APPROVAL { background: rgba(20, 184, 166, 0.1); border-color: rgba(20, 184, 166, 0.25); }
-}
 
 .scifi-log-persona-tag {
   padding: 2px 6px;
@@ -785,6 +890,64 @@
   }
 }
 
+/* AI Speech Bubble */
+.scifi-speech-bubble-wrapper {
+  position: absolute;
+  bottom: 100%;
+  right: 4px;
+  margin-bottom: 12px;
+  width: max-content;
+  max-width: 32rem;
+  background-color: #1e293b;
+  color: #ecfeff;
+  border: 1px solid rgba(6, 182, 212, 0.5);
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+  animation: fadeZoomIn 0.3s ease-out;
+  z-index: 50;
+}
+
+@keyframes fadeZoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scifi-speech-bubble-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+.scifi-speech-bubble-text {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.625;
+  padding-right: 24px;
+  white-space: pre-wrap;
+}
+
+.scifi-speech-bubble-tail {
+  position: absolute;
+  bottom: -8px;
+  right: 20px;
+  width: 16px;
+  height: 16px;
+  background-color: #1e293b;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.5);
+  border-right: 1px solid rgba(6, 182, 212, 0.5);
+  transform: rotate(45deg);
+}
+
 .scifi-btn-resume {
   padding: 10px 20px;
   border-radius: 10px;
@@ -805,7 +968,380 @@
   }
 }
 
+/* ==========================================================================
+   SIDEBAR CHAT UI STYLES
+   ========================================================================== */
+
+.scifi-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.scifi-chat-bubble {
+  position: relative;
+  max-width: 90%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  animation: scifi-slide-up 0.3s ease-out forwards;
+}
+
+.scifi-chat-role-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: monospace;
+}
+
+.scifi-chat-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(37, 99, 235, 0.2));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-bottom-right-radius: 4px;
+  color: #e0f2fe;
+
+  .scifi-chat-role-label {
+    color: #7dd3fc;
+    text-align: right;
+  }
+}
+
+.scifi-chat-assistant {
+  align-self: flex-start;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-left: 2px solid #06b6d4;
+  border-bottom-left-radius: 4px;
+  color: #cbd5e1;
+
+  .scifi-chat-role-label {
+    color: #22d3ee;
+  }
+}
+
+.scifi-chat-content {
+  word-wrap: break-word;
+}
+
+.scifi-chat-link {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  border-radius: 6px;
+  color: #22d3ee;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(6, 182, 212, 0.25);
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+  }
+}
+
+@keyframes scifi-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes scifi-pulse {
   0%, 100% { opacity: 0.3; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.08); }
 }
+
+.scifi-badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+.scifi-badge-purple { background: #3b0764; color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+.scifi-badge-blue { background: #172554; color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.scifi-badge-amber { background: #451a03; color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.scifi-badge-cyan { background: #083344; color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+.scifi-badge-emerald-pulse { background: #022c22; color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); animation: scifi-pulse 2s infinite; }
+.scifi-badge-emerald-solid { background: #064e3b; color: #ffffff; border: 1px solid #34d399; }
+
+.scifi-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.scifi-chat-empty {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+.scifi-approval-box {
+  background-color: rgba(2, 44, 34, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.scifi-approval-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #34d399;
+  font-weight: 700;
+}
+.scifi-approval-text {
+  color: #cbd5e1;
+  font-size: 11px;
+  margin: 0;
+}
+.scifi-approval-btn {
+  width: 100%;
+  padding: 0.625rem;
+  background-color: #059669;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.scifi-approval-btn:hover {
+  background-color: #10b981;
+}
+
+.scifi-drawer-footer {
+  padding: 1rem;
+  border-top: 1px solid #1e293b;
+  background-color: rgba(2, 6, 23, 0.8);
+}
+.scifi-drawer-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.scifi-drawer-input {
+  flex: 1;
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  font-size: 0.75rem;
+  color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  outline: none;
+}
+.scifi-drawer-input:focus {
+  border-color: #06b6d4;
+}
+.scifi-drawer-submit-btn {
+  padding: 0.5rem 0.75rem;
+  background-color: #0891b2;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+}
+.scifi-drawer-submit-btn:hover {
+  background-color: #06b6d4;
+}
+
+/* ==========================================================================
+   CHECKLIST COMPONENT (No Tailwind)
+   ========================================================================== */
+
+.scifi-checklist-wrapper {
+  width: 100%;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  backdrop-filter: blur(12px);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  color: #f1f5f9;
+  margin: 0.75rem 0;
+}
+
+.scifi-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.scifi-checklist-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #22d3ee;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.scifi-checklist-ping {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: #22d3ee;
+  animation: scifi-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes scifi-ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+.scifi-checklist-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0.25rem 0 0 0;
+}
+
+.scifi-checklist-stats {
+  text-align: right;
+}
+
+.scifi-checklist-stats-text {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: #67e8f9;
+  font-weight: 700;
+}
+
+.scifi-checklist-progress-bg {
+  width: 100%;
+  background-color: #1e293b;
+  border-radius: 9999px;
+  height: 0.375rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.scifi-checklist-progress-fill {
+  background: linear-gradient(to right, #06b6d4, #3b82f6);
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+.scifi-checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scifi-checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.scifi-checklist-status-done { background-color: rgba(2, 44, 34, 0.2); border-color: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+.scifi-checklist-status-in_progress { background-color: rgba(8, 51, 68, 0.3); border-color: rgba(6, 182, 212, 0.4); color: #a5f3fc; animation: scifi-pulse 2s infinite; }
+.scifi-checklist-status-awaiting_confirmation { background-color: rgba(69, 26, 3, 0.3); border-color: rgba(245, 158, 11, 0.5); color: #fde68a; }
+.scifi-checklist-status-error { background-color: rgba(69, 10, 10, 0.3); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.scifi-checklist-status-pending { background-color: rgba(2, 6, 23, 0.4); border-color: #1e293b; color: #cbd5e1; }
+
+.scifi-checklist-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  overflow: hidden;
+}
+
+.scifi-checklist-item-index {
+  font-family: monospace;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.scifi-checklist-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scifi-icon-done { width: 1rem; height: 1rem; color: #34d399; }
+.scifi-icon-spin { width: 1rem; height: 1rem; color: #22d3ee; animation: scifi-spin 1s linear infinite; }
+.scifi-icon-warn { color: #fbbf24; font-weight: 700; font-size: 0.75rem; }
+.scifi-icon-error { color: #f87171; font-weight: 700; font-size: 0.75rem; }
+.scifi-icon-pending { width: 0.5rem; height: 0.5rem; border-radius: 50%; background-color: #475569; }
+
+@keyframes scifi-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.scifi-checklist-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scifi-checklist-item-desc {
+  font-weight: 600;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scifi-checklist-item-tool {
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.scifi-checklist-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.scifi-checklist-btn-run {
+  padding: 0.25rem 0.5rem;
+  background-color: #0891b2;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+}
+.scifi-checklist-btn-run:hover { background-color: #06b6d4; }
+
+.scifi-checklist-btn-confirm {
+  padding: 0.25rem 0.5rem;
+  background-color: #d97706;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+}
+.scifi-checklist-btn-confirm:hover { background-color: #f59e0b; }
+

@@ -9,6 +9,7 @@ export const agentToolsSchema = [
         properties: {
           name: { type: "string", description: "The title of the form" },
           description: { type: "string", description: "A short description of the form" },
+          expiryDays: { type: "number", description: "The lifetime or expiry of the form in days (e.g. 4 for 4 days)" },
           elements: {
             type: "array",
             description: "List of fields to include in the form",

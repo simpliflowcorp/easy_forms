@@ -16,6 +16,7 @@ export type TicketStage = "STAGE_1" | "STAGE_2" | "STAGE_3";
 
 export interface AgentTicket {
   ticketId: string;
+  sessionId?: string;
   stage: TicketStage;
   title: string;
   prompt: string;
@@ -139,6 +140,12 @@ export interface AgentState {
   // If this ticket was resumed with a NEW user prompt, we keep the original prompt
   // for trace clarity and store the new input here. See agentLoop.ts resume path.
   resumedPrompt?: string;
+
+  // Layer 5: User Preferences Memory
+  userContext?: {
+    profile?: any;
+    preferences?: any;
+  };
 
   // Execution Telemetry Trace Log
   executionTrace?: ExecutionTraceStep[];

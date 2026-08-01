@@ -4,18 +4,20 @@ import { runPlanner } from "./personas/planner";
 import { runExecutor } from "./personas/executor";
 import { runEvaluator } from "./personas/evaluator";
 import { runCommunicator } from "./personas/communicator";
-import { sandboxStore } from "./sandbox/sandboxStore";
 import { sandboxRedisStore } from "./sandbox/sandboxRedisStore";
+import { mergeSandboxToProduction } from "./sandbox/sandboxMerge";
 import { agentRedis } from "./sandbox/agentRedis";
 import { acquireAgentLock, AgentLockHandle } from "./sandbox/agentLock";
 import { newTicketId, newTraceId } from "./helper/id";
 import AgentTicketModel from "@/models/agentTicketModel";
+import User from "@/models/userModel";
 
 export async function runAgentLoop(
   userId: string,
   prompt: string,
   mergeApproved: boolean = false,
   resumeTicketId?: string,
+  sessionId?: string,
   onUpdate?: (state: AgentState) => void
 ): Promise<AgentState> {
   const trace: ExecutionTraceStep[] = [];
@@ -71,6 +73,7 @@ export async function runAgentLoop(
   // Phase 6.2 (#7, #22): previously only Redis was cleared on success,
   // leaving Mongo tickets stuck in PROCESSING status, corrupting both the
   // Drafter's recent-context ordering and the followup-detection feature.
+  // Mongo is authoritative; Redis is a resume cache.
   const markResolved = async (s: AgentState) => {
     s.executionTrace = trace;
     await AgentTicketModel.findOneAndUpdate(
@@ -83,6 +86,7 @@ export async function runAgentLoop(
         stage: s.ticket.stage,
         title: s.ticket.title,
         prompt: s.ticket.prompt,
+        sessionId: s.ticket.sessionId,
         createdAt: s.ticket.createdAt
       },
       { upsert: true },
@@ -90,22 +94,54 @@ export async function runAgentLoop(
     await agentRedis.clearState(s.ticket.ticketId);
   };
 
+  // Throttle Mongo writes to key transitions only. Redis gets every transition.
+  const shouldPersistToMongo = (s: AgentState): boolean => {
+    const persona = s.activePersona;
+    const status = s.ticket.status;
+    return (
+      persona === "DRAFTER" ||           // init record
+      persona === "AWAITING_USER_APPROVAL" || // durable "come back later"
+      status === "LLM_ERROR" ||          // durable failure
+      status === "REJECTED" ||           // durable failure
+      status === "RESOLVED"              // already via markResolved
+    );
+  };
+
+  // Create compressed trace for Mongo (no heavy payload blobs)
+  const compressTraceForMongo = (trace: ExecutionTraceStep[]) => {
+    return trace.map((t) => ({
+      stepId: t.stepId,
+      timestamp: t.timestamp,
+      persona: t.persona,
+      message: t.message,
+      // Omit payload to keep Mongo docs small
+    }));
+  };
+
   const persistStateToRedis = async (s: AgentState) => {
     s.executionTrace = trace;
+    // Mongo is authoritative; Redis is a resume cache.
+    // Write Mongo first, then Redis. If Mongo fails, Redis is never updated
+    // and the throw propagates (loop's handleFailure marks LLM_ERROR
+    // consistently across both stores).
+    if (shouldPersistToMongo(s)) {
+      await AgentTicketModel.findOneAndUpdate(
+        { ticketId: s.ticket.ticketId, userId: s.userId },
+        { 
+          ...s,
+          ticketId: s.ticket.ticketId,
+          stage: s.ticket.stage,
+          title: s.ticket.title,
+          status: s.ticket.status,
+          prompt: s.ticket.prompt,
+          sessionId: s.ticket.sessionId,
+          createdAt: s.ticket.createdAt,
+          executionTrace: compressTraceForMongo(trace),
+        },
+        { upsert: true },
+      );
+    }
     await agentRedis.saveState(s);
-    await AgentTicketModel.findOneAndUpdate(
-      { ticketId: s.ticket.ticketId, userId: s.userId },
-      { 
-        ...s,
-        ticketId: s.ticket.ticketId,
-        stage: s.ticket.stage,
-        title: s.ticket.title,
-        status: s.ticket.status,
-        prompt: s.ticket.prompt,
-        createdAt: s.ticket.createdAt
-      },
-      { upsert: true },
-    );
   };
 
   // Helper to handle failure fallback
@@ -125,6 +161,7 @@ export async function runAgentLoop(
         title: currentState.ticket.title,
         status: currentState.ticket.status,
         prompt: currentState.ticket.prompt,
+        sessionId: currentState.ticket.sessionId,
         createdAt: currentState.ticket.createdAt
       },
       { upsert: true },
@@ -133,6 +170,7 @@ export async function runAgentLoop(
   };
 
   try {
+    const turnStartTimeMs = Date.now();
     // If user clicked final approval to merge sandbox -> production DB
     if (mergeApproved) {
       if (!resumeTicketId) {
@@ -183,10 +221,10 @@ export async function runAgentLoop(
       };
 
       addTrace("MERGED_TO_PRODUCTION", "User approved merging Sandbox Store draft to production DB");
-      const mergeStats = await sandboxStore.mergeToProduction(userId, mergeTicketId);
+      const mergeStats = await mergeSandboxToProduction(userId, mergeTicketId);
       addTrace(
         "MERGED_TO_PRODUCTION",
-        `Merged ${mergeStats.mergedForms} form(s) and ${mergeStats.mergedViews} view(s)`,
+        `Merged ${mergeStats.mergedForms} form(s) and ${mergeStats.mergedViews} view(s) (updates applied: ${mergeStats.updatesApplied}, updates missed: ${mergeStats.updatesMissed}, deletes applied: ${mergeStats.deletesApplied}, deletes missed: ${mergeStats.deletesMissed})`,
       );
 
       if (resumeTicketId) {
@@ -197,7 +235,13 @@ export async function runAgentLoop(
         );
       }
 
-      state.reply = `Successfully merged sandbox changes to production DB! (Forms created: ${mergeStats.mergedForms}, Views created: ${mergeStats.mergedViews})`;
+      const missedCount = mergeStats.updatesMissed + mergeStats.deletesMissed;
+      if (missedCount > 0) {
+        state.reply = `Successfully merged sandbox changes to production DB! (Forms created: ${mergeStats.mergedForms}, Views created: ${mergeStats.mergedViews})` +
+          `\n\n⚠️ Warning: ${missedCount} change(s) couldn't be applied because the form was modified elsewhere after you previewed it. Please re-open the form and try again.`;
+      } else {
+        state.reply = `Successfully merged sandbox changes to production DB! (Forms created: ${mergeStats.mergedForms}, Views created: ${mergeStats.mergedViews})`;
+      }
       if (onUpdate) onUpdate({ ...state });
       return state;
     }
@@ -232,7 +276,7 @@ export async function runAgentLoop(
           } as unknown as AgentState;
           // Phase 1.1 (#17): legacy sandbox objects persisted before the remodel
           // lack `updates` / `deletes` arrays. Coerce to canonical so the new
-          // sandboxStore APIs don't silently drop pending intentions on resume.
+          // sandboxRedisStore APIs don't silently drop pending intentions on resume.
           resumedState.sandbox = normalizeSandboxStore(resumedState.sandbox);
           // Replay the historical trace into our in-memory buffer.
           resumedState.executionTrace?.forEach((t) => trace.push(t));
@@ -257,7 +301,24 @@ export async function runAgentLoop(
       // Request" field. Now we keep the original prompt for traceability and
       // stash the new user input in a separate field. Downstream personas that
       // need the LATEST user input read `state.resumedPrompt ?? state.prompt`.
-      if (resumedState) resumedState.resumedPrompt = prompt;
+      if (resumedState) {
+        resumedState.resumedPrompt = prompt;
+        
+        // A new user prompt means we must re-evaluate intent. Reset the loop back
+        // to the DRAFTER so it can parse the new input and decide what to do.
+        resumedState.activePersona = "DRAFTER";
+        resumedState.isComplete = false;
+        resumedState.isQuestion = false;
+        resumedState.reply = undefined;
+        resumedState.drafterMessage = undefined;
+        resumedState.evaluatorFeedback = undefined;
+        resumedState.actionPlan = [];
+        resumedState.iterationCount = 1; // Reset iteration count so the loop doesn't instantly exit
+
+        if (resumedState.ticket.status === "RESOLVED") {
+          resumedState.ticket.status = "PROCESSING";
+        }
+      }
 
       state = resumedState;
     }
@@ -269,6 +330,7 @@ export async function runAgentLoop(
         stage: "STAGE_1",
         title: "Processing Ticket...",
         prompt,
+        sessionId,
         createdAt: new Date().toISOString(),
         status: "PROCESSING",
       };
@@ -293,92 +355,109 @@ export async function runAgentLoop(
     const activeState: AgentState = state;
     state = activeState;
 
+    // Layer 5: Inject User Profile and Preferences
+    if (!state.userContext) {
+      try {
+        const userDoc = await User.findById(userId).lean();
+        if (userDoc) {
+          state.userContext = {
+            profile: {
+              username: userDoc.username,
+              email: userDoc.email,
+              ...(userDoc.profile || {}),
+            },
+            preferences: userDoc.preferences || {},
+          };
+        }
+      } catch (e) {
+        console.warn(`[agentLoop] failed to fetch userContext for ${userId}`, e);
+      }
+    }
+
     try {
       let isLooping = true;
       while (isLooping) {
         // Phase 6.3 (#16): simulated-offline is now per-ticket, not global.
-        const simOfflineKey = `agent:simulated_offline:${state!.ticket.ticketId}`;
+        const simOfflineKey = `agent:simulated_offline:${state.ticket.ticketId}`;
         const isSimulatedOffline = (await agentRedis.client.get(simOfflineKey)) === "true";
         if (isSimulatedOffline) {
           throw new Error("Simulated LLM Offline Crash Triggered");
         }
-        // Back-compat: honor the legacy global key but only for this ticket.
-        const legacy = await agentRedis.client.get("agent:simulated_offline");
-        if (legacy === "true") {
-          console.warn(
-            "[agent] legacy global simulated_offline flag is set. Set agent:simulated_offline:{ticketId} instead.",
-          );
-        }
 
         // Stage 1: Drafter Persona
-        if (state!.activePersona === "DRAFTER") {
-          state = await runDrafter(state!);
-          state!.executionTrace = trace;
+        if (state.activePersona === "DRAFTER") {
+          state = await runDrafter(state);
+          state.executionTrace = trace;
           addTrace(
-            state!.activePersona,
-            `Drafter classified Ticket as [${state!.ticket.stage}]: "${state!.ticket.title}"`,
+            state.activePersona,
+            `Drafter classified Ticket as [${state.ticket.stage}]: "${state.ticket.title}"`,
             {
-              requirements: state!.requirements,
-              isQuestion: state!.isQuestion,
-              reply: state!.reply,
-              llmRawOutput: state!.llmRawOutput,
+              requirements: state.requirements,
+              isQuestion: state.isQuestion,
+              reply: state.reply,
+              llmRawOutput: state.llmRawOutput,
             },
           );
-          await persistStateToRedis(state!);
+          await persistStateToRedis(state);
 
-          if (state!.activePersona === "REJECTED" || state!.isQuestion || state!.isComplete) {
-            if (state!.isComplete) {
-              await markResolved(state!);
+          if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
+            if (state.isComplete) {
+              await markResolved(state);
             }
-            return state!;
+            return state;
           }
         }
         // Stage 2: Planner Persona
-        else if (state!.activePersona === "PLANNER") {
+        else if (state.activePersona === "PLANNER") {
           if ((await agentRedis.client.get(simOfflineKey)) === "true") {
             throw new Error("Simulated LLM Offline Crash Triggered during Planner");
           }
 
           addTrace("PLANNER", "Handing context to Planner Persona for Action Plan compilation");
-          state = await runPlanner(state!);
-          state!.executionTrace = trace;
-          addTrace("PLANNER", `Planner compiled ${state!.actionPlan.length} action step(s)`, state!.actionPlan);
-          await persistStateToRedis(state!);
+          state = await runPlanner(state);
+          state.executionTrace = trace;
+          addTrace("PLANNER", `Planner compiled ${state.actionPlan.length} action step(s)`, state.actionPlan);
+          await persistStateToRedis(state);
         }
         // Stage 3: Executor Persona (Sandbox Isolation)
-        else if (state!.activePersona === "EXECUTOR_SANDBOX") {
+        else if (state.activePersona === "EXECUTOR_SANDBOX") {
           addTrace("EXECUTOR_SANDBOX", "Executing Action Plan inside isolated Sandbox Store");
-          state = await runExecutor(state!);
-          state!.executionTrace = trace;
-          addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state!.actionPlan);
-          await persistStateToRedis(state!);
+          state = await runExecutor(state);
+          state.executionTrace = trace;
+          addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state.actionPlan);
+          await persistStateToRedis(state);
         }
         // Stage 4: Evaluator Persona (Loop Verification)
-        else if (state!.activePersona === "EVALUATOR") {
+        else if (state.activePersona === "EVALUATOR") {
           addTrace("EVALUATOR", "Handing sandbox results to Evaluator Persona for Quality Assurance");
-          state = await runEvaluator(state!);
-          state!.executionTrace = trace;
-          addTrace(state!.activePersona, `Evaluator finished QA check (Iteration ${state!.iterationCount}/${state!.maxIterations})`, {
-            feedback: state!.evaluatorFeedback,
+          state = await runEvaluator(state);
+          state.executionTrace = trace;
+          addTrace(state.activePersona, `Evaluator finished QA check (Iteration ${state.iterationCount}/${state.maxIterations})`, {
+            feedback: state.evaluatorFeedback,
           });
-          await persistStateToRedis(state!);
+          await persistStateToRedis(state);
         }
         // Stage 5: Communicator Persona (Final Response Generation)
-        else if (state!.activePersona === "COMMUNICATOR") {
+        else if (state.activePersona === "COMMUNICATOR") {
           addTrace("COMMUNICATOR", "Generating final response for the user");
-          state = await runCommunicator(state!);
-          state!.executionTrace = trace;
-          addTrace(state!.activePersona, `Communicator formulated final reply`, {
-            reply: state!.reply,
+          const latencyMs = Date.now() - turnStartTimeMs;
+          state = await runCommunicator(state, latencyMs);
+          state.executionTrace = trace;
+          addTrace(state.activePersona, `Communicator formulated final reply`, {
+            reply: state.reply,
           });
 
           // Phase 6.2 (#22): finalize Mongo + Redis coherently per the Evaluator's
           // verdict instead of the previous "clear Redis but leave Mongo PROCESSING".
-          if (state!.isComplete) {
-            await markResolved(state!);
+          // P2-6: Communicator may set status to LLM_ERROR on offline/failure.
+          if (state.ticket.status === "LLM_ERROR") {
+            // Offline or error — keep ticket alive for resume, don't mark resolved.
+            await persistStateToRedis(state);
+          } else if (state.isComplete) {
+            await markResolved(state);
           } else {
             // Question / clarification pending — keep state alive for the user.
-            await persistStateToRedis(state!);
+            await persistStateToRedis(state);
           }
           isLooping = false;
         }
@@ -387,8 +466,8 @@ export async function runAgentLoop(
         // state to Redis here so the user's pending merge intent survives
         // until they click "Confirm & Merge" — without this, the resumed
         // request would have no sandbox cache to merge from.
-        else if (state!.activePersona === "AWAITING_USER_APPROVAL") {
-          await persistStateToRedis(state!);
+        else if (state.activePersona === "AWAITING_USER_APPROVAL") {
+          await persistStateToRedis(state);
           isLooping = false;
         } else {
           // If we reach a state that is not one of the loop stages, break out
@@ -396,9 +475,9 @@ export async function runAgentLoop(
         }
       }
 
-      return state!;
+      return state;
     } catch (error) {
-      return await handleFailure(error, state!);
+      return await handleFailure(error, state);
     }
   } catch (outerError: any) {
     // Phase 6.1: lock-acquire failures (AgentBusyError) and other top-level

@@ -1,0 +1,26 @@
+[extend]
+# Use default gitleaks config and extend with custom rules
+
+[[rules]]
+description = "NVIDIA API Key"
+id = "nvidia-api-key"
+regex = '''nvapi-[a-zA-Z0-9_-]{20,}'''
+tags = ["key", "nvidia"]
+
+[[rules]]
+description = "OpenAI API Key"
+id = "openai-api-key"
+regex = '''sk-[a-zA-Z0-9]{48,}'''
+tags = ["key", "openai"]
+
+[[rules]]
+description = "Anthropic API Key"
+id = "anthropic-api-key"
+regex = '''sk-ant-[a-zA-Z0-9_-]{95,}'''
+tags = ["key", "anthropic"]
+
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token)["']?\s*[:=]\s*["']?[a-zA-Z0-9_-]{20,}["']?'''
+tags = ["key", "generic"]
