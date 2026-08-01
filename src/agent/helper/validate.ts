@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const DrafterOutputSchema = z.object({
+  thoughtProcess: z.string().nullish(),
   stage: z.enum(["STAGE_1", "STAGE_2", "STAGE_3"]),
   skill: z.enum([
     "build_form",
@@ -15,12 +16,12 @@ export const DrafterOutputSchema = z.object({
     "product_guide",
     "general_chat",
   ]),
-  title: z.string().optional(),
-  isVague: z.boolean().optional().default(false),
-  clarifyingQuestion: z.string().optional(),
+  title: z.string().nullish(),
+  isVague: z.boolean().nullish().default(false),
+  clarifyingQuestion: z.string().nullish(),
   requirements: z
     .object({
-      formTitle: z.string().optional(),
+      formTitle: z.string().nullish(),
       fields: z
         .array(
           z.object({
@@ -33,26 +34,26 @@ export const DrafterOutputSchema = z.object({
               z.literal(5),
             ]),
             required: z.boolean(),
-            options: z.array(z.string()).optional(),
+            options: z.array(z.string()).nullish(),
           })
         )
-        .optional(),
+        .nullish(),
     })
-    .optional(),
-  isFollowUp: z.boolean().optional().default(false),
-  isFollowUpConfirmed: z.boolean().optional().default(false),
-  followUpTicketId: z.string().optional(),
-  isCancellation: z.boolean().optional().default(false),
-  isTopicChange: z.boolean().optional().default(false),
-  guideResponse: z.string().optional(),
-  llmRawOutput: z.string().optional(),
+    .nullish(),
+  isFollowUp: z.boolean().nullish().default(false),
+  isFollowUpConfirmed: z.boolean().nullish().default(false),
+  followUpTicketId: z.string().nullish(),
+  isCancellation: z.boolean().nullish().default(false),
+  isTopicChange: z.boolean().nullish().default(false),
+  guideResponse: z.string().nullish(),
+  llmRawOutput: z.string().nullish(),
 });
 
 export const EvaluatorOutputSchema = z.object({
-  thoughtProcess: z.string().optional(),
-  isComplete: z.boolean().optional(),
-  shouldRetry: z.boolean().optional(),
-  feedback: z.string().optional(),
+  thoughtProcess: z.string().nullish(),
+  isComplete: z.boolean().nullish(),
+  shouldRetry: z.boolean().nullish(),
+  feedback: z.string().nullish(),
 });
 
 export type DrafterOutput = z.infer<typeof DrafterOutputSchema>;

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 export default function AgentTestingPage() {
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState<{persona: string, content: string} | null>(null);
 
   const handleRunPrompt = async (prompt: string, mergeApproved: boolean = false, resumeTicketId?: string) => {
     setIsLoading(true);
@@ -44,11 +45,18 @@ export default function AgentTestingPage() {
             }
             try {
               const stateData = JSON.parse(dataStr);
-              if (stateData.error) {
+              if (stateData.type === "stream_chunk") {
+                setStreamingContent(prev => {
+                  const content = prev?.persona === stateData.persona ? prev.content + stateData.chunk : stateData.chunk;
+                  return { persona: stateData.persona, content };
+                });
+              } else if (stateData.error) {
                 toast.error(stateData.error);
+                setStreamingContent(null);
               } else {
                 setAgentState(stateData);
                 finalState = stateData;
+                setStreamingContent(null);
               }
             } catch (e) { }
           }
@@ -56,11 +64,13 @@ export default function AgentTestingPage() {
       }
 
       setIsLoading(false);
+      setStreamingContent(null);
       if (finalState?.reply) {
         toast.success(finalState.reply, { duration: 4000 });
       }
     } catch (err: any) {
       setIsLoading(false);
+      setStreamingContent(null);
       toast.error("Execution error");
     }
   };
@@ -70,6 +80,7 @@ export default function AgentTestingPage() {
       <AgentVisualizer
         agentState={agentState}
         isLoading={isLoading}
+        streamingContent={streamingContent}
         onSendPrompt={(p) => handleRunPrompt(p)}
         onMerge={() => handleRunPrompt("", true, agentState?.ticket?.ticketId)}
         onResume={(ticketId) => handleRunPrompt(agentState?.prompt || "", false, ticketId)}

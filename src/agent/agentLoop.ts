@@ -18,7 +18,8 @@ export async function runAgentLoop(
   mergeApproved: boolean = false,
   resumeTicketId?: string,
   sessionId?: string,
-  onUpdate?: (state: AgentState) => void
+  onUpdate?: (state: AgentState) => void,
+  onChunk?: (persona: string, chunk: string) => void
 ): Promise<AgentState> {
   const trace: ExecutionTraceStep[] = [];
   let state: AgentState | null = null;
@@ -377,6 +378,13 @@ export async function runAgentLoop(
     try {
       let isLooping = true;
       while (isLooping) {
+        if (onChunk) {
+          const currentPersona = state.activePersona;
+          state.onChunk = (chunk: string) => onChunk(currentPersona, chunk);
+        } else {
+          state.onChunk = undefined;
+        }
+
         // Phase 6.3 (#16): simulated-offline is now per-ticket, not global.
         const simOfflineKey = `agent:simulated_offline:${state.ticket.ticketId}`;
         const isSimulatedOffline = (await agentRedis.client.get(simOfflineKey)) === "true";

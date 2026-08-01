@@ -82,7 +82,13 @@ async function getAuthUserId(req: NextRequest): Promise<string | null> {
   return null;
 }
 
-export async function GET(req: NextRequest) {
+async function handleRequest(
+  req: NextRequest,
+  prompt: string,
+  mergeApproved: boolean,
+  resumeTicketId?: string,
+  sessionId?: string
+) {
   try {
     const userId = await getAuthUserId(req);
     if (!userId) {
@@ -91,12 +97,6 @@ export async function GET(req: NextRequest) {
         { status: 401 },
       );
     }
-
-    const { searchParams } = new URL(req.url);
-    const prompt = searchParams.get("prompt") || "";
-    const mergeApproved = searchParams.get("mergeApproved") === "true";
-    const resumeTicketId = searchParams.get("resumeTicketId") || undefined;
-    const sessionId = searchParams.get("sessionId") || undefined;
 
     // Check per-user rate limit before opening SSE stream
     const rateLimitResult = await checkRateLimit(userId, mergeApproved);
@@ -138,6 +138,11 @@ export async function GET(req: NextRequest) {
         const onUpdate = (state: any) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(state)}\n\n`));
         };
+        const onChunk = (persona: string, chunk: string) => {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "stream_chunk", persona, chunk })}\n\n`)
+          );
+        };
 
         try {
           await runAgentLoop(
@@ -147,6 +152,7 @@ export async function GET(req: NextRequest) {
             resumeTicketId,
             sessionId,
             onUpdate,
+            onChunk
           );
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
           controller.close();
@@ -180,4 +186,28 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const prompt = searchParams.get("prompt") || "";
+  const mergeApproved = searchParams.get("mergeApproved") === "true";
+  const resumeTicketId = searchParams.get("resumeTicketId") || undefined;
+  const sessionId = searchParams.get("sessionId") || undefined;
+
+  return handleRequest(req, prompt, mergeApproved, resumeTicketId, sessionId);
+}
+
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch (e) {}
+
+  const prompt = body.prompt || "";
+  const mergeApproved = Boolean(body.mergeApproved);
+  const resumeTicketId = body.resumeTicketId || undefined;
+  const sessionId = body.sessionId || undefined;
+
+  return handleRequest(req, prompt, mergeApproved, resumeTicketId, sessionId);
 }

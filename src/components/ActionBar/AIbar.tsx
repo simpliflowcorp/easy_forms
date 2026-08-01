@@ -12,6 +12,7 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  executionTrace?: any[];
 };
 
 type Props = {
@@ -62,6 +63,7 @@ const AIbar = ({ activeFormId, activeFormName }: Props) => {
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [streamingContent, setStreamingContent] = useState<{ persona: string; content: string } | null>(null);
 
   React.useEffect(() => {
     let sid = sessionStorage.getItem("agent_session_id");
@@ -124,6 +126,7 @@ const AIbar = ({ activeFormId, activeFormName }: Props) => {
 
       eventSource.onmessage = (event) => {
         if (event.data === "[DONE]") {
+          setStreamingContent(null);
           eventSource.close();
           setIsLoading(false);
           // Proceed to handle final state logic below
@@ -131,6 +134,14 @@ const AIbar = ({ activeFormId, activeFormName }: Props) => {
         } else {
           try {
             const stateData = JSON.parse(event.data);
+            if (stateData.type === "stream_chunk") {
+              setStreamingContent(prev => ({
+                persona: stateData.persona,
+                content: (prev?.content || "") + stateData.chunk
+              }));
+              return;
+            }
+            
             if (stateData.error) {
               if (!useAgentStore.getState().isSidebarOpen) {
                 toast.error(stateData.error);
@@ -175,7 +186,12 @@ const AIbar = ({ activeFormId, activeFormName }: Props) => {
             if (lastMsg && lastMsg.role === "assistant" && lastMsg.content === msg) {
               return prev; // prevent duplicate messages
             }
-            return [...prev, { id: crypto.randomUUID(), role: "assistant", content: msg }];
+            return [...prev, { 
+              id: crypto.randomUUID(), 
+              role: "assistant", 
+              content: msg,
+              executionTrace: finalState.executionTrace
+            }];
           });
           talkBack(msg);
         }
@@ -333,6 +349,7 @@ const AIbar = ({ activeFormId, activeFormName }: Props) => {
         chatMessages={chatMessages}
         onMerge={() => handleAIChat("", true, agentState?.ticket?.ticketId)}
         onSendPrompt={(p) => handleAIChat(p, false, agentState?.ticket?.ticketId)}
+        streamingContent={streamingContent}
       />
 
       {/* STAGE 3: Confirmation Modal with Backup Suggestions */}

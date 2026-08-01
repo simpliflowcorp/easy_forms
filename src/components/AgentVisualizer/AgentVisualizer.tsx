@@ -84,6 +84,7 @@ const nodeTypes = { persona: PersonaNode };
 interface AgentVisualizerProps {
   agentState: AgentState | null;
   isLoading: boolean;
+  streamingContent?: { persona: string; content: string } | null;
   onSendPrompt: (prompt: string) => void;
   onMerge: () => void;
   onResume: (ticketId: string) => void;
@@ -92,6 +93,7 @@ interface AgentVisualizerProps {
 export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
   agentState,
   isLoading,
+  streamingContent,
   onSendPrompt,
   onMerge,
   onResume,
@@ -574,12 +576,13 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
               </div>
 
               <div className="scifi-pane-body scifi-chat-container">
-                {(!agentState?.executionTrace || agentState.executionTrace.length === 0) ? (
+                {(!agentState?.executionTrace || agentState.executionTrace.length === 0) && !streamingContent ? (
                   <div style={{ color: '#475569', fontSize: '12px', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
                     Comm-link standing by. Awaiting agent transmissions...
                   </div>
                 ) : (
-                  agentState.executionTrace.map((trc: ExecutionTraceStep) => {
+                  <>
+                  {agentState?.executionTrace?.map((trc: ExecutionTraceStep) => {
                     const isExpanded = expandedLogId === trc.stepId;
                     
                     const avatars: Record<string, string> = {
@@ -625,7 +628,35 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                         </div>
                       </div>
                     );
-                  })
+                  })}
+                  
+                  {streamingContent && (
+                    <div className="scifi-chat-bubble-wrapper">
+                      <div className={`scifi-chat-avatar ${streamingContent.persona}`}>
+                        {({
+                          DRAFTER: "🔍",
+                          PLANNER: "📝",
+                          EXECUTOR_SANDBOX: "⚙️",
+                          EVALUATOR: "🧪",
+                          COMMUNICATOR: "💬",
+                          AWAITING_USER_APPROVAL: "🧑‍💻",
+                        } as Record<string, string>)[streamingContent.persona] || "🤖"}
+                      </div>
+                      <div className="scifi-chat-content">
+                        <div className="scifi-chat-meta">
+                          <span className={`scifi-chat-sender ${streamingContent.persona}`}>{streamingContent.persona.replace("_", " ")}</span>
+                          <span className="scifi-chat-time" style={{ color: '#34d399', animation: 'pulse 1.5s infinite' }}>Thinking...</span>
+                        </div>
+                        <div className={`scifi-chat-bubble ${streamingContent.persona}`} style={{ opacity: 0.8 }}>
+                          <pre className="scifi-payload-pre" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '2px solid #38bdf8' }}>
+                            {streamingContent.content}
+                            <span style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: '#38bdf8', marginLeft: '4px', verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} />
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>

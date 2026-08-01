@@ -158,6 +158,7 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       {
         tools: agentToolsSchema,
         tool_choice: "auto",
+        onChunk: state.onChunk,
       },
     );
 

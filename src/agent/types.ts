@@ -157,4 +157,7 @@ export interface AgentState {
   isQuestion?: boolean;
   reply?: string;
   isComplete?: boolean;
+
+  // Streaming callback injected by agentLoop
+  onChunk?: (chunk: string) => void;
 }

@@ -55,7 +55,7 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
           `Evaluator Assessment: ${state.evaluatorFeedback || "n/a"}\n\n` +
           `Tool Execution Results:\n${JSON.stringify(summaryPayload, null, 2)}`,
       },
-    ]);
+    ], { onChunk: state.onChunk });
 
     return {
       ...state,

@@ -65,6 +65,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       ],
       {
         response_format: { type: "json_object" },
+        onChunk: state.onChunk,
       },
     );
 
@@ -184,20 +185,19 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     };
   }
 
-  // If prompt is vague (e.g. user wants to build a form but provided no
-  // fields), ask a clarifying question. This also covers the case where the
-  // LLM flagged the prompt as a follow-up that needs clarification.
-  if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed)) {
+  if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed && llmAnalysis.clarifyingQuestion)) {
     return {
       ...state,
       activePersona: "DRAFTER",
       isQuestion: true,
       reply:
         llmAnalysis.clarifyingQuestion ||
-        "I can help you build a form! To gather all required parameters per guidelines.md, please specify:\n" +
-          "1. Form Title\n" +
-          "2. What specific fields to include (e.g. Full Name, Email, Star Rating, Comments)\n" +
-          "3. Which fields are mandatory",
+        (llmAnalysis.skill === "build_form" || llmAnalysis.isVague
+          ? "I can help you build a form! To gather all required parameters per guidelines.md, please specify:\n" +
+            "1. Form Title\n" +
+            "2. What specific fields to include (e.g. Full Name, Email, Star Rating, Comments)\n" +
+            "3. Which fields are mandatory"
+          : "Could you please clarify your request?"),
       llmRawOutput: rawContent,
     };
   }

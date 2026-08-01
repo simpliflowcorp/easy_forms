@@ -13,6 +13,7 @@ export interface LLMOptions {
   response_format?: { type: "json_object" };
   tools?: any[];
   tool_choice?: "auto" | "none" | { type: "function"; function: { name: string } };
+  onChunk?: (chunk: string) => void;
 }
 
 /** Distinct error classes so the Evaluator / loop can reason about cause (#21).
@@ -105,7 +106,7 @@ async function callOnce(
     temperature: options.temperature ?? 0.2,
     top_p: options.top_p ?? 0.7,
     max_tokens: options.max_tokens ?? 1024,
-    stream: false,
+    stream: !!options.onChunk,
     response_format: options.response_format,
     tools: options.tools,
     tool_choice: options.tool_choice,
@@ -136,8 +137,107 @@ async function callOnce(
       throw new LLMHTTPError(res.status, `LLM API Error: ${res.status} - ${errBody}`);
     }
 
-    const data = await res.json();
-    return data.choices[0].message;
+    if (!options.onChunk) {
+      const data = await res.json();
+      return data.choices[0].message;
+    }
+
+    if (!res.body) throw new Error("No response body for streaming");
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let fullContent = "";
+    let buffer = "";
+    let thoughtProcessCaptured = "";
+    const toolCallsMap = new Map<number, any>();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        if (part.startsWith("data: ")) {
+          const dataStr = part.slice(6);
+          if (dataStr.trim() === "[DONE]") continue;
+          try {
+            const data = JSON.parse(dataStr);
+            const deltaContent = data.choices?.[0]?.delta?.content;
+            if (deltaContent) {
+              fullContent += deltaContent;
+              if (options.onChunk) {
+                if (options.response_format?.type === "json_object") {
+                  const searchStr = '"thoughtProcess"';
+                  const startIdx = fullContent.indexOf(searchStr);
+                  if (startIdx !== -1) {
+                    const colonIdx = fullContent.indexOf(':', startIdx + searchStr.length);
+                    if (colonIdx !== -1) {
+                      const quoteIdx = fullContent.indexOf('"', colonIdx + 1);
+                      if (quoteIdx !== -1) {
+                        let endIdx = -1;
+                        let isEscaped = false;
+                        for (let i = quoteIdx + 1; i < fullContent.length; i++) {
+                          if (fullContent[i] === '\\' && !isEscaped) {
+                            isEscaped = true;
+                          } else if (fullContent[i] === '"' && !isEscaped) {
+                            endIdx = i;
+                            break;
+                          } else {
+                            isEscaped = false;
+                          }
+                        }
+                        const currentEndIdx = endIdx !== -1 ? endIdx : fullContent.length;
+                        const currentThought = fullContent.substring(quoteIdx + 1, currentEndIdx);
+                        const unescapedThought = currentThought.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+                        if (unescapedThought.length > thoughtProcessCaptured.length) {
+                          const newChunk = unescapedThought.substring(thoughtProcessCaptured.length);
+                          thoughtProcessCaptured += newChunk;
+                          options.onChunk(newChunk);
+                        }
+                      }
+                    }
+                  }
+                } else {
+                  options.onChunk(deltaContent);
+                }
+              }
+            }
+            
+            const deltaToolCalls = data.choices?.[0]?.delta?.tool_calls;
+            if (deltaToolCalls) {
+              for (const tcDelta of deltaToolCalls) {
+                const idx = tcDelta.index;
+                if (!toolCallsMap.has(idx)) {
+                  toolCallsMap.set(idx, {
+                    id: tcDelta.id || "",
+                    type: tcDelta.type || "function",
+                    function: {
+                      name: tcDelta.function?.name || "",
+                      arguments: tcDelta.function?.arguments || ""
+                    }
+                  });
+                } else {
+                  const existing = toolCallsMap.get(idx);
+                  if (tcDelta.id) existing.id += tcDelta.id;
+                  if (tcDelta.function?.name) existing.function.name += tcDelta.function.name;
+                  if (tcDelta.function?.arguments) existing.function.arguments += tcDelta.function.arguments;
+                }
+              }
+            }
+          } catch (e) {
+            // ignore parse errors for partial SSE blocks
+          }
+        }
+      }
+    }
+    
+    const result: any = { role: "assistant", content: fullContent };
+    const tool_calls = Array.from(toolCallsMap.values());
+    if (tool_calls.length > 0) {
+      result.tool_calls = tool_calls;
+    }
+    return result;
   } catch (err: any) {
     // Convert after the fact so callers either see a typed error or the raw one.
     throw classifyError(err);

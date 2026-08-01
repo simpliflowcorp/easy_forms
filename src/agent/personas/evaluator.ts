@@ -93,7 +93,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
             `Tool Execution Results:\n${JSON.stringify(summaryPayload, null, 2)}`,
         },
       ],
-      { response_format: { type: "json_object" } },
+      { response_format: { type: "json_object" }, onChunk: state.onChunk },
     );
     rawContent = response?.content || "";
     const parsedVerdict = parsePersona(rawContent, EvaluatorOutputSchema);
