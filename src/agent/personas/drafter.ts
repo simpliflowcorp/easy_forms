@@ -39,6 +39,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   }));
 
   const pendingQuestionContext = state.isQuestion ? state.reply : null;
+  state.recentContext = recentContext;
 
   // Fetch existing form names to help Drafter resolve titles.
   const existingForms = await Form.find({ user: userId }).select("name").limit(20).lean();
@@ -66,6 +67,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       {
         response_format: { type: "json_object" },
         onChunk: state.onChunk,
+        temperature: 0.7,
       },
     );
 

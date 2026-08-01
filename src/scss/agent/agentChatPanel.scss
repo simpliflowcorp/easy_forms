@@ -1,0 +1,146 @@
+/* Chat Overlay & Agentic Stream */
+.agent-chat-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: calc(100% - 66px);
+  width: 40%;
+  min-width: 350px;
+  background-color: var(--primary-bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  pointer-events: auto;
+  border-left: var(--common-border);
+}
+
+.agent-chat-header{
+  display: flex;
+  justify-content: right;
+  border-bottom: var(--common-border);
+  
+}
+
+.agent-chat-container {
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  position: relative;
+}
+
+.agent-chat-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  color: var(--font-color);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 100;
+  transition: var(--universal-transition);
+
+  &:hover {
+    color: #f5f5f5;
+  }
+  
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.agent-chat-empty {
+  text-align: center;
+  font-family: monospace;
+  color: var(--primary-placeholder);
+  font-size: 14px;
+  margin-top: 40px;
+  animation: scifi-pulse 2s infinite;
+}
+
+
+.agent-chat-bubble {
+  padding: 8px 16px;
+  font-size: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+  font-family: inherit;
+  background: var(--secondary-bg);
+  border: var(--common-border);
+  border-radius: 12px 12px 2px 12px;
+}
+
+.agent-chat-user {
+
+}
+
+.agent-chat-assistant {
+  border-radius: 12px 12px 12px 2px;
+  
+
+}
+
+
+/* Agentic Thought Stream */
+.agent-thought-stream {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  
+}
+
+.agent-thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .agent-thinking-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: var(--secondary-bg);
+    border: var(--common-border);
+    border-radius: 50px;
+  }
+
+  .agent-thinking-icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.agent-thinking-content {
+  margin: 4px 16px;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  border-left: var(--common-border);
+  padding-left: 10px;
+}
+.agent-thought-message {
+  padding: 4px;
+}
+.agent-chat-row-assistant {
+     align-items: flex-end;
+}
+
+.agent-chat-avatar-gpt {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: var(--common-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary-bg);
+  color: var(--primary);
+}

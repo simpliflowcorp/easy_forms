@@ -71,219 +71,72 @@
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
 }
 
-/* Chat Overlay & Agentic Stream */
-.scifi-chat-overlay {
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: calc(100% - 66px);
-  width: 40%;
-  min-width: 350px;
-  z-index: 50;
-  background: var(--model-bg);
-  backdrop-filter: blur(30px);
-  border-left: var(--common-border);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  align-items: center;
-  overflow-y: hidden;
-  pointer-events: auto;
+
+
+.agent-thinking-summary:hover {
+  color: #f5f5f5;
 }
 
-.scifi-chat-container {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  position: relative;
-}
-
-.scifi-chat-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  padding: 8px;
-  color: var(--light-dark);
-  background: var(--model-bg);
-  border: var(--common-border);
+.scifi-circle-placeholder {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  cursor: pointer;
-  z-index: 100;
-  transition: var(--universal-transition);
-
-  &:hover {
-    color: var(--font-color);
-  }
-  
-  svg {
-    width: 20px;
-    height: 20px;
-  }
+  background-color: #a3a3a3;
+  flex-shrink: 0;
 }
 
-.scifi-chat-empty {
-  text-align: center;
-  font-family: monospace;
-  color: var(--primary-placeholder);
-  font-size: 14px;
-  margin-top: 40px;
-  animation: scifi-pulse 2s infinite;
-}
-
-/* Agentic Thought Stream (ChatGPT Style) */
-.scifi-thought-stream {
-  margin-bottom: 16px;
-  align-self: flex-start;
-  width: 100%;
-}
-
-.scifi-thinking-dropdown {
-  background: transparent;
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 14px;
-}
-
-.scifi-thinking-summary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 8px;
-  color: var(--light-dark);
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 20px;
-  border: var(--common-border);
-  background: var(--terinary-bg);
-  transition: var(--universal-transition);
-  user-select: none;
-  font-weight: 500;
-  outline: none;
-}
-
-.scifi-thinking-summary::-webkit-details-marker {
-  display: none;
-}
-
-.scifi-thinking-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.process-caret::after {
-  content: '▼';
-  font-size: 10px;
-  color: var(--light-dark);
-}
-details[open] > .scifi-thinking-summary .process-caret::after {
-  content: '▲';
-}
-
-.scifi-thinking-summary:hover {
-  background: var(--terinary-bg);
-}
-
-.scifi-thinking-icon {
-  width: 16px;
-  height: 16px;
+.agent-thinking-icon {
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
+  flex-shrink: 0;
 }
 
-.scifi-thinking-content {
-  margin-top: 12px;
-  padding-left: 20px;
-  border-left: 2px solid var(--primary);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  color: var(--light-dark);
-  font-size: 8px;
-  font-family: monospace;
-  max-height: 200px;
-  overflow-y: auto;
-}
 
-.scifi-thought-step {
+
+.agent-thought-step {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.scifi-thought-message strong {
-  color: var(--primary);
+.agent-thought-message {
+  font-size: 10px;
+  color: var(--font-color);
+  line-height: 1.4;
 }
 
-.scifi-thought-process {
-  color: var(--light-dark);
+.agent-thought-message strong {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.agent-thought-process {
+  color: #a3a3a3;
   white-space: pre-wrap;
-  background: var(--secondary-bg);
-  padding: 8px;
-  border-radius: var(--element-border-radius);
-  border: var(--common-border);
+  background: transparent;
+  padding: 4px 0 4px 12px;
+  font-size: 8px;
+  border-left: 1px solid #262626;
 }
 
 /* Chat Rows & Bubbles (ChatGPT Style) */
-.scifi-chat-row {
+.agent-chat-row {
   display: flex;
   width: 100%;
   gap: 12px;
   margin-bottom: 12px;
 }
 
-.scifi-chat-row-user {
+.agent-chat-row-user {
   justify-content: flex-end;
 }
 
-.scifi-chat-row-assistant {
-  justify-content: flex-start;
-}
 
-.scifi-chat-avatar-gpt {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: var(--common-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--secondary-bg);
-  color: var(--primary);
-}
 
-.scifi-chat-bubble {
-  padding: 12px 16px;
-  border-radius: 20px;
-  font-size: 15px;
-  line-height: 1.6;
-  max-width: 80%;
-  word-wrap: break-word;
-}
 
-.scifi-chat-user {
-  background: var(--terinary-bg);
-  border: var(--common-border);
-  color: var(--font-color);
-  border-radius: 20px;
-}
 
-.scifi-chat-assistant {
-  background: transparent;
-  color: var(--font-color);
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 5px;
-  max-width: 100%;
-}
+
 
 
 .scifi-brand-area {
@@ -797,7 +650,7 @@ details[open] > .scifi-thinking-summary .process-caret::after {
   align-items: center;
 }
 
-.scifi-chat-container {
+.agent-chat-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1002,26 +855,16 @@ details[open] > .scifi-thinking-summary .process-caret::after {
    SIDEBAR CHAT UI STYLES
    ========================================================================== */
 
-.scifi-chat-container {
+.agent-chat-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
   scroll-behavior: smooth;
 }
 
-.scifi-chat-bubble {
-  position: relative;
-  max-width: 90%;
-  padding: 12px 16px;
-  border-radius: 14px;
-  font-size: 13px;
-  line-height: 1.6;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  animation: scifi-slide-up 0.3s ease-out forwards;
-}
 
-.scifi-chat-role-label {
+
+.agent-chat-role-label {
   display: block;
   font-size: 10px;
   font-weight: 700;
@@ -1031,37 +874,14 @@ details[open] > .scifi-thinking-summary .process-caret::after {
   font-family: monospace;
 }
 
-.scifi-chat-user {
-  align-self: flex-end;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(37, 99, 235, 0.2));
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-bottom-right-radius: 4px;
-  color: #e0f2fe;
 
-  .scifi-chat-role-label {
-    color: #7dd3fc;
-    text-align: right;
-  }
-}
 
-.scifi-chat-assistant {
-  align-self: flex-start;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-left: 2px solid #06b6d4;
-  border-bottom-left-radius: 4px;
-  color: #cbd5e1;
 
-  .scifi-chat-role-label {
-    color: #22d3ee;
-  }
-}
-
-.scifi-chat-content {
+.agent-chat-content {
   word-wrap: break-word;
 }
 
-.scifi-chat-link {
+.agent-chat-link {
   display: inline-block;
   margin-top: 6px;
   padding: 6px 12px;
@@ -1102,13 +922,7 @@ details[open] > .scifi-thinking-summary .process-caret::after {
 .scifi-badge-emerald-pulse { background: #022c22; color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); animation: scifi-pulse 2s infinite; }
 .scifi-badge-emerald-solid { background: #064e3b; color: #ffffff; border: 1px solid #34d399; }
 
-.scifi-drawer-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
-}
-
-.scifi-chat-empty {
+.agent-chat-empty {
   text-align: center;
   color: #64748b;
   font-size: 0.75rem;
@@ -1374,4 +1188,29 @@ details[open] > .scifi-thinking-summary .process-caret::after {
   cursor: pointer;
 }
 .scifi-checklist-btn-confirm:hover { background-color: #f59e0b; }
+
+/* Custom Scrollbar for Sci-Fi Theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--common-border);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.scifi-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 

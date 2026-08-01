@@ -5,6 +5,7 @@ import { AgentState, PersonaStage } from "@/agent/types";
 import { AgentActionChecklist } from "./AgentActionChecklist";
 import { ChatMessage } from "./AIbar";
 import { useClickAway } from "@/hooks/useClickAway";
+import Icon from "../icons/Icon";
 
 interface AgentSidebarDrawerProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [showProcess, setShowProcess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -43,23 +45,25 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
   if (!target) return null;
 
   return createPortal(
-    <div ref={drawerRef} className="scifi-chat-overlay">
-      <button 
-        onClick={onClose}
-        className="scifi-chat-close-btn"
-        title="Close Agent Chat"
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div ref={drawerRef} className="agent-chat-overlay">
 
-      <div className="scifi-chat-container scifi-drawer-body">
+      <div className="agent-chat-header">
 
+        <button
+          onClick={onClose}
+          className="agent-chat-close-btn"
+          title="Close Agent Chat"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-        
+      <div className="agent-chat-container scifi-drawer-body">
+
         {chatMessages.length === 0 && (!agentState?.executionTrace || agentState.executionTrace.length === 0) && (
-          <div className="scifi-chat-empty">Listening...</div>
+          <div className="agent-chat-empty">Listening...</div>
         )}
 
         {/* Existing Chat Messages (ChatGPT Style) */}
@@ -74,7 +78,7 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
                 parts.push(text.substring(lastIndex, match.index));
               }
               parts.push(
-                <a key={match.index} href={match[2]} download className="scifi-chat-link">
+                <a key={match.index} href={match[2]} download className="agent-chat-link">
                   {match[1]}
                 </a>
               );
@@ -87,48 +91,50 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
           };
 
           return (
-            <div key={msg.id || i} className="scifi-chat-row-wrapper">
+            <div key={msg.id || i} className="agent-chat-row-wrapper">
               {/* Process Block for finalized past messages */}
               {msg.role === 'assistant' && msg.executionTrace && msg.executionTrace.length > 0 && (
-                <div className="scifi-thought-stream">
-                  <details className="scifi-thinking-dropdown">
-                    <summary className="scifi-thinking-summary">
-                      <div className="scifi-thinking-header">
-                        <svg className="scifi-thinking-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Process
-                      </div>
-                      <span className="process-caret"></span>
-                    </summary>
-                    <div className="scifi-thinking-content custom-scrollbar">
+                <div className="agent-thought-stream">
+                  <div className="agent-thinking-header">
+                    <div className="agent-thinking-header-left">
+                      <svg className="agent-thinking-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Process
+                    </div>
+                    <Icon icon={showProcess ? "chevron-up" : "chevron-down"} action={() => {
+                      setShowProcess(!showProcess)
+                    }} />
+                  </div>
+                  {showProcess &&
+                    <div className={`agent-thinking-content custom-scrollbar`}>
                       {msg.executionTrace.map((trace: any, j: number) => (
-                        <div key={trace.stepId || j} className="scifi-thought-step">
-                          <div className="scifi-thought-message">
+                        <div key={trace.stepId || j} className="agent-thought-step">
+                          <div className="agent-thought-message">
                             <strong>[{trace.persona}]</strong> {trace.message}
                           </div>
                           {trace.payload?.thoughtProcess && (
-                            <div className="scifi-thought-process">
+                            <div className="agent-thought-process">
                               {trace.payload.thoughtProcess}
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
-                  </details>
-                </div>
-              )}
+                  }
 
-              <div className={`scifi-chat-row ${msg.role === 'user' ? 'scifi-chat-row-user' : 'scifi-chat-row-assistant'}`}>
+                </div>
+              )
+              }
+
+              <div className={`agent-chat-row ${msg.role === 'user' ? 'agent-chat-row-user' : 'agent-chat-row-assistant'}`}>
                 {msg.role === 'assistant' && (
-                  <div className="scifi-chat-avatar-gpt">
-                    <svg className="w-5 h-5 scifi-agent-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
+                  <div className="agent-chat-avatar-gpt">
+                    <div className="scifi-circle-placeholder" />
                   </div>
                 )}
-                <div className={`scifi-chat-bubble ${msg.role === 'user' ? 'scifi-chat-user' : 'scifi-chat-assistant'}`}>
-                  <div className="scifi-chat-content whitespace-pre-wrap">
+                <div className={`agent-chat-bubble ${msg.role === 'user' ? 'agent-chat-user' : 'agent-chat-assistant'}`}>
+                  <div className="agent-chat-content whitespace-pre-wrap">
                     {renderTextWithLinks(msg.content)}
                   </div>
                 </div>
@@ -139,38 +145,38 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
 
         {/* Live Thought Stream for the active agent call */}
         {(streamingContent || (agentState?.executionTrace && !agentState?.isComplete)) && (
-          <div className="scifi-thought-stream">
-            <details className="scifi-thinking-dropdown" open={!!streamingContent}>
-              <summary className="scifi-thinking-summary">
-                <div className="scifi-thinking-header">
-                  <svg className="scifi-thinking-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="agent-thought-stream">
+            <details className="agent-thinking-dropdown" open={!!streamingContent}>
+              <summary className="agent-thinking-summary">
+                <div className="agent-thinking-header">
+                  <svg className="agent-thinking-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   {streamingContent ? "Processing..." : "Process"}
                 </div>
                 <span className="process-caret"></span>
               </summary>
-              <div className="scifi-thinking-content custom-scrollbar">
+              <div className="agent-thinking-content custom-scrollbar">
                 {agentState?.executionTrace?.map((trace, i) => (
-                  <div key={trace.stepId || i} className="scifi-thought-step">
-                    <div className="scifi-thought-message">
+                  <div key={trace.stepId || i} className="agent-thought-step">
+                    <div className="agent-thought-message">
                       <strong>[{trace.persona}]</strong> {trace.message}
                     </div>
                     {trace.payload?.thoughtProcess && (
-                      <div className="scifi-thought-process">
+                      <div className="agent-thought-process">
                         {trace.payload.thoughtProcess}
                       </div>
                     )}
                   </div>
                 ))}
-                
+
                 {/* Live streaming chunk */}
                 {streamingContent && (
-                  <div className="scifi-thought-step">
-                    <div className="scifi-thought-message">
+                  <div className="agent-thought-step">
+                    <div className="agent-thought-message">
                       <strong>[{streamingContent.persona}]</strong> Generating thoughts...
                     </div>
-                    <div className="scifi-thought-process">
+                    <div className="agent-thought-process">
                       {streamingContent.content}<span className="scifi-blink">_</span>
                     </div>
                   </div>
@@ -196,10 +202,10 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
             </button>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
-    </div>,
+    </div >,
     target
   );
 };

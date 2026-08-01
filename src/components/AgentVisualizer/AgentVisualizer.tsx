@@ -8,35 +8,35 @@ import '@xyflow/react/dist/style.css';
 const PersonaNode = ({ data }: any) => {
   return (
     <div className={`scifi-node ${data.isSystem ? 'scifi-node-system' : ''} ${data.isAmber ? 'scifi-node-amber' : data.isActive ? 'scifi-node-active' : ''}`}>
-      <Handle 
-        type="target" 
-        position={Position.Top} 
-        id="top" 
-        className="scifi-handle" 
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="scifi-handle"
         style={{ top: '-6px', left: '50%' }}
       />
-      <Handle 
-        type="source" 
-        position={Position.Top} 
-        id="top-source" 
-        className="scifi-handle scifi-handle-source-amber" 
-        style={{ left: '70%', top: '-6px' }} 
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-source"
+        className="scifi-handle scifi-handle-source-amber"
+        style={{ left: '70%', top: '-6px' }}
       />
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        id="left" 
-        className="scifi-handle" 
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="scifi-handle"
         style={{ left: '-6px' }}
       />
-      <Handle 
-        type="target" 
-        position={Position.Bottom} 
-        id="bottom-target" 
-        className="scifi-handle scifi-handle-source-amber" 
-        style={{ left: '30%', bottom: '-6px' }} 
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-target"
+        className="scifi-handle scifi-handle-source-amber"
+        style={{ left: '30%', bottom: '-6px' }}
       />
-      
+
       {/* Node Top Meta Header */}
       <div className="scifi-node-header">
         <span className="scifi-node-subtag">{data.subTag}</span>
@@ -60,20 +60,20 @@ const PersonaNode = ({ data }: any) => {
       <div className="scifi-node-progress-track">
         <div className={`scifi-node-progress-bar ${data.isActive ? 'active' : data.isAmber ? 'amber' : 'idle'}`} />
       </div>
-      
-      <Handle 
-        type="source" 
-        position={Position.Right} 
-        id="right" 
-        className="scifi-handle" 
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="scifi-handle"
         style={{ right: '-6px' }}
       />
-      <Handle 
-        type="source" 
-        position={Position.Bottom} 
-        id="bottom-source" 
-        className="scifi-handle scifi-handle-source-amber" 
-        style={{ left: '70%', bottom: '-6px' }} 
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom-source"
+        className="scifi-handle scifi-handle-source-amber"
+        style={{ left: '70%', bottom: '-6px' }}
       />
     </div>
   );
@@ -109,7 +109,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       try {
         const data = JSON.parse(event.data);
         setIsOnline(data.status === "online");
-      } catch (e) {}
+      } catch (e) { }
     };
 
     eventSource.onerror = () => {
@@ -166,55 +166,55 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     // --- Persona Level Nodes ---
     {
       id: 'drafter', type: 'persona', position: { x: 40, y: 180 },
-      data: { 
+      data: {
         subTag: 'NEXUS.PRSN-01',
-        icon: '🔍', 
-        label: '1. DRAFTER', 
-        desc: 'Prompt Digestion\n& Intent Check', 
+        icon: '🔍',
+        label: '1. DRAFTER',
+        desc: 'Prompt Digestion\n& Intent Check',
         isActive: agentState?.activePersona === "DRAFTER",
         isAmber: false,
       }
     },
     {
       id: 'planner', type: 'persona', position: { x: 280, y: 180 },
-      data: { 
+      data: {
         subTag: 'NEXUS.PRSN-02',
-        icon: '📝', 
-        label: '2. PLANNER', 
-        desc: 'Action Plan\nCompiler', 
+        icon: '📝',
+        label: '2. PLANNER',
+        desc: 'Action Plan\nCompiler',
         isActive: agentState?.activePersona === "PLANNER",
         isAmber: false,
       }
     },
     {
       id: 'executor', type: 'persona', position: { x: 520, y: 180 },
-      data: { 
+      data: {
         subTag: 'NEXUS.PRSN-03',
-        icon: '⚙️', 
-        label: '3. EXECUTOR', 
-        desc: 'Isolated Sandbox\nTool Run', 
+        icon: '⚙️',
+        label: '3. EXECUTOR',
+        desc: 'Isolated Sandbox\nTool Run',
         isActive: agentState?.activePersona === "EXECUTOR_SANDBOX",
         isAmber: agentState?.activePersona === "EXECUTOR_SANDBOX",
       }
     },
     {
       id: 'evaluator', type: 'persona', position: { x: 760, y: 180 },
-      data: { 
+      data: {
         subTag: 'NEXUS.PRSN-04',
-        icon: '🧪', 
-        label: '4. EVALUATOR', 
-        desc: 'QA Check &\nLoop Control', 
+        icon: '🧪',
+        label: '4. EVALUATOR',
+        desc: 'QA Check &\nLoop Control',
         isActive: agentState?.activePersona === "EVALUATOR",
         isAmber: false,
       }
     },
     {
       id: 'communicator', type: 'persona', position: { x: 1000, y: 180 },
-      data: { 
+      data: {
         subTag: 'NEXUS.PRSN-05',
-        icon: '💬', 
-        label: '5. COMMUNICATOR', 
-        desc: 'Format Final\nClient Reply', 
+        icon: '💬',
+        label: '5. COMMUNICATOR',
+        desc: 'Format Final\nClient Reply',
         isActive: agentState?.activePersona === "COMMUNICATOR",
         isAmber: false,
       }
@@ -253,8 +253,8 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     {
       id: 'e1-2', source: 'drafter', sourceHandle: 'right', target: 'planner', targetHandle: 'left',
       animated: agentState?.activePersona === "PLANNER",
-      style: { 
-        stroke: agentState?.activePersona === "PLANNER" ? '#38bdf8' : '#1e293b', 
+      style: {
+        stroke: agentState?.activePersona === "PLANNER" ? '#38bdf8' : '#1e293b',
         strokeWidth: agentState?.activePersona === "PLANNER" ? 4 : 2,
         filter: agentState?.activePersona === "PLANNER" ? 'drop-shadow(0 0 8px #38bdf8)' : 'none'
       },
@@ -263,8 +263,8 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     {
       id: 'e2-3', source: 'planner', sourceHandle: 'right', target: 'executor', targetHandle: 'left',
       animated: agentState?.activePersona === "EXECUTOR_SANDBOX",
-      style: { 
-        stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#38bdf8' : '#1e293b', 
+      style: {
+        stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#38bdf8' : '#1e293b',
         strokeWidth: agentState?.activePersona === "EXECUTOR_SANDBOX" ? 4 : 2,
         filter: agentState?.activePersona === "EXECUTOR_SANDBOX" ? 'drop-shadow(0 0 8px #38bdf8)' : 'none'
       },
@@ -273,8 +273,8 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     {
       id: 'e3-4', source: 'executor', sourceHandle: 'right', target: 'evaluator', targetHandle: 'left',
       animated: agentState?.activePersona === "EVALUATOR",
-      style: { 
-        stroke: agentState?.activePersona === "EVALUATOR" ? '#38bdf8' : '#1e293b', 
+      style: {
+        stroke: agentState?.activePersona === "EVALUATOR" ? '#38bdf8' : '#1e293b',
         strokeWidth: agentState?.activePersona === "EVALUATOR" ? 4 : 2,
         filter: agentState?.activePersona === "EVALUATOR" ? 'drop-shadow(0 0 8px #38bdf8)' : 'none'
       },
@@ -283,8 +283,8 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     {
       id: 'e4-5', source: 'evaluator', sourceHandle: 'right', target: 'communicator', targetHandle: 'left',
       animated: agentState?.activePersona === "COMMUNICATOR",
-      style: { 
-        stroke: agentState?.activePersona === "COMMUNICATOR" ? '#38bdf8' : '#1e293b', 
+      style: {
+        stroke: agentState?.activePersona === "COMMUNICATOR" ? '#38bdf8' : '#1e293b',
         strokeWidth: agentState?.activePersona === "COMMUNICATOR" ? 4 : 2,
         filter: agentState?.activePersona === "COMMUNICATOR" ? 'drop-shadow(0 0 8px #38bdf8)' : 'none'
       },
@@ -294,9 +294,9 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       id: 'e4-3', source: 'evaluator', sourceHandle: 'bottom-source', target: 'executor', targetHandle: 'bottom-target',
       type: 'smoothstep',
       animated: agentState?.activePersona === "EXECUTOR_SANDBOX",
-      style: { 
-        stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#f59e0b' : '#1e293b', 
-        strokeWidth: agentState?.activePersona === "EXECUTOR_SANDBOX" ? 4 : 2, 
+      style: {
+        stroke: agentState?.activePersona === "EXECUTOR_SANDBOX" ? '#f59e0b' : '#1e293b',
+        strokeWidth: agentState?.activePersona === "EXECUTOR_SANDBOX" ? 4 : 2,
         strokeDasharray: '6,6',
         filter: agentState?.activePersona === "EXECUTOR_SANDBOX" ? 'drop-shadow(0 0 8px #f59e0b)' : 'none'
       },
@@ -306,14 +306,14 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
   return (
     <div className="scifi-agent-page">
-      
+
       {/* Ambient Glow Effects */}
       <div className="scifi-glow-orb-1" />
       <div className="scifi-glow-orb-2" />
 
       {/* Cybernetic HUD Header Bar */}
       <header className="scifi-header">
-        
+
         {/* Brand Logo & Title */}
         <div className="scifi-brand-area">
           <div className="scifi-brand-logo">
@@ -365,10 +365,10 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
       {/* Main Workspace Area */}
       <div className="scifi-workspace">
-        
+
         {/* Left Mission Control Sidebar Console */}
         <aside className="scifi-sidebar">
-          
+
           {/* Header Title */}
           <div className="scifi-section-title">
             <span>⚡ MISSION CONTROL CONSOLE</span>
@@ -467,7 +467,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
         {/* Center / Main Content Area */}
         <main className="scifi-main-content">
-          
+
           {/* Notification Overlay Modals */}
           {(agentState?.isComplete && agentState.activePersona === "AWAITING_USER_APPROVAL") && (
             <div className="scifi-modal-container">
@@ -500,8 +500,8 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => onResume(agentState.ticket.ticketId)} 
+                <button
+                  onClick={() => onResume(agentState.ticket.ticketId)}
                   disabled={isLoading || !isOnline}
                   className="scifi-btn-resume"
                 >
@@ -513,9 +513,9 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
           {/* ReactFlow Canvas Area */}
           <div className="scifi-canvas-wrapper">
-            <ReactFlow 
-              nodes={nodes} 
-              edges={edges} 
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
               nodeTypes={nodeTypes}
               fitView
               fitViewOptions={{ padding: 0.2 }}
@@ -531,14 +531,14 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
           {/* Bottom Dock (Agent Neural Comm-Link) */}
           <div className="scifi-dock">
-            
+
             {/* Memory & Context Pane */}
             <div className="scifi-pane-memory" style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(30, 41, 59, 0.8)', minWidth: 0 }}>
               <div className="scifi-pane-header">
                 <span>🧠 AGENT WORKING MEMORY</span>
               </div>
               <div className="scifi-pane-body" style={{ overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-                
+
                 {/* Requirements */}
                 {agentState?.requirements && Object.keys(agentState.requirements).length > 0 && (
                   <div className="scifi-memory-block">
@@ -548,7 +548,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                     </pre>
                   </div>
                 )}
-                
+
                 {/* Current Action Plan */}
                 {agentState?.actionPlan && agentState.actionPlan.length > 0 && (
                   <div className="scifi-memory-block">
@@ -558,7 +558,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                     </pre>
                   </div>
                 )}
-                
+
                 {(!agentState?.requirements || Object.keys(agentState.requirements).length === 0) && (!agentState?.actionPlan || agentState.actionPlan.length === 0) && (
                   <div style={{ color: '#475569', fontSize: '12px', fontStyle: 'italic', textAlign: 'center', marginTop: '20px' }}>
                     Memory banks empty.
@@ -575,87 +575,87 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                 </span>
               </div>
 
-              <div className="scifi-pane-body scifi-chat-container">
+              <div className="scifi-pane-body agent-chat-container">
                 {(!agentState?.executionTrace || agentState.executionTrace.length === 0) && !streamingContent ? (
                   <div style={{ color: '#475569', fontSize: '12px', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
                     Comm-link standing by. Awaiting agent transmissions...
                   </div>
                 ) : (
                   <>
-                  {agentState?.executionTrace?.map((trc: ExecutionTraceStep) => {
-                    const isExpanded = expandedLogId === trc.stepId;
-                    
-                    const avatars: Record<string, string> = {
-                      DRAFTER: "🔍",
-                      PLANNER: "📝",
-                      EXECUTOR_SANDBOX: "⚙️",
-                      EVALUATOR: "🧪",
-                      COMMUNICATOR: "💬",
-                      AWAITING_USER_APPROVAL: "🧑‍💻",
-                    };
-                    const avatar = avatars[trc.persona] || "🤖";
+                    {agentState?.executionTrace?.map((trc: ExecutionTraceStep) => {
+                      const isExpanded = expandedLogId === trc.stepId;
 
-                    return (
-                      <div key={trc.stepId} className="scifi-chat-bubble-wrapper">
-                        <div className={`scifi-chat-avatar ${trc.persona}`}>
-                          {avatar}
-                        </div>
-                        <div className="scifi-chat-content">
-                          <div className="scifi-chat-meta">
-                            <span className={`scifi-chat-sender ${trc.persona}`}>{trc.persona.replace("_", " ")}</span>
-                            <span className="scifi-chat-time">{trc.timestamp.split('T')[1]?.split('.')[0] || trc.timestamp}</span>
+                      const avatars: Record<string, string> = {
+                        DRAFTER: "🔍",
+                        PLANNER: "📝",
+                        EXECUTOR_SANDBOX: "⚙️",
+                        EVALUATOR: "🧪",
+                        COMMUNICATOR: "💬",
+                        AWAITING_USER_APPROVAL: "🧑‍💻",
+                      };
+                      const avatar = avatars[trc.persona] || "🤖";
+
+                      return (
+                        <div key={trc.stepId} className="agent-chat-bubble-wrapper">
+                          <div className={`agent-chat-avatar ${trc.persona}`}>
+                            {avatar}
                           </div>
-                          
-                          <div className={`scifi-chat-bubble ${trc.persona}`}>
-                            <div className="scifi-chat-message">{trc.message}</div>
-                            
-                            {trc.payload && (
-                              <div style={{ marginTop: '8px' }}>
-                                <span 
-                                  onClick={() => setExpandedLogId(isExpanded ? null : trc.stepId)}
-                                  style={{ fontSize: '9px', fontWeight: 700, color: 'inherit', cursor: 'pointer', opacity: 0.8 }}
-                                >
-                                  {isExpanded ? '[-] HIDE DETAILS' : '[+] VIEW DETAILS'}
-                                </span>
-                                {isExpanded && (
-                                  <pre className="scifi-payload-pre">
-                                    {JSON.stringify(trc.payload, null, 2)}
-                                  </pre>
-                                )}
-                              </div>
-                            )}
+                          <div className="agent-chat-content">
+                            <div className="agent-chat-meta">
+                              <span className={`agent-chat-sender ${trc.persona}`}>{trc.persona.replace("_", " ")}</span>
+                              <span className="agent-chat-time">{trc.timestamp.split('T')[1]?.split('.')[0] || trc.timestamp}</span>
+                            </div>
+
+                            <div className={`agent-chat-bubble ${trc.persona}`}>
+                              <div className="agent-chat-message">{trc.message}</div>
+
+                              {trc.payload && (
+                                <div style={{ marginTop: '8px' }}>
+                                  <span
+                                    onClick={() => setExpandedLogId(isExpanded ? null : trc.stepId)}
+                                    style={{ fontSize: '9px', fontWeight: 700, color: 'inherit', cursor: 'pointer', opacity: 0.8 }}
+                                  >
+                                    {isExpanded ? '[-] HIDE DETAILS' : '[+] VIEW DETAILS'}
+                                  </span>
+                                  {isExpanded && (
+                                    <pre className="scifi-payload-pre">
+                                      {JSON.stringify(trc.payload, null, 2)}
+                                    </pre>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {streamingContent && (
+                      <div className="agent-chat-bubble-wrapper">
+                        <div className={`agent-chat-avatar ${streamingContent.persona}`}>
+                          {({
+                            DRAFTER: "🔍",
+                            PLANNER: "📝",
+                            EXECUTOR_SANDBOX: "⚙️",
+                            EVALUATOR: "🧪",
+                            COMMUNICATOR: "💬",
+                            AWAITING_USER_APPROVAL: "🧑‍💻",
+                          } as Record<string, string>)[streamingContent.persona] || "🤖"}
+                        </div>
+                        <div className="agent-chat-content">
+                          <div className="agent-chat-meta">
+                            <span className={`agent-chat-sender ${streamingContent.persona}`}>{streamingContent.persona.replace("_", " ")}</span>
+                            <span className="agent-chat-time" style={{ color: '#34d399', animation: 'pulse 1.5s infinite' }}>Thinking...</span>
+                          </div>
+                          <div className={`agent-chat-bubble ${streamingContent.persona}`} style={{ opacity: 0.8 }}>
+                            <pre className="scifi-payload-pre" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '2px solid #38bdf8' }}>
+                              {streamingContent.content}
+                              <span style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: '#38bdf8', marginLeft: '4px', verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} />
+                            </pre>
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                  
-                  {streamingContent && (
-                    <div className="scifi-chat-bubble-wrapper">
-                      <div className={`scifi-chat-avatar ${streamingContent.persona}`}>
-                        {({
-                          DRAFTER: "🔍",
-                          PLANNER: "📝",
-                          EXECUTOR_SANDBOX: "⚙️",
-                          EVALUATOR: "🧪",
-                          COMMUNICATOR: "💬",
-                          AWAITING_USER_APPROVAL: "🧑‍💻",
-                        } as Record<string, string>)[streamingContent.persona] || "🤖"}
-                      </div>
-                      <div className="scifi-chat-content">
-                        <div className="scifi-chat-meta">
-                          <span className={`scifi-chat-sender ${streamingContent.persona}`}>{streamingContent.persona.replace("_", " ")}</span>
-                          <span className="scifi-chat-time" style={{ color: '#34d399', animation: 'pulse 1.5s infinite' }}>Thinking...</span>
-                        </div>
-                        <div className={`scifi-chat-bubble ${streamingContent.persona}`} style={{ opacity: 0.8 }}>
-                          <pre className="scifi-payload-pre" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '2px solid #38bdf8' }}>
-                            {streamingContent.content}
-                            <span style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: '#38bdf8', marginLeft: '4px', verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} />
-                          </pre>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    )}
                   </>
                 )}
               </div>

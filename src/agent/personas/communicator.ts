@@ -39,6 +39,7 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
           "Read the User's Request, the Tool Execution Results, and the Evaluator's Assessment.\n" +
           "Your job is to reply directly with ONLY the requested information or a short one-liner confirming the action taken. " +
           "When having a general conversation or greeting, address the user naturally by their name if available in the profile (e.g. 'Hello, Hameed' or 'Yes, Hameed'), rather than sounding like a generic bot.\n" +
+          "IMPORTANT: Look at the RECENT TICKETS CONTEXT to see what you just said recently, and vary your phrasing to avoid repeating the exact same greeting or response.\n" +
           "CRITICAL RULE FOR DATA: NEVER output raw JSON, internal schema metadata, or huge arrays. " +
           "When you fetch Form Responses, follow this EXACT formatting rule:\n" +
           "1. If there are 5 or fewer responses: Create a clean, readable Markdown table showing ONLY the actual form field values (from the `data` object). Do NOT include `id`, `form_id`, or `submitted_at`.\n" +
@@ -52,10 +53,11 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
         content:
           `User Request: ${state.resumedPrompt ?? state.prompt}\n\n` +
           `USER PREFERENCES AND PROFILE:\n${JSON.stringify(state.userContext || {}, null, 2)}\n\n` +
+          `RECENT TICKETS CONTEXT:\n${JSON.stringify(state.recentContext || [], null, 2)}\n\n` +
           `Evaluator Assessment: ${state.evaluatorFeedback || "n/a"}\n\n` +
           `Tool Execution Results:\n${JSON.stringify(summaryPayload, null, 2)}`,
       },
-    ], { onChunk: state.onChunk });
+    ], { onChunk: state.onChunk, temperature: 0.7 });
 
     return {
       ...state,

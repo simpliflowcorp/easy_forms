@@ -146,6 +146,7 @@ export interface AgentState {
     profile?: any;
     preferences?: any;
   };
+  recentContext?: any[];
 
   // Execution Telemetry Trace Log
   executionTrace?: ExecutionTraceStep[];
