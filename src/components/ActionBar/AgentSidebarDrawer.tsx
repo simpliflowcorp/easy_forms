@@ -43,7 +43,6 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
   if (!target) return null;
 
   return createPortal(
-  return createPortal(
     <div ref={drawerRef} className="scifi-chat-overlay">
       <button 
         onClick={onClose}
