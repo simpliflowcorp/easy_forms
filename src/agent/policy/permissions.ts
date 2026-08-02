@@ -25,6 +25,14 @@ const SKILL_TO_SCOPE: Record<string, string> = {
   unsupported: "_always_allowed",
 };
 
+/** Skills that are pure reads and can bypass Planner/Executor/Evaluator. */
+export const READ_ONLY_SKILLS = new Set([
+  "run_database_query",
+  "filter_responses",
+  "generate_analytics_skill",
+  "manage_custom_views", // read-only custom view operations
+]);
+
 export interface PermissionCheckResult {
   allowed: boolean;
   scope?: string;

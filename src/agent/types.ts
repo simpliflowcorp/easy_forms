@@ -159,6 +159,10 @@ export interface AgentState {
   reply?: string;
   isComplete?: boolean;
 
+  // R1: flag indicating this is a read-only query that bypasses
+  // Planner/Executor/Evaluator and goes directly DRAFTER → COMMUNICATOR.
+  isReadOnly?: boolean;
+
   // Streaming callback injected by agentLoop
   onChunk?: (chunk: string) => void;
 

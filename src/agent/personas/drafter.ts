@@ -3,7 +3,7 @@ import { DRAFTER_SYSTEM_PROMPT } from "../prompts";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import AgentTicketModel from "@/models/agentTicketModel";
 import Form from "@/models/formModel";
-import { checkPermission } from "../policy/permissions";
+import { checkPermission, READ_ONLY_SKILLS } from "../policy/permissions";
 import { parsePersona, DrafterOutputSchema } from "../helper/validate";
 
 export async function runDrafter(state: AgentState): Promise<AgentState> {
@@ -192,6 +192,47 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     };
   }
 
+  // Handle Unsupported skills or Greetings.
+  if (llmAnalysis.skill === "unsupported") {
+    return {
+      ...state,
+      activePersona: "DRAFTER",
+      isQuestion: true,
+      reply: llmAnalysis.clarifyingQuestion || "Hello! How can I assist you with Easy Forms today?",
+      llmRawOutput: rawContent,
+    };
+  }
+
+  // R1: Read-only short-circuit — if the skill is a pure read, bypass
+  // Planner/Executor/Evaluator and go directly to Communicator.
+  if (READ_ONLY_SKILLS.has(llmAnalysis.skill)) {
+    const { executeAgentTool } = await import("../../lib/agentTools.js");
+    const toolResult = await executeAgentTool(llmAnalysis.skill, llmAnalysis.requirements || {}, state.userId);
+    
+    // Build minimal state for Communicator to render the read result
+    return {
+      ...state,
+      activePersona: "COMMUNICATOR",
+      isComplete: true,
+      isReadOnly: true,
+      isQuestion: false,
+      actionPlan: [{
+        id: "read_1",
+        tool: llmAnalysis.skill,
+        params: llmAnalysis.requirements || {},
+        result: toolResult,
+        status: "done",
+        description: `Read query: ${llmAnalysis.skill}`,
+      }],
+      requirements: {
+        ...state.requirements,
+        skill: llmAnalysis.skill,
+      },
+      drafterMessage: `Drafter classified as read-only: ${llmAnalysis.skill}.`,
+      llmRawOutput: rawContent,
+    };
+  }
+
   if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed && llmAnalysis.clarifyingQuestion)) {
     return {
       ...state,
@@ -205,31 +246,6 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
             "2. What specific fields to include (e.g. Full Name, Email, Star Rating, Comments)\n" +
             "3. Which fields are mandatory"
           : "Could you please clarify your request?"),
-      llmRawOutput: rawContent,
-    };
-  }
-
-  // Handle STAGE_1 read requests. The legacy `read_query_skill` symbol is
-  // kept for back-compat with historical Drafter prompts; new tickets route
-  // via the real `run_database_query` / `filter_responses` /
-  // `generate_analytics_skill` skills (Phase 4.1 Evaluator relies on these).
-  if (
-    llmAnalysis.stage === "STAGE_1" ||
-    llmAnalysis.skill === "read_query_skill" ||
-    llmAnalysis.skill === "run_database_query" ||
-    llmAnalysis.skill === "filter_responses" ||
-    llmAnalysis.skill === "generate_analytics_skill" ||
-    llmAnalysis.skill === "manage_custom_views"
-  ) {
-    state.requirements = {
-      ...state.requirements,
-      skill: llmAnalysis.skill === "read_query_skill" ? "run_database_query" : llmAnalysis.skill,
-    };
-    return {
-      ...state,
-      activePersona: "PLANNER",
-      isQuestion: false,
-      drafterMessage: `Drafter Persona digested prompt intent as Read Query. Requirements ready for Planner.`,
       llmRawOutput: rawContent,
     };
   }
