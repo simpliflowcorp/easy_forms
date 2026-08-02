@@ -155,7 +155,7 @@ This section documents divergences between the prompt texts above (which are ill
 - Then LLM-based semantic QA returns `{isComplete, shouldRetry, feedback}` via `safeJSON`. LLM signoff → `AWAITING_USER_APPROVAL` OR `COMMUNICATOR` based on whether the plan mutated state. The **Evaluator** owns the `AWAITING_USER_APPROVAL` transition, not the Communicator.
 - On `shouldRetry && budget remain` → EXECUTOR_SANDBOX with `evaluatorFeedback` so the next execution knows what to fix.
 - Both deterministic and LLM-driven retries route to EXECUTOR_SANDBOX with prior plan + feedback intact. Planner is re-engaged only on a fresh ticket (post-Drafter) or an explicit `[replan]` signal.
-- `redactPII` strips `ip_address` / `user_agent` from anything sent to the LLM.
+- `redactPII` (`src/agent/helper/redact.ts`) strips a documented key list (`ip_address`, `user_agent`, `email`, `phone`, `phone_number`, `mobile`, `ssn`, `password`, `address`, `zip`, `postcode`) from anything sent to the LLM. Key-name based only — won't catch values in arbitrary keys like `"User Email Address"`. Set `AGENT_REDACT_VALUES=1` to enable value-based regex redaction (email/phone/SSN patterns) inside string payloads; default off to avoid false positives in legit form content.
 
 ### Communicator
 - No longer mutates `activePersona`. Its job is solely to render the user-facing reply text. The `AWAITING_USER_APPROVAL` decision is owned by the Evaluator.

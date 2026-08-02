@@ -1,6 +1,6 @@
 import { AgentState } from "../types";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
-import { parsePersona, EvaluatorOutputSchema } from "../helper/validate";
+import { parsePersona, EvaluatorOutputSchema, EvaluatorOutput } from "../helper/validate";
 import { redactPII } from "../helper/redact";
 
 const EVALUATOR_SYSTEM_PROMPT = `You are the EVALUATOR PERSONA of the Easy Forms AI Agent System.
@@ -23,12 +23,7 @@ OUTPUT FORMAT (JSON ONLY):
   "feedback": "Detailed evaluation report or instructions for the next iteration"
 }`;
 
-interface EvaluatorVerdict {
-  thoughtProcess?: string;
-  isComplete?: boolean;
-  shouldRetry?: boolean;
-  feedback?: string;
-}
+type EvaluatorVerdict = EvaluatorOutput;
 
 /** True if any action in the plan mutates form/view state and therefore
  *  requires explicit human "Confirm & Merge" approval before touching prod. */

@@ -47,8 +47,10 @@ export default function AgentTestingPage() {
               const stateData = JSON.parse(dataStr);
               if (stateData.type === "stream_chunk") {
                 setStreamingContent(prev => {
-                  const content = prev?.persona === stateData.persona ? prev.content + stateData.chunk : stateData.chunk;
-                  return { persona: stateData.persona, content };
+                  if (prev !== null && prev?.persona === stateData.persona) {
+                    return { persona: stateData.persona, content: prev.content + stateData.chunk };
+                  }
+                  return { persona: stateData.persona, content: stateData.chunk };
                 });
               } else if (stateData.error) {
                 toast.error(stateData.error);

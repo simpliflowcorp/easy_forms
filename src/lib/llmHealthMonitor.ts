@@ -21,16 +21,12 @@ export const startLlmHealthMonitor = () => {
 
   const checkHealth = async () => {
     try {
-      // Check for simulated offline mode first
-      const isSimulatedOffline = await pubClient.get("agent:simulated_offline");
-      if (isSimulatedOffline === "true") {
-        if (global._llmHealthLastStatus !== "offline") {
-          global._llmHealthLastStatus = "offline";
-          await pubClient.publish("agent:llm_health", JSON.stringify({ status: "offline" }));
-        }
-        return;
-      }
-
+      // NOTE: per-ticket simulated offline (agent:simulated_offline:{ticketId})
+      // is honoured only inside agentLoop.ts — it intentionally does NOT
+      // affect the global health broadcast, which reflects the real NVIDIA
+      // probe. The legacy bare global key `agent:simulated_offline` was
+      // removed (P0-3 cleanup): nothing sets it and a stale value would
+      // have silently crashed every client's status.
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
 
