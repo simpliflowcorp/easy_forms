@@ -16,6 +16,74 @@ export interface LLMOptions {
   onChunk?: (chunk: string) => void;
 }
 
+/**
+ * R2.1 — per-call token-cost accounting.
+ *
+ * Provider-agnostic usage shape, normalised from the raw provider payloads:
+ *   - NVIDIA NIM / OpenAI-compat: `{ usage: { prompt_tokens, completion_tokens, total_tokens } }`
+ *     present on `data.usage` in non-streaming, and in the final `data:` chunk
+ *     immediately preceding `[DONE]` when `stream_options.include_usage = true`
+ *     (both NVIDIA and Gemini-OpenAI-compat honour this).
+ *   - Raw Gemini SDK shape `{ promptTokenCount, candidatesTokenCount, totalTokenCount }`
+ *     is not used by this codebase (we route via the OpenAI-compat endpoint),
+ *     but `parseUsage` accepts it defensively so the helper stays robust to a
+ *     future provider change.
+ *
+ * `costUsd` is NOT computed here — model-specific pricing is added by the
+ * downstream persistence layer (R2.2) once we have a stable `AgentUsage` row,
+ * since per-model cost tables update at deployment, not in the hot path.
+ */
+export interface LLMUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  model: string;
+}
+
+export interface LLMResult {
+  role?: string;
+  content: string;
+  tool_calls?: any[];
+  usage?: LLMUsage;
+}
+
+/** Normalize the raw provider usage blob (which may be `undefined`) into
+ *  the canonical `LLMUsage` shape. Returns `null` if the upstream payload
+ *  has no usable token counts — callers may then leave `usage` undefined
+ *  rather than fabricate zeros (which would muddy the budget math). */
+function parseUsage(rawUsage: any, model: string): LLMUsage | null {
+  if (!rawUsage || typeof rawUsage !== "object") return null;
+
+  const promptTokens =
+    rawUsage.prompt_tokens ??
+    rawUsage.promptTokenCount ??
+    rawUsage.input_tokens ??
+    rawUsage.inputTokens ??
+    0;
+  const completionTokens =
+    rawUsage.completion_tokens ??
+    rawUsage.candidatesTokenCount ??
+    rawUsage.output_tokens ??
+    rawUsage.outputTokens ??
+    0;
+  const totalTokens =
+    rawUsage.total_tokens ??
+    rawUsage.totalTokenCount ??
+    (Number(promptTokens) + Number(completionTokens));
+
+  // If every field is 0 / missing, the upstream didn't actually return usage
+  // (some Gemini response shapes omit it entirely when bypassed for
+  // non-billable reasons). Treat that as null.
+  if (!promptTokens && !completionTokens && !totalTokens) return null;
+
+  return {
+    promptTokens: Number(promptTokens) || 0,
+    completionTokens: Number(completionTokens) || 0,
+    totalTokens: Number(totalTokens) || 0,
+    model,
+  };
+}
+
 /** Distinct error classes so the Evaluator / loop can reason about cause (#21).
  *  Previously every LLM failure was a generic Error — `LLM_ERROR` ticket status
  *  conflated offline, rate-limit, and parse failures. */
@@ -107,6 +175,10 @@ async function callOnce(
     top_p: options.top_p ?? 0.7,
     max_tokens: options.max_tokens ?? 1024,
     stream: !!options.onChunk,
+    // R2.1: ask the OpenAI-compat endpoint to include a final usage chunk
+    // before [DONE] when streaming. NVIDIA NIM and Gemini-OpenAI-compat both
+    // honour this; harmless if ignored. Non-streaming always has data.usage.
+    stream_options: options.onChunk ? { include_usage: true } : undefined,
     response_format: options.response_format,
     tools: options.tools,
     tool_choice: options.tool_choice,
@@ -139,7 +211,13 @@ async function callOnce(
 
     if (!options.onChunk) {
       const data = await res.json();
-      return data.choices[0].message;
+      const message = data.choices?.[0]?.message || { role: "assistant", content: "" };
+      const usage = parseUsage(data.usage, payload.model);
+      // Preserve existing caller-visible shape `.content` / `.tool_calls` /
+      // `.role` (additive), and attach `.usage` if the provider returned one.
+      // R2.1: callers may opt-in to reading usage; all current callers only
+      // read `.content` / `.tool_calls` so this is backwards-compatible.
+      return { ...message, usage };
     }
 
     if (!res.body) throw new Error("No response body for streaming");
@@ -149,6 +227,12 @@ async function callOnce(
     let buffer = "";
     let thoughtProcessCaptured = "";
     const toolCallsMap = new Map<number, any>();
+    // R2.1: providers emit usage in the FINAL data: chunk before [DONE] when
+    // `stream_options.include_usage = true` is honoured (NVIDIA NIM,
+    // Gemini-OpenAI-compat). Some providers may not honour it; in that case
+    // `parsedUsage` stays null and we simply don't attach it. We pick the
+    // latest non-null usage we see (the final chunk is the authoritative one).
+    let parsedUsage: LLMUsage | null = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -163,6 +247,14 @@ async function callOnce(
           if (dataStr.trim() === "[DONE]") continue;
           try {
             const data = JSON.parse(dataStr);
+            // R2.1: capture usage from the final chunk; the OpenAI-compat
+            // shape is `{ usage: { ... } }` on a stub `choices: []` chunk
+            // emitted just before [DONE]. We overwrite (don't accumulate)
+            // because usage is cumulative for the whole response, not a
+            // per-chunk delta.
+            const chunkUsage = parseUsage(data.usage, payload.model);
+            if (chunkUsage) parsedUsage = chunkUsage;
+
             const deltaContent = data.choices?.[0]?.delta?.content;
             if (deltaContent) {
               fullContent += deltaContent;
@@ -237,6 +329,13 @@ async function callOnce(
     if (tool_calls.length > 0) {
       result.tool_calls = tool_calls;
     }
+    // R2.1: attach the per-call usage if the provider emitted it. Stays
+    // undefined if the provider ignored stream_options.include_usage; the
+    // downstream budget math handles a missing `usage` field gracefully
+    // (treats it as "no cost row recorded for this call", not as zero-cost).
+    if (parsedUsage) {
+      result.usage = parsedUsage;
+    }
     return result;
   } catch (err: any) {
     // Convert after the fact so callers either see a typed error or the raw one.
@@ -265,7 +364,7 @@ export async function retryLLM(
   messages: LLMMessage[],
   options: LLMOptions = {},
   retry: RetryOptions = {},
-): Promise<any> {
+): Promise<LLMResult> {
   const retries = Math.max(0, retry.retries ?? 3);
   const baseMs = retry.baseMs ?? 500;
   const jitterMs = retry.jitterMs ?? 250;
@@ -307,6 +406,6 @@ export async function retryLLM(
 export async function callLLM(
   messages: LLMMessage[],
   options: LLMOptions = {},
-): Promise<any> {
+): Promise<LLMResult> {
   return retryLLM(messages, options);
 }
