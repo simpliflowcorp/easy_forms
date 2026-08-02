@@ -3,7 +3,8 @@ import { sandboxRedisStore } from "../sandbox/sandboxRedisStore";
 import { ALLOWED_TOOLS, checkToolPermission } from "../policy/permissions";
 import { newIdempotencyKey } from "../helper/id";
 import mongoose from "mongoose";
-import Form from "@/models/formModel";
+import Form from "../../models/formModel";
+import CustomView from "../../models/customViewModel";
 
 export async function runExecutor(state: AgentState): Promise<AgentState> {
   const updatedPlan = [...state.actionPlan];
@@ -62,7 +63,7 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
       //   - Use strict ObjectId / field-id lookup only (no user-supplied regex).
       //   - Snapshot `updatedAt` for optimistic concurrency at merge time.
       //   - Stamp an `idempotencyKey` so a re-merge of the same intention is a no-op.
-      if (["create_form", "update_form", "delete_form"].includes(act.tool)) {
+      if (["create_form", "update_form", "delete_form", "create_custom_view", "update_custom_view", "delete_custom_view"].includes(act.tool)) {
         if (act.tool === "create_form") {
           let elements = act.params.elements || [];
           if (typeof elements === "string") {
@@ -92,29 +93,44 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
           const draftForm = await sandboxRedisStore.saveDraftForm(state.userId, state.ticket.ticketId, normalizedParams);
           act.result = { form: draftForm, isSandbox: true, idempotencyKey };
           act.status = "done";
+        } else if (act.tool === "create_custom_view") {
+          // create_custom_view: save a draft custom view to the sandbox
+          const idempotencyKey = act.params.idempotencyKey || newIdempotencyKey();
+          const viewData = {
+            ...act.params,
+            idempotencyKey,
+            _id: act.id, // Tie the draft ID to the action ID
+            isSandboxDraft: true,
+          };
+          const draftView = await sandboxRedisStore.saveDraftView(state.userId, state.ticket.ticketId, viewData);
+          act.result = { view: draftView, isSandbox: true, idempotencyKey };
+          act.status = "done";
         } else {
-          // update_form / delete_form: existence snapshot from production.
-          const formId = act.params.formId;
-          if (!formId || typeof formId !== "string") {
-            throw new Error(`${act.tool}: 'formId' is required.`);
+          // update_form / delete_form / update_custom_view / delete_custom_view: existence snapshot from production.
+          const isCustomView = act.tool.startsWith("update_custom_view") || act.tool.startsWith("delete_custom_view");
+          const model = isCustomView ? CustomView : Form;
+          
+          const targetId = act.params.formId || act.params.viewId;
+          if (!targetId || typeof targetId !== "string") {
+            throw new Error(`${act.tool}: '${isCustomView ? "viewId" : "formId"}' is required.`);
           }
 
           const findSpec: Record<string, any> = { user: state.userId };
-          if (mongoose.Types.ObjectId.isValid(formId)) {
-            findSpec._id = new mongoose.Types.ObjectId(formId);
+          if (mongoose.Types.ObjectId.isValid(targetId)) {
+            findSpec._id = new mongoose.Types.ObjectId(targetId);
           } else {
-            // The legacy `formId` (hashid-style string) is also tolerated.
-            findSpec.formId = formId;
+            // The legacy id (hashid-style string) is also tolerated.
+            findSpec[isCustomView ? "viewId" : "formId"] = targetId;
           }
-          const existing = await Form.findOne(findSpec).select("_id name updatedAt").lean();
+          const existing = await model.findOne(findSpec).select("_id name updatedAt").lean();
           if (!existing) {
-            throw new Error(`Form '${formId}' not found or access denied.`);
+            throw new Error(`${isCustomView ? "CustomView" : "Form"} '${targetId}' not found or access denied.`);
           }
 
           const expectedUpdatedAt = existing.updatedAt;
           const idempotencyKey = act.params.idempotencyKey || newIdempotencyKey();
 
-          if (act.tool === "update_form") {
+          if (act.tool === "update_form" || act.tool === "update_custom_view") {
             await sandboxRedisStore.saveUpdateIntention(
               state.userId,
               state.ticket.ticketId,
