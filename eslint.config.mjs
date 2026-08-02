@@ -106,6 +106,7 @@ export default [
       "test-db.js",
       "test-db2.js",
       "src/agent/legacy/**/*.ts",
+      "tests/load/**",
     ],
   },
   // Block must declare `files` so ESLint 10 doesn't silently ignore everything.
