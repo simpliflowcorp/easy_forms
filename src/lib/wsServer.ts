@@ -63,6 +63,22 @@ function broadcast(channel: string, message: object) {
   }
 }
 
+/** Send token chunk to a specific user's connections */
+function sendTokenToUser(userId: string, persona: string, token: string) {
+  const userConnections = connections.get(userId);
+  if (userConnections) {
+    const data = JSON.stringify({ 
+      type: "token", 
+      payload: { persona, token } 
+    });
+    for (const ws of userConnections) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data);
+      }
+    }
+  }
+}
+
 async function authenticateConnection(ws: WSClient, req: any): Promise<string | null> {
   try {
     await connectDB();
@@ -174,7 +190,7 @@ export function createWSServer() {
     }
   });
 
-  return { server, wss };
+  return { server, wss, sendTokenToUser };
 }
 
 async function handleMessage(ws: WSClient, message: any) {
@@ -208,6 +224,12 @@ async function handleMessage(ws: WSClient, message: any) {
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: "state", payload: state }));
             }
+          },
+          // R3: Token streaming callback
+          (persona: string, chunk: string) => {
+            if (ws.readyState === WebSocket.OPEN && ws.userId) {
+              sendTokenToUser(ws.userId, persona, chunk);
+            }
           }
         );
       } catch (error: any) {
@@ -240,6 +262,12 @@ async function handleMessage(ws: WSClient, message: any) {
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: "state", payload: state }));
             }
+          },
+          // R3: Token streaming callback
+          (persona: string, chunk: string) => {
+            if (ws.readyState === WebSocket.OPEN && ws.userId) {
+              sendTokenToUser(ws.userId, persona, chunk);
+            }
           }
         );
       } catch (error: any) {
@@ -271,6 +299,12 @@ async function handleMessage(ws: WSClient, message: any) {
           (state: AgentState) => {
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: "state", payload: state }));
+            }
+          },
+          // R3: Token streaming callback
+          (persona: string, chunk: string) => {
+            if (ws.readyState === WebSocket.OPEN && ws.userId) {
+              sendTokenToUser(ws.userId, persona, chunk);
             }
           }
         );
