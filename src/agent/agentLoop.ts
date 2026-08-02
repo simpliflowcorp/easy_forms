@@ -12,6 +12,7 @@ import { newTicketId, newTraceId } from "./helper/id";
 import AgentTicketModel from "@/models/agentTicketModel";
 import AgentUsageModel from "@/models/agentUsageModel";
 import User from "@/models/userModel";
+import { LLMBudgetExceededError } from "@/lib/llmClient";
 
 export async function runAgentLoop(
   userId: string,
@@ -40,6 +41,40 @@ export async function runAgentLoop(
   // size while preserving the most recent diagnostic context.
   const MAX_TRACE_ENTRIES = 50;
   const MAX_PAYLOAD_BYTES = 4096;
+
+  // R2.3 — token budget configuration (env-overridable)
+  const PER_TICKET_BUDGET = Number(process.env.LLM_TOKEN_BUDGET_PER_TICKET || "50000");
+  const PER_USER_DAY_BUDGET = Number(process.env.LLM_TOKEN_BUDGET_PER_USER_DAY || "200000");
+
+  // R2.3: pre-flight budget check — throws LLMBudgetExceededError if either
+  // per-ticket or per-user-daily budget would be exceeded by the next call.
+  // Called at the start of each loop iteration before any persona LLM call.
+  const checkBudget = async (s: AgentState) => {
+    // Per-ticket budget
+    if (s.tokenUsage && s.tokenUsage.total >= PER_TICKET_BUDGET) {
+      throw new LLMBudgetExceededError(
+        `Per-ticket token budget (${PER_TICKET_BUDGET}) exceeded. Current: ${s.tokenUsage.total}. Please rephrase with fewer details.`,
+        "per_ticket"
+      );
+    }
+
+    // Per-user daily budget — sum today's usage from Mongo
+    if (PER_USER_DAY_BUDGET > 0) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const todayUsage = await AgentUsageModel.aggregate([
+        { $match: { userId: s.userId, createdAt: { $gte: startOfDay } } },
+        { $group: { _id: null, total: { $sum: "$totalTokens" } } },
+      ]);
+      const todayTotal = todayUsage[0]?.total || 0;
+      if (todayTotal >= PER_USER_DAY_BUDGET) {
+        throw new LLMBudgetExceededError(
+          `Daily token budget (${PER_USER_DAY_BUDGET}) exceeded. Current: ${todayTotal}. Please try again tomorrow.`,
+          "per_day"
+        );
+      }
+    }
+  };
 
   const addTrace = (persona: AgentState["activePersona"], message: string, payload?: any) => {
     if (trace.length >= MAX_TRACE_ENTRIES) {
@@ -191,9 +226,21 @@ export async function runAgentLoop(
   // Helper to handle failure fallback
   const handleFailure = async (err: any, currentState: AgentState) => {
     currentState.executionTrace = trace;
-    currentState.ticket.status = "LLM_ERROR";
-    currentState.reply = "AI processing interrupted due to a server error. You can resume this ticket when the server is back online.";
-    addTrace(currentState.activePersona, `Execution error: ${err.message}`);
+
+    // R2.3: handle budget exceeded with a friendly message, keep ticket alive
+    if (err instanceof LLMBudgetExceededError) {
+      currentState.ticket.status = "LLM_ERROR";
+      currentState.isComplete = false;
+      currentState.reply = err.budgetType === "per_ticket"
+        ? `You've reached the token limit for this conversation (${PER_TICKET_BUDGET} tokens). Please start a new conversation or rephrase with fewer details.`
+        : `You've reached the daily token limit (${PER_USER_DAY_BUDGET} tokens). Please try again tomorrow.`;
+      addTrace(currentState.activePersona, `Budget exceeded: ${err.budgetType} (${err.message})`);
+    } else {
+      currentState.ticket.status = "LLM_ERROR";
+      currentState.reply = "AI processing interrupted due to a server error. You can resume this ticket when the server is back online.";
+      addTrace(currentState.activePersona, `Execution error: ${err.message}`);
+    }
+    currentState.isComplete = false;
 
     // Save to MongoDB on failure so the user can resume after a crash (RESOLVED is reserved for success).
     await AgentTicketModel.findOneAndUpdate(
@@ -421,6 +468,9 @@ export async function runAgentLoop(
     try {
       let isLooping = true;
       while (isLooping) {
+        // R2.3: budget pre-check before any LLM call in this iteration
+        await checkBudget(state);
+
         if (onChunk) {
           const currentPersona = state.activePersona;
           state.onChunk = (chunk: string) => onChunk(currentPersona, chunk);

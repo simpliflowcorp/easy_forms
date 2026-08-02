@@ -118,6 +118,15 @@ export class LLMParseError extends Error {
   }
 }
 
+/** R2.3 — thrown when per-ticket or per-user-daily token budget is exceeded.
+ *  Evaluator / loop catches this and routes to COMMUNICATOR with a friendly message. */
+export class LLMBudgetExceededError extends Error {
+  constructor(message: string, public budgetType: "per_ticket" | "per_day") {
+    super(message);
+    this.name = "LLMBudgetExceededError";
+  }
+}
+
 const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 
 function sleep(ms: number): Promise<void> {
