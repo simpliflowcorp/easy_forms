@@ -49,7 +49,7 @@ async function checkRateLimit(userId: string, isMergeApproved: boolean): Promise
   return { allowed: true };
 }
 
-async function getAuthUserId(req: NextRequest): Promise<string | null> {
+export async function getAuthUserId(req: NextRequest): Promise<string | null> {
   await connectDB();
   let token = req.cookies.get("token")?.value;
   let email: string | undefined;
