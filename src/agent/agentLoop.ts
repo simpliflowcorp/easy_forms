@@ -13,6 +13,7 @@ import AgentTicketModel from "@/models/agentTicketModel";
 import AgentUsageModel from "@/models/agentUsageModel";
 import User from "@/models/userModel";
 import { LLMBudgetExceededError } from "@/lib/llmClient";
+import { READ_ONLY_SKILLS } from "./policy/permissions";
 
 export async function runAgentLoop(
   userId: string,
@@ -288,7 +289,7 @@ export async function runAgentLoop(
       // don't double-merge. The transaction is idempotent (#4) but the lock still
       // prevents confusing double-trace in the UI.
       const mergeTicketId = resumeTicketId;
-      lock = await acquireAgentLock(userId, mergeTicketId);
+      lock = await acquireAgentLock({ userId, ticketId: mergeTicketId, isReadOnly: false });
 
       state = {
         userId,
@@ -344,7 +345,13 @@ export async function runAgentLoop(
     // init block, AFTER the lock was acquired, so lock-compared-del could
     // never match the ticket being run.)
     const pendingTicketId = resumeTicketId || newTicketId();
-    lock = await acquireAgentLock(userId, pendingTicketId);
+
+    // For merge path, acquire write lock immediately.
+    // For non-merge, we'll acquire the appropriate lock after Drafter classifies.
+    const mergeTicketId = resumeTicketId!;
+    if (mergeApproved) {
+      lock = await acquireAgentLock({ userId, ticketId: mergeTicketId, isReadOnly: false });
+    }
 
     // 1. Resume Logic: Check Redis, then MongoDB
     if (resumeTicketId) {
@@ -476,7 +483,7 @@ export async function runAgentLoop(
     const activeState: AgentState = state;
     state = activeState;
 
-    // Layer 5: Inject User Profile and Preferences
+// Layer 5: Inject User Profile and Preferences
     if (!state.userContext) {
       try {
         const userDoc = await User.findById(userId).lean();
@@ -492,6 +499,56 @@ export async function runAgentLoop(
         }
       } catch (e) {
         console.warn(`[agentLoop] failed to fetch userContext for ${userId}`, e);
+      }
+    }
+
+    // R4: Run Drafter first to classify the request, then acquire appropriate lock
+    // Use a short "classification lock" to prevent double-submits during classification
+    let classificationLock: AgentLockHandle | null = null;
+    try {
+      const classificationKey = `agent_lock:classify:${userId}`;
+      const ok = await agentRedis.client.set(classificationKey, pendingTicketId, "PX", 5000, "NX");
+      if (!ok) throw new AgentBusyError();
+      classificationLock = {
+        release: async () => {
+          const script = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
+          await agentRedis.client.eval(script, 1, classificationKey, pendingTicketId);
+        },
+        stale: () => false,
+      };
+
+      // Run Drafter to classify the request
+      state = await runDrafter(state);
+      state.executionTrace = trace;
+      addTrace(
+        state.activePersona,
+        `Drafter classified Ticket as [${state.ticket.stage}]: "${state.ticket.title}"`,
+        {
+          requirements: state.requirements,
+          isQuestion: state.isQuestion,
+          reply: state.reply,
+          llmRawOutput: state.llmRawOutput,
+        },
+      );
+      captureLLMUsage(state, "DRAFTER");
+      await persistStateToRedis(state);
+
+      // Handle early returns from Drafter
+      if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
+        if (state.isComplete) {
+          await markResolved(state);
+        }
+        return state;
+      }
+
+      // R4: Determine if read-only and acquire appropriate lock
+      const isReadOnly = READ_ONLY_SKILLS.has(state.requirements.skill || "");
+      lock = await acquireAgentLock({ userId, ticketId: pendingTicketId, isReadOnly });
+
+    } finally {
+      // Release classification lock
+      if (classificationLock) {
+        await classificationLock.release();
       }
     }
 
@@ -515,29 +572,10 @@ export async function runAgentLoop(
           throw new Error("Simulated LLM Offline Crash Triggered");
         }
 
-// Stage 1: Drafter Persona
+        // Stage 1: Drafter Persona (already run, skip to next persona)
         if (state.activePersona === "DRAFTER") {
-          state = await runDrafter(state);
-          state.executionTrace = trace;
-          addTrace(
-            state.activePersona,
-            `Drafter classified Ticket as [${state.ticket.stage}]: "${state.ticket.title}"`,
-            {
-              requirements: state.requirements,
-              isQuestion: state.isQuestion,
-              reply: state.reply,
-              llmRawOutput: state.llmRawOutput,
-            },
-          );
-          captureLLMUsage(state, "DRAFTER");
-          await persistStateToRedis(state);
-
-          if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
-            if (state.isComplete) {
-              await markResolved(state);
-            }
-            return state;
-          }
+          // Should not reach here - Drafter already ran
+          state.activePersona = "PLANNER";
         }
         // Stage 2: Planner Persona
         else if (state.activePersona === "PLANNER") {
