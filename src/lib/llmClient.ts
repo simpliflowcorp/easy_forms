@@ -369,11 +369,24 @@ export interface RetryOptions {
  * was also a bug — `fetch` could hang a user request for the duration of a
  * whole meeting. It's now bounded by LLM_TIMEOUT_MS (default 30s).
  */
+/**
+ * Test-only hook: if set, retryLLM will call this instead of making real LLM calls.
+ * Only for use in tests. Set to undefined to restore real behavior.
+ */
+export const __testRetryLLMOverride = {
+  current: undefined as ((messages: LLMMessage[], options: LLMOptions, retry: RetryOptions) => Promise<LLMResult>) | undefined,
+};
+
 export async function retryLLM(
   messages: LLMMessage[],
   options: LLMOptions = {},
   retry: RetryOptions = {},
 ): Promise<LLMResult> {
+  // Test-only override: allows tests to inject a mock implementation
+  if (__testRetryLLMOverride.current) {
+    return __testRetryLLMOverride.current(messages, options, retry);
+  }
+
   const retries = Math.max(0, retry.retries ?? 3);
   const baseMs = retry.baseMs ?? 500;
   const jitterMs = retry.jitterMs ?? 250;

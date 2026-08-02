@@ -242,10 +242,9 @@ async function mockRetryLLM(
   };
 }
 
-// Replace the retryLLM export
-(llmClientModule as any).retryLLM = mockRetryLLM;
-
 // ─── Test harness ────────────────────────────────────────────────────────
+
+import { __testRetryLLMOverride } from "@/lib/llmClient";
 
 interface GoldenPrompt {
   prompt: string;
@@ -260,7 +259,7 @@ function parseGoldenPrompts(content: string): GoldenPrompt[] {
 }
 
 async function setupMockUser(): Promise<string> {
-  const userId = "eval_user_001";
+  const userId = "507f1f77bcf86cd799439011"; // Valid MongoDB ObjectId
   users.set(userId, {
     _id: userId,
     username: "evaluser",
@@ -285,6 +284,7 @@ async function runGoldenPrompt(userId: string, prompt: GoldenPrompt): Promise<{
   iterations: number;
 }> {
   const startTime = Date.now();
+  let latencyMs = 0;
   
   try {
     // Clear any previous mock responses for this run
@@ -305,10 +305,27 @@ async function runGoldenPrompt(userId: string, prompt: GoldenPrompt): Promise<{
       { content: "Task completed." },
     ]);
     
-    const state = await runAgentLoop(userId, prompt.prompt, false, undefined, undefined, () => {});
+// R7: Set the test override for retryLLM
+const { __testRetryLLMOverride } = await import("../../../src/lib/llmClient.js");
+
+const originalOverride = (await import("../../../src/lib/llmClient.js")).__testRetryLLMOverride?.current;
+if (__testRetryLLMOverride) {
+  __testRetryLLMOverride.current = mockRetryLLM;
+}
     
+    let state: AgentState | null = null;
+    try {
+      state = await runAgentLoop(userId, prompt.prompt, false, undefined, undefined, () => {});
+} finally {
+      // Restore original override
+      if (__testRetryLLMOverride && originalOverride !== undefined) {
+        __testRetryLLMOverride.current = originalOverride;
+      } else if (__testRetryLLMOverride && originalOverride === undefined) {
+        __testRetryLLMOverride.current = undefined;
+      }
+    }
     const latencyMs = Date.now() - startTime;
-    const usedTools = state.actionPlan.map((a: any) => a.tool).filter(Boolean);
+    const usedTools = state!.actionPlan.map((a: any) => a.tool).filter(Boolean);
     const toolsMatch = checkToolsUsed(state.actionPlan, prompt.expectedTools);
     const iterationsOk = state.iterationCount <= prompt.maxIterations;
     const completed = state.isComplete === true;
