@@ -2,26 +2,7 @@ import { AgentState } from "../types";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { parsePersona, EvaluatorOutputSchema, EvaluatorOutput } from "../helper/validate";
 import { redactPII } from "../helper/redact";
-
-const EVALUATOR_SYSTEM_PROMPT = `You are the EVALUATOR PERSONA of the Easy Forms AI Agent System.
-
-YOUR ROLE:
-You perform Quality Assurance on the sandbox output against the user's initial prompt goals.
-
-RULES:
-1. Compare sandbox output results against requirements.
-2. If actions succeeded and match user goals: Set "isComplete": true. DO NOT defer this decision to a human. You must make the decision yourself based on the results.
-3. CRITICAL: If a database query returns an empty array '[]', this is a valid successful result! It simply means no records matched the filters (e.g. there are no active forms). DO NOT set "shouldRetry" just because results are empty. Set "isComplete": true and let the Communicator tell the user there were no results.
-4. If an action failed with an error message (like a JSON parse error or unauthorized error) and loop budget remains (iterations < maxIterations): Set "shouldRetry": true and put specific, actionable feedback in "feedback".
-5. If max iterations (3) reached without full match: Set "isComplete": false and "shouldRetry": false with feedback explaining the recovery needed.
-
-OUTPUT FORMAT (JSON ONLY):
-{
-  "thoughtProcess": "step-by-step reasoning",
-  "isComplete": boolean,
-  "shouldRetry": boolean,
-  "feedback": "Detailed evaluation report or instructions for the next iteration"
-}`;
+import { loadPersonaPrompt } from "../prompts/loader";
 
 type EvaluatorVerdict = EvaluatorOutput;
 
@@ -71,6 +52,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
   let verdict: EvaluatorVerdict = {};
   let rawContent = "";
   try {
+    const { systemPrompt } = loadPersonaPrompt("evaluator");
     const summaryPayload = state.actionPlan.map((a) => ({
       tool: a.tool,
       params: redactPII(a.params),
@@ -78,7 +60,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
     }));
     const response = await retryLLM(
       [
-        { role: "system", content: EVALUATOR_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         {
           role: "user",
           content:

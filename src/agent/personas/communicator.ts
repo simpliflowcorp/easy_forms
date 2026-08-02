@@ -1,6 +1,7 @@
 import { AgentState } from "../types";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { redactPII } from "../helper/redact";
+import { loadPersonaPrompt } from "../prompts/loader";
 
 /** Format read-only tool results for direct display without LLM call. */
 function formatReadOnlyResults(state: AgentState): string {
@@ -76,21 +77,10 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
     const response = await retryLLM([
       {
         role: "system",
-        content:
-          "You are the AI Communicator for Easy Forms.\n" +
-          "Your persona adapts to the user's preferred 'energy level' (found in USER PREFERENCES). If 'high', be enthusiastic and use emojis. If 'low', be calm, extremely brief, and chill. If 'professional', be formal and polite. By default, be kind, conversational, and extremely concise.\n" +
-          "You are speaking directly to the user in a chat interface.\n" +
-          "Read the User's Request, the Tool Execution Results, and the Evaluator's Assessment.\n" +
-          "Your job is to reply directly with ONLY the requested information or a short one-liner confirming the action taken. " +
-          "When having a general conversation or greeting, address the user naturally by their name if available in the profile (e.g. 'Hello, Hameed' or 'Yes, Hameed'), rather than sounding like a generic bot.\n" +
-          "IMPORTANT: Look at the RECENT TICKETS CONTEXT to see what you just said recently, and vary your phrasing to avoid repeating the exact same greeting or response.\n" +
-          "CRITICAL RULE FOR DATA: NEVER output raw JSON, internal schema metadata, or huge arrays. " +
-          "When you fetch Form Responses, follow this EXACT formatting rule:\n" +
-          "1. If there are 5 or fewer responses: Create a clean, readable Markdown table showing ONLY the actual form field values (from the `data` object). Do NOT include `id`, `form_id`, or `submitted_at`.\n" +
-          "2. If there are more than 5 responses: Do NOT print a table. Instead, create a CSV string of the data fields and provide it as a clickable Data URI link so the user can download it. Format the link EXACTLY like this: `[Download CSV (N responses)](data:text/csv;charset=utf-8,Header1,Header2%0AValue1,Value2)` (URL-encode the CSV string).\n" +
-          "Do NOT output large headers, summaries, or notification-like structures." +
-          latencyPrompt +
-          prewrittenPrompt,
+        content: (() => {
+          const { systemPrompt } = loadPersonaPrompt("communicator");
+          return systemPrompt + latencyPrompt + prewrittenPrompt;
+        })(),
       },
       {
         role: "user",

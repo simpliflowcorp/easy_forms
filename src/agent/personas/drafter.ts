@@ -1,10 +1,10 @@
 import { AgentState, AgentTicket } from "../types";
-import { DRAFTER_SYSTEM_PROMPT } from "../prompts";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import AgentTicketModel from "@/models/agentTicketModel";
 import Form from "@/models/formModel";
 import { checkPermission, READ_ONLY_SKILLS } from "../policy/permissions";
 import { parsePersona, DrafterOutputSchema } from "../helper/validate";
+import { loadPersonaPrompt } from "../prompts/loader";
 
 export async function runDrafter(state: AgentState): Promise<AgentState> {
   const { userId } = state;
@@ -53,9 +53,12 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   let llmAnalysis: any = null;
   let rawContent: string = "";
   try {
+    // R7: Load prompt from versioned file
+    const { systemPrompt } = loadPersonaPrompt("drafter");
+    
     const message = await retryLLM(
       [
-        { role: "system", content: DRAFTER_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         {
           role: "user",
           content: `CURRENT LOCAL TIME: ${new Date().toLocaleString()}\n\nEXISTING FORMS: [${formNames}]\n\nUSER PREFERENCES AND PROFILE:\n${JSON.stringify(

@@ -3,6 +3,7 @@ import { retryLLM, LLMOfflineError, LLMParseError } from "@/lib/llmClient";
 import { agentToolsSchema } from "../tools";
 import { newActionId } from "../helper/id";
 import { safeJSON } from "../helper/jsonParse";
+import { loadPersonaPrompt } from "../prompts/loader";
 
 const FIELD_TYPES = new Set([1, 2, 3, 4, 5]);
 const FILTER_OPS = new Set(["equals", "contains", "gt", "gte", "lt", "lte", "ne"]);
@@ -131,18 +132,14 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
   let rawResponse: any;
 
   try {
+    // R7: Load prompt from versioned file
+    const { systemPrompt } = loadPersonaPrompt("planner");
+    
     rawResponse = await retryLLM(
       [
         {
           role: "system",
-          content: `You are the AI Planner for Easy Forms.
-          Your job is to read the user's request and the Drafter's context, and decide which tool(s) to call to satisfy the request.
-          First, explain your step-by-step thought process and why you are choosing specific tools. Then, invoke the required tools.
-
-          DATABASE SCHEMA CONTEXT (For run_database_query):
-          - Form Collection: { name: string, description: string, status: number (0=draft, 1=active), expiry: Date, elements: [{ label, type, required }] }
-          - Response Collection: { form_id: ObjectId, submitted_at: Date, data: object, metadata: { ip_address, user_agent } }
-          - CustomView Collection: { formId: string, name: string, sortField: string, sortOrder: string }`,
+          content: systemPrompt,
         },
         {
           role: "user",
