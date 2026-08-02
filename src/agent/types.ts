@@ -109,6 +109,7 @@ export interface ExecutionTraceStep {
   persona: PersonaStage;
   message: string;
   payload?: any;
+  actionPlanRef?: string; // R9: reference to Planner's stepId instead of embedding actionPlan
 }
 
 export interface AgentState {

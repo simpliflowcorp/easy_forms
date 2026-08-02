@@ -78,7 +78,7 @@ export async function runAgentLoop(
     }
   };
 
-  const addTrace = (persona: AgentState["activePersona"], message: string, payload?: any) => {
+  const addTrace = (persona: AgentState["activePersona"], message: string, payload?: any, actionPlanRef?: string) => {
     if (trace.length >= MAX_TRACE_ENTRIES) {
       // Rolling window: drop the oldest 5 when we hit the cap. We drop in
       // batches so we don't pay the shift O(n) cost on every push.
@@ -95,17 +95,20 @@ export async function runAgentLoop(
         tracedPayload = { _unserializable: true };
       }
     }
+    const stepId = newTraceId();
     trace.push({
-      stepId: newTraceId(),
+      stepId,
       timestamp: new Date().toLocaleTimeString(),
       persona,
       message,
       payload: tracedPayload,
+      actionPlanRef,
     });
     if (state && onUpdate) {
       state.executionTrace = trace;
       onUpdate({ ...state });
     }
+    return stepId;
   };
 
   // R2.2: helper to capture LLM usage from the last persona call and
@@ -558,6 +561,9 @@ export async function runAgentLoop(
         // R2.3: budget pre-check before any LLM call in this iteration
         await checkBudget(state);
 
+        // Track planner step ID for actionPlanRef in Executor trace
+        let plannerStepId: string | undefined;
+
         if (onChunk) {
           const currentPersona = state.activePersona;
           state.onChunk = (chunk: string) => onChunk(currentPersona, chunk);
@@ -586,7 +592,7 @@ export async function runAgentLoop(
           addTrace("PLANNER", "Handing context to Planner Persona for Action Plan compilation");
           state = await runPlanner(state);
           state.executionTrace = trace;
-          addTrace("PLANNER", `Planner compiled ${state.actionPlan.length} action step(s)`, state.actionPlan);
+          plannerStepId = addTrace("PLANNER", `Planner compiled ${state.actionPlan.length} action step(s)`, state.actionPlan);
           captureLLMUsage(state, "PLANNER");
           await persistStateToRedis(state);
         }
@@ -595,7 +601,7 @@ export async function runAgentLoop(
           addTrace("EXECUTOR_SANDBOX", "Executing Action Plan inside isolated Sandbox Store");
           state = await runExecutor(state);
           state.executionTrace = trace;
-          addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state.actionPlan);
+          addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", undefined, plannerStepId);
           // Executor doesn't call LLM directly, but if it did we'd capture here
           await persistStateToRedis(state);
         }
