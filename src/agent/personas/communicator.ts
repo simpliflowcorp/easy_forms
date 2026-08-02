@@ -59,6 +59,11 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
       },
     ], { onChunk: state.onChunk, temperature: 0.7 });
 
+    // R2.2: capture LLM usage for token tracking
+    if (response?.usage) {
+      state.lastLLMUsage = response.usage;
+    }
+
     return {
       ...state,
       reply:

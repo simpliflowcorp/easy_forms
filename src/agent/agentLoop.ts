@@ -10,6 +10,7 @@ import { agentRedis } from "./sandbox/agentRedis";
 import { acquireAgentLock, AgentLockHandle } from "./sandbox/agentLock";
 import { newTicketId, newTraceId } from "./helper/id";
 import AgentTicketModel from "@/models/agentTicketModel";
+import AgentUsageModel from "@/models/agentUsageModel";
 import User from "@/models/userModel";
 
 export async function runAgentLoop(
@@ -67,6 +68,48 @@ export async function runAgentLoop(
     if (state && onUpdate) {
       state.executionTrace = trace;
       onUpdate({ ...state });
+    }
+  };
+
+  // R2.2: helper to capture LLM usage from the last persona call and
+  // accumulate into state.tokenUsage.
+  const captureLLMUsage = (s: AgentState, persona: string) => {
+    if (!s.lastLLMUsage) return;
+    const { promptTokens, completionTokens, totalTokens, model } = s.lastLLMUsage;
+    
+    if (!s.tokenUsage) {
+      s.tokenUsage = { total: 0, byPersona: {}, estimatedCost: 0 };
+    }
+    
+    s.tokenUsage.total += totalTokens;
+    
+    if (!s.tokenUsage.byPersona[persona]) {
+      s.tokenUsage.byPersona[persona] = { prompt: 0, completion: 0, total: 0 };
+    }
+    s.tokenUsage.byPersona[persona].prompt += promptTokens;
+    s.tokenUsage.byPersona[persona].completion += completionTokens;
+    s.tokenUsage.byPersona[persona].total += totalTokens;
+    
+    // Rough cost estimate: $0.0001 per 1K tokens (placeholder, refined in R8)
+    s.tokenUsage.estimatedCost = Number((s.tokenUsage.total * 0.0001 / 1000).toFixed(6));
+    
+    // Clear the temporary field
+    delete s.lastLLMUsage;
+    
+    // Persist per-call usage row to Mongo (AgentUsage model)
+    if (typeof totalTokens === "number" && totalTokens > 0) {
+      AgentUsageModel.create({
+        ticketId: s.ticket.ticketId,
+        userId: s.userId,
+        persona,
+        model,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        costUsd: Number((totalTokens * 0.0001 / 1000).toFixed(6)),
+      }).catch((err) => {
+        console.warn(`[agentLoop] Failed to persist AgentUsage for ${persona}:`, err.message);
+      });
     }
   };
 
@@ -392,7 +435,7 @@ export async function runAgentLoop(
           throw new Error("Simulated LLM Offline Crash Triggered");
         }
 
-        // Stage 1: Drafter Persona
+// Stage 1: Drafter Persona
         if (state.activePersona === "DRAFTER") {
           state = await runDrafter(state);
           state.executionTrace = trace;
@@ -406,6 +449,7 @@ export async function runAgentLoop(
               llmRawOutput: state.llmRawOutput,
             },
           );
+          captureLLMUsage(state, "DRAFTER");
           await persistStateToRedis(state);
 
           if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
@@ -425,6 +469,7 @@ export async function runAgentLoop(
           state = await runPlanner(state);
           state.executionTrace = trace;
           addTrace("PLANNER", `Planner compiled ${state.actionPlan.length} action step(s)`, state.actionPlan);
+          captureLLMUsage(state, "PLANNER");
           await persistStateToRedis(state);
         }
         // Stage 3: Executor Persona (Sandbox Isolation)
@@ -433,6 +478,7 @@ export async function runAgentLoop(
           state = await runExecutor(state);
           state.executionTrace = trace;
           addTrace("EXECUTOR_SANDBOX", "Sandbox Execution finished", state.actionPlan);
+          // Executor doesn't call LLM directly, but if it did we'd capture here
           await persistStateToRedis(state);
         }
         // Stage 4: Evaluator Persona (Loop Verification)
@@ -443,6 +489,7 @@ export async function runAgentLoop(
           addTrace(state.activePersona, `Evaluator finished QA check (Iteration ${state.iterationCount}/${state.maxIterations})`, {
             feedback: state.evaluatorFeedback,
           });
+          captureLLMUsage(state, "EVALUATOR");
           await persistStateToRedis(state);
         }
         // Stage 5: Communicator Persona (Final Response Generation)
@@ -454,6 +501,7 @@ export async function runAgentLoop(
           addTrace(state.activePersona, `Communicator formulated final reply`, {
             reply: state.reply,
           });
+          captureLLMUsage(state, "COMMUNICATOR");
 
           // Phase 6.2 (#22): finalize Mongo + Redis coherently per the Evaluator's
           // verdict instead of the previous "clear Redis but leave Mongo PROCESSING".

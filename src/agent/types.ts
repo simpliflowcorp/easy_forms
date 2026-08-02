@@ -161,4 +161,21 @@ export interface AgentState {
 
   // Streaming callback injected by agentLoop
   onChunk?: (chunk: string) => void;
+
+  // R2.2 — temporary field for the loop to capture the last LLM call's usage
+  // from each persona. Cleared by the loop after capture.
+  lastLLMUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    model: string;
+  };
+
+  // R2.2 — accumulated token usage across the current ticket.
+  // Updated by agentLoop on each persona LLM call (usage comes from retryLLM -> LLMResult.usage).
+  tokenUsage?: {
+    total: number;
+    byPersona: Record<string, { prompt: number; completion: number; total: number }>;
+    estimatedCost: number;
+  };
 }

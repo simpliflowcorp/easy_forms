@@ -165,6 +165,11 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
     thoughtProcess = rawResponse?.content?.trim() || "No reasoning provided.";
     tool_calls = rawResponse?.tool_calls;
 
+    // R2.2: capture LLM usage for token tracking
+    if (rawResponse?.usage) {
+      state.lastLLMUsage = rawResponse.usage;
+    }
+
     // Phase 3.3: removed the `<|python_tag|> / True/False/None` Llama-3.1
     // text fallback. That fallback hard-coded Llama-specific syntax quirks
     // into supposedly-generic code AND silently truncated multi-call plans

@@ -74,6 +74,11 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     rawContent = message?.content || "";
     console.log("LLM Raw Output:", rawContent);
 
+    // R2.2: capture LLM usage for token tracking
+    if (message?.usage) {
+      state.lastLLMUsage = message.usage;
+    }
+
     // Validate LLM output against Drafter schema
     llmAnalysis = parsePersona(rawContent, DrafterOutputSchema);
   } catch (err: any) {

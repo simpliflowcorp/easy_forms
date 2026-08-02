@@ -91,6 +91,12 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       { response_format: { type: "json_object" }, onChunk: state.onChunk },
     );
     rawContent = response?.content || "";
+
+    // R2.2: capture LLM usage for token tracking
+    if (response?.usage) {
+      state.lastLLMUsage = response.usage;
+    }
+
     const parsedVerdict = parsePersona(rawContent, EvaluatorOutputSchema);
     verdict = parsedVerdict || {};
   } catch (err: any) {
