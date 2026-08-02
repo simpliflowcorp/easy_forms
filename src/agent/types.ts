@@ -159,6 +159,15 @@ export interface AgentState {
   reply?: string;
   isComplete?: boolean;
 
+  // R5: Multi-turn conversation history for context continuity across turns.
+  // Capped at MAX_HISTORY turns (user + assistant pairs).
+  conversationHistory?: Array<{
+    role: "user" | "assistant";
+    content: string;
+    ticketId: string;
+    timestamp: string;
+  }>;
+
   // R1: flag indicating this is a read-only query that bypasses
   // Planner/Executor/Evaluator and goes directly DRAFTER → COMMUNICATOR.
   isReadOnly?: boolean;

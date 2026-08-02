@@ -41,6 +41,11 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   const pendingQuestionContext = state.isQuestion ? state.reply : null;
   state.recentContext = recentContext;
 
+  // R5: Prepare conversation history for context (last 3 turns = 6 messages max)
+  const recentConversation = state.conversationHistory
+    ? state.conversationHistory.slice(-6).map(m => `${m.role}: ${m.content}`).join("\n")
+    : "None";
+
   // Fetch existing form names to help Drafter resolve titles.
   const existingForms = await Form.find({ user: userId }).select("name").limit(20).lean();
   const formNames = existingForms.map((f: any) => f.name).join(", ");
@@ -61,7 +66,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
             recentContext,
             null,
             2,
-          )}\n\nPENDING QUESTION CONTEXT:\n${pendingQuestionContext || "None"}\n\nUSER PROMPT:\n${prompt}`,
+          )}\n\nCONVERSATION HISTORY (last 3 turns):\n${recentConversation}\n\nPENDING QUESTION CONTEXT:\n${pendingQuestionContext || "None"}\n\nUSER PROMPT:\n${prompt}`,
         },
       ],
       {

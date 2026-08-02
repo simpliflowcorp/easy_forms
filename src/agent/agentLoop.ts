@@ -41,6 +41,7 @@ export async function runAgentLoop(
   // size while preserving the most recent diagnostic context.
   const MAX_TRACE_ENTRIES = 50;
   const MAX_PAYLOAD_BYTES = 4096;
+  const MAX_HISTORY = 10; // 10 user + 10 assistant turns = 20 messages max
 
   // R2.3 — token budget configuration (env-overridable)
   const PER_TICKET_BUDGET = Number(process.env.LLM_TOKEN_BUDGET_PER_TICKET || "50000");
@@ -411,7 +412,27 @@ export async function runAgentLoop(
         }
       }
 
-      state = resumedState;
+      // At this point resumedState is guaranteed non-null if we're resuming
+      if (resumedState) {
+        state = resumedState;
+
+        // R5: Add the new user prompt to conversation history on resume
+        if (resumedState.conversationHistory) {
+          state.conversationHistory?.push({
+            role: "user",
+            content: prompt, // the new prompt from the user
+            ticketId: state.ticket.ticketId,
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          state.conversationHistory = [{
+            role: "user",
+            content: prompt,
+            ticketId: state.ticket.ticketId,
+            timestamp: new Date().toISOString(),
+          }];
+        }
+      }
     }
 
     // 2. Initialization if not resuming.
@@ -437,8 +458,17 @@ export async function runAgentLoop(
         actionPlan: [],
         sandbox: emptySandboxStore(),
         executionTrace: trace,
+        conversationHistory: [], // R5: initialize empty conversation history
       };
       addTrace("DRAFTER", `Initiating prompt digestion for: "${prompt}"`);
+
+      // R5: Add initial user prompt to conversation history
+      state.conversationHistory?.push({
+        role: "user",
+        content: prompt,
+        ticketId: initialTicket.ticketId,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // At this point `state` is guaranteed non-null but TS cannot infer it
@@ -552,6 +582,21 @@ export async function runAgentLoop(
             reply: state.reply,
           });
           captureLLMUsage(state, "COMMUNICATOR");
+
+          // R5: Add Communicator's reply to conversation history
+          if (state.reply) {
+            state.conversationHistory?.push({
+              role: "assistant",
+              content: state.reply,
+              ticketId: state.ticket.ticketId,
+              timestamp: new Date().toISOString(),
+            });
+            // Cap history at MAX_HISTORY turns (user + assistant = 2 messages per turn)
+            const maxMessages = MAX_HISTORY * 2;
+            if (state.conversationHistory && state.conversationHistory.length > maxMessages) {
+              state.conversationHistory = state.conversationHistory.slice(-maxMessages);
+            }
+          }
 
           // Phase 6.2 (#22): finalize Mongo + Redis coherently per the Evaluator's
           // verdict instead of the previous "clear Redis but leave Mongo PROCESSING".
