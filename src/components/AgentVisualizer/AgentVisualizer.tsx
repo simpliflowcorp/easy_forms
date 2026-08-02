@@ -101,32 +101,113 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
   const [customPrompt, setCustomPrompt] = useState("");
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    const eventSource = new EventSource("/api/agent/health-stream");
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setIsOnline(data.status === "online");
-      } catch (e) { }
-    };
-
-    eventSource.onerror = () => {
-      setIsOnline(false);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
-
+  
+  // Built-in presets
   const presets = [
     { tag: "CMD-01", label: "1. Read Query", prompt: "how many forms do we have?" },
     { tag: "CMD-02", label: "2. Vague Build", prompt: "lets build a form." },
     { tag: "CMD-03", label: "3. Detailed Build", prompt: "build a feedback form with Full Name, Email, and Star Rating" },
     { tag: "CMD-04", label: "4. Destructive", prompt: "delete test form" },
   ];
+  
+  // R8.1: Custom presets state
+  const [customPresets, setCustomPresets] = useState<Array<{ id: string; label: string; prompt: string; tags: string[] }>>([]);
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const [newPresetLabel, setNewPresetLabel] = useState("");
+  const [newPresetPrompt, setNewPresetPrompt] = useState("");
+  const [newPresetTags, setNewPresetTags] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+  
+  // R8.2: Budget configuration
+  const PER_TICKET_BUDGET = 50000;
+  const PER_USER_DAY_BUDGET = 200000;
+  const BUDGET_BYPASS_USERS = process.env.NEXT_PUBLIC_BUDGET_BYPASS_USERS?.split(",") || [];
+
+  // R8.1: Fetch custom presets on mount
+  React.useEffect(() => {
+    const fetchPresets = async () => {
+      try {
+        const res = await fetch("/api/agent/presets");
+        if (res.ok) {
+          const data = await res.json();
+          setCustomPresets(data.presets || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch presets:", e);
+      }
+    };
+    fetchPresets();
+  }, []);
+
+  // R8.1: Save preset
+  const savePreset = async () => {
+    if (!newPresetLabel.trim() || !newPresetPrompt.trim()) return;
+    setSavingPreset(true);
+    try {
+      const res = await fetch("/api/agent/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: newPresetLabel.trim(),
+          prompt: newPresetPrompt.trim(),
+          tags: newPresetTags.split(",").map(t => t.trim()).filter(Boolean),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCustomPresets(prev => [data.preset, ...prev]);
+        setNewPresetLabel("");
+        setNewPresetPrompt("");
+        setNewPresetTags("");
+        setShowPresetModal(false);
+      }
+    } catch (e) {
+      console.error("Failed to save preset:", e);
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  // R8.1: Delete preset
+  const deletePreset = async (id: string) => {
+    try {
+      await fetch(`/api/agent/presets/${id}`, { method: "DELETE" });
+      setCustomPresets(prev => prev.filter(p => p.id !== id));
+    } catch (e) {
+      console.error("Failed to delete preset:", e);
+    }
+  };
+
+  // R8.1: Save current prompt as preset
+  const saveCurrentPromptAsPreset = () => {
+    if (customPrompt.trim()) {
+      setNewPresetLabel(`Custom ${new Date().toLocaleTimeString()}`);
+      setNewPresetPrompt(customPrompt);
+      setShowPresetModal(true);
+    }
+  };
+
+  // R8.2: Calculate budget usage
+  const getBudgetUsage = () => {
+    if (!agentState?.tokenUsage) return { used: 0, total: PER_TICKET_BUDGET, percentage: 0 };
+    const used = agentState.tokenUsage.total;
+    const total = PER_TICKET_BUDGET;
+    return { used, total, percentage: Math.min(100, (used / total) * 100) };
+  };
+
+  // R8.2: Check if budget exceeded
+  const isBudgetExceeded = () => {
+    if (!agentState?.tokenUsage) return false;
+    const bypassUsers = BUDGET_BYPASS_USERS;
+    // Note: would need userId from context to check bypass
+    return agentState.tokenUsage.total >= PER_TICKET_BUDGET;
+  };
+
+  // R8.2: Get daily budget usage (would need API call for real data)
+  const getDailyBudgetUsage = () => {
+    // Placeholder - would need API call to get actual daily usage
+    return { used: 0, total: PER_USER_DAY_BUDGET, percentage: 0 };
+  };
 
   const nodes = useMemo(() => [
     // --- System Level Nodes ---
@@ -341,6 +422,49 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
               <span>|</span>
               <span>QUANTUM CORE: <strong style={{ color: '#c084fc' }}>ACTIVE</strong></span>
             </div>
+
+            {/* R8.2: Token Budget Progress Bar */}
+            <div style={{ marginTop: '8px', padding: '4px 8px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '4px' }}>
+              {(() => {
+                const { used, total, percentage } = getBudgetUsage();
+                const isWarning = percentage >= 80;
+                const isDanger = percentage >= 100;
+                const isExceeded = isBudgetExceeded();
+                return (
+                  <div style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                      <span>TOKEN BUDGET</span>
+                      <span style={{ color: isDanger ? '#ef4444' : isWarning ? '#fbbf24' : '#38bdf8' }}>
+                        {used.toLocaleString()} / {total.toLocaleString()} ({percentage.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div style={{ height: '4px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          width: `${Math.min(100, percentage)}%`,
+                          height: '100%',
+                          background: isDanger ? 'linear-gradient(90deg, #ef4444, #f87171)' : 
+                                   isWarning ? 'linear-gradient(90deg, #fbbf24, #fde047)' : 
+                                   'linear-gradient(90deg, #38bdf8, #0ea5e9)',
+                          borderRadius: '2px',
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                    {isExceeded && (
+                      <span style={{ color: '#ef4444', fontSize: '9px', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                        ⚠ BUDGET EXCEEDED — Request blocked
+                      </span>
+                    )}
+                    {isWarning && !isDanger && !isExceeded && (
+                      <span style={{ color: '#fbbf24', fontSize: '9px', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                        ⚠ APPROACHING BUDGET LIMIT
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
@@ -377,14 +501,25 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
           {/* Presets Grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#94a3b8', fontWeight: 600, letterSpacing: '1px' }}>
-              PRESET COMMAND STREAMS
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#94a3b8', fontWeight: 600, letterSpacing: '1px' }}>
+                PRESET COMMAND STREAMS
+              </div>
+              <button
+                onClick={() => saveCurrentPromptAsPreset()}
+                disabled={isLoading || !isOnline || !customPrompt.trim()}
+                className="scifi-btn-small"
+                style={{ fontSize: '8px', padding: '2px 6px' }}
+              >
+                ➕ SAVE AS PRESET
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Built-in presets */}
               {presets.map((p, idx) => (
                 <div
-                  key={idx}
+                  key={`builtin-${idx}`}
                   onClick={() => {
                     if (!isLoading && isOnline) onSendPrompt(p.prompt);
                   }}
@@ -397,6 +532,63 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
                   <div className="scifi-preset-prompt">{p.prompt}</div>
                 </div>
               ))}
+
+              {/* Custom presets from API */}
+              {customPresets.length > 0 && (
+                <>
+                  <hr style={{ borderColor: 'rgba(30, 41, 59, 0.8)', borderStyle: 'dashed', borderWidth: '1px 0 0 0', margin: '8px 0' }} />
+                  <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#38bdf8', fontWeight: 600, letterSpacing: '1px', marginBottom: '6px' }}>
+                    CUSTOM PRESETS
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {customPresets.map((p) => (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          if (!isLoading && isOnline) onSendPrompt(p.prompt);
+                        }}
+                        className={`scifi-preset-card ${isLoading || !isOnline ? 'disabled' : ''}`}
+                        style={{ position: 'relative' }}
+                      >
+                        <div className="scifi-preset-header">
+                          <span className="scifi-preset-label">{p.label}</span>
+                          <span className="scifi-preset-tag">CUSTOM</span>
+                        </div>
+                        <div className="scifi-preset-prompt">{p.prompt}</div>
+                        {p.tags.length > 0 && (
+                          <div style={{ fontSize: '8px', color: '#64748b', marginTop: '4px' }}>
+                            {p.tags.map(t => <span key={t} style={{ marginRight: '4px', padding: '1px 4px', background: 'rgba(56, 189, 248, 0.2)', borderRadius: '2px' }}>{t}</span>)}
+                          </div>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete preset "${p.label}"?`)) deletePreset(p.id);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            color: '#ef4444',
+                            fontSize: '10px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -661,9 +853,68 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
               </div>
             </div>
 
-          </div>
+</div>
         </main>
       </div>
+
+      {/* R8.1: Save Preset Modal */}
+      {showPresetModal && (
+        <div className="scifi-modal-overlay" onClick={() => setShowPresetModal(false)}>
+          <div className="scifi-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="scifi-modal-header">
+              <span>💾 SAVE AS PRESET</span>
+              <button onClick={() => setShowPresetModal(false)} className="scifi-modal-close">✕</button>
+            </div>
+            <div className="scifi-modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', fontFamily: 'monospace', color: '#94a3b8', marginBottom: '4px' }}>
+                    PRESET LABEL
+                  </label>
+                  <input
+                    type="text"
+                    value={newPresetLabel}
+                    onChange={(e) => setNewPresetLabel(e.target.value)}
+                    placeholder="e.g., Weekly Feedback Form"
+                    className="scifi-input"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', fontFamily: 'monospace', color: '#94a3b8', marginBottom: '4px' }}>
+                    PROMPT
+                  </label>
+                  <textarea
+                    value={newPresetPrompt}
+                    onChange={(e) => setNewPresetPrompt(e.target.value)}
+                    placeholder="Enter the prompt to save as preset..."
+                    className="scifi-input-textarea"
+                    style={{ minHeight: '80px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', fontFamily: 'monospace', color: '#94a3b8', marginBottom: '4px' }}>
+                    TAGS (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={newPresetTags}
+                    onChange={(e) => setNewPresetTags(e.target.value)}
+                    placeholder="e.g., feedback, survey, weekly"
+                    className="scifi-input"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="scifi-modal-footer">
+              <button onClick={() => setShowPresetModal(false)} className="scifi-btn-cancel">CANCEL</button>
+              <button onClick={savePreset} disabled={savingPreset || !newPresetLabel.trim() || !newPresetPrompt.trim()} className="scifi-btn-save">
+                {savingPreset ? "SAVING..." : "💾 SAVE PRESET"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
