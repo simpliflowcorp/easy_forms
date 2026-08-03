@@ -178,19 +178,6 @@ export async function runAgentLoop(
     await agentRedis.clearState(s.ticket.ticketId);
   };
 
-  // Throttle Mongo writes to key transitions only. Redis gets every transition.
-  const shouldPersistToMongo = (s: AgentState): boolean => {
-    const persona = s.activePersona;
-    const status = s.ticket.status;
-    return (
-      persona === "DRAFTER" ||           // init record
-      persona === "AWAITING_USER_APPROVAL" || // durable "come back later"
-      status === "LLM_ERROR" ||          // durable failure
-      status === "REJECTED" ||           // durable failure
-      status === "RESOLVED"              // already via markResolved
-    );
-  };
-
   // Create compressed trace for Mongo (no heavy payload blobs)
   const compressTraceForMongo = (trace: ExecutionTraceStep[]) => {
     return trace.map((t) => ({
@@ -205,26 +192,24 @@ export async function runAgentLoop(
   const persistStateToRedis = async (s: AgentState) => {
     s.executionTrace = trace;
     // Mongo is authoritative; Redis is a resume cache.
-    // Write Mongo first, then Redis. If Mongo fails, Redis is never updated
-    // and the throw propagates (loop's handleFailure marks LLM_ERROR
-    // consistently across both stores).
-    if (shouldPersistToMongo(s)) {
-      await AgentTicketModel.findOneAndUpdate(
-        { ticketId: s.ticket.ticketId, userId: s.userId },
-        { 
-          ...s,
-          ticketId: s.ticket.ticketId,
-          stage: s.ticket.stage,
-          title: s.ticket.title,
-          status: s.ticket.status,
-          prompt: s.ticket.prompt,
-          sessionId: s.ticket.sessionId,
-          createdAt: s.ticket.createdAt,
-          executionTrace: compressTraceForMongo(trace),
-        },
-        { upsert: true },
-      );
-    }
+    // Write Mongo on EVERY transition (D0.1 fix), then Redis.
+    // If Mongo fails, Redis is never updated and the throw propagates
+    // (loop's handleFailure marks LLM_ERROR consistently across both stores).
+    await AgentTicketModel.findOneAndUpdate(
+      { ticketId: s.ticket.ticketId, userId: s.userId },
+      { 
+        ...s,
+        ticketId: s.ticket.ticketId,
+        stage: s.ticket.stage,
+        title: s.ticket.title,
+        status: s.ticket.status,
+        prompt: s.ticket.prompt,
+        sessionId: s.ticket.sessionId,
+        createdAt: s.ticket.createdAt,
+        executionTrace: compressTraceForMongo(trace),
+      },
+      { upsert: true },
+    );
     await agentRedis.saveState(s);
   };
 
