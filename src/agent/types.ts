@@ -12,6 +12,8 @@ export type PersonaStage =
 
 export type TicketStage = "STAGE_1" | "STAGE_2" | "STAGE_3";
 
+export type EvaluatorDecision = "retry" | "replan" | "ask_user" | "complete";
+
 export type ErrorKind =
   | "timeout"
   | "rate_limit"
@@ -185,6 +187,12 @@ export interface AgentState {
   // Output messages for UI
   drafterMessage?: string;
   evaluatorFeedback?: string;
+  evaluatorDecision?: EvaluatorDecision;
+  priorPlans?: Array<{
+    iteration: number;
+    actionPlan: AgentAction[];
+    feedback: string;
+  }>;
   llmRawOutput?: string;
   isQuestion?: boolean;
   reply?: string;
