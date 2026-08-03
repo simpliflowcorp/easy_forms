@@ -1,4 +1,4 @@
-import { AgentState, AgentTicket, AgentBusyError, LoopTimeoutError, emptySandboxStore, ExecutionTraceStep, normalizeSandboxStore } from "./types";
+import { AgentState, AgentTicket, AgentBusyError, LoopTimeoutError, AgentCancelledError, emptySandboxStore, ExecutionTraceStep, normalizeSandboxStore } from "./types";
 import { runDrafter } from "./personas/drafter";
 import { runPlanner } from "./personas/planner";
 import { runExecutor } from "./personas/executor";
@@ -12,7 +12,7 @@ import { newTicketId, newTraceId } from "./helper/id";
 import AgentTicketModel from "@/models/agentTicketModel";
 import AgentUsageModel from "@/models/agentUsageModel";
 import User from "@/models/userModel";
-import { LLMBudgetExceededError } from "@/lib/llmClient";
+import { LLMBudgetExceededError, LLMRateLimitError, LLMTimeoutError, LLMHTTPError } from "@/lib/llmClient";
 import { READ_ONLY_SKILLS } from "./policy/permissions";
 
 export async function runAgentLoop(
@@ -217,6 +217,7 @@ export async function runAgentLoop(
     await agentRedis.saveState(s);
   };
 
+
   // Helper to handle failure fallback
   const handleFailure = async (err: any, currentState: AgentState) => {
     currentState.executionTrace = trace;
@@ -229,12 +230,39 @@ export async function runAgentLoop(
         ? `You've reached the token limit for this conversation (${PER_TICKET_BUDGET} tokens). Please start a new conversation or rephrase with fewer details.`
         : `You've reached the daily token limit (${PER_USER_DAY_BUDGET} tokens). Please try again tomorrow.`;
       addTrace(currentState.activePersona, `Budget exceeded: ${err.budgetType} (${err.message})`);
+      currentState.ticket.errorKind = "unknown";
+    } else if (err instanceof LoopTimeoutError) {
+      currentState.ticket.status = "LLM_ERROR";
+      currentState.isComplete = false;
+      currentState.reply = `The agent loop exceeded the maximum execution time (${LOOP_DEADLINE_MS}ms). Please try a simpler request or break it into smaller steps.`;
+      addTrace(currentState.activePersona, `Loop timeout: ${err.message}`);
+      currentState.ticket.errorKind = "timeout";
+    } else if (err instanceof AgentCancelledError) {
+      currentState.ticket.status = "CANCELLED";
+      currentState.isComplete = true;
+      currentState.reply = "Agent loop cancelled by user.";
+      addTrace(currentState.activePersona, `User cancelled: ${err.message}`);
+      currentState.ticket.errorKind = "cancelled";
+    } else if (err instanceof LLMRateLimitError || err instanceof LLMTimeoutError || err instanceof LLMHTTPError) {
+      currentState.ticket.status = "LLM_ERROR";
+      currentState.isComplete = false;
+      if (err instanceof LLMRateLimitError) {
+        currentState.reply = "Too many requests to the AI provider. Please wait a moment and try again.";
+        currentState.ticket.errorKind = "rate_limit";
+      } else if (err instanceof LLMTimeoutError) {
+        currentState.reply = "The AI is taking longer than expected. Please try again.";
+        currentState.ticket.errorKind = "timeout";
+      } else if (err instanceof LLMHTTPError) {
+        currentState.reply = "The AI provider had a transient issue. Please retry shortly.";
+        currentState.ticket.errorKind = err.status >= 500 ? "http_5xx" : "unknown";
+      }
+      addTrace(currentState.activePersona, `Typed LLM error: ${err.name}: ${err.message}`);
     } else {
       currentState.ticket.status = "LLM_ERROR";
       currentState.reply = "AI processing interrupted due to a server error. You can resume this ticket when the server is back online.";
       addTrace(currentState.activePersona, `Execution error: ${err.message}`);
+      currentState.ticket.errorKind = "unknown";
     }
-    currentState.isComplete = false;
 
     // Save to MongoDB on failure so the user can resume after a crash (RESOLVED is reserved for success).
     await AgentTicketModel.findOneAndUpdate(
@@ -245,6 +273,7 @@ export async function runAgentLoop(
         stage: currentState.ticket.stage,
         title: currentState.ticket.title,
         status: currentState.ticket.status,
+        errorKind: currentState.ticket.errorKind,
         prompt: currentState.ticket.prompt,
         sessionId: currentState.ticket.sessionId,
         createdAt: currentState.ticket.createdAt
@@ -253,7 +282,6 @@ export async function runAgentLoop(
     );
     return currentState;
   };
-
   try {
     const turnStartTimeMs = Date.now();
     // If user clicked final approval to merge sandbox -> production DB
@@ -551,6 +579,13 @@ export async function runAgentLoop(
         // D0.2: check loop deadline at top of every iteration
         if (Date.now() - startedAtMs > LOOP_DEADLINE_MS) {
           throw new LoopTimeoutError(LOOP_DEADLINE_MS);
+        }
+        // D0.7: check for user abort signal
+        const abortKey = `agent:abort:${state.ticket.ticketId}`;
+        const isAborted = (await agentRedis.client.get(abortKey)) === "true";
+        if (isAborted) {
+          await agentRedis.client.del(abortKey);
+          throw new AgentCancelledError(state.ticket.ticketId);
         }
         await checkBudget(state);
 
