@@ -1,4 +1,4 @@
-import { AgentState, AgentTicket, AgentBusyError, emptySandboxStore, ExecutionTraceStep, normalizeSandboxStore } from "./types";
+import { AgentState, AgentTicket, AgentBusyError, LoopTimeoutError, emptySandboxStore, ExecutionTraceStep, normalizeSandboxStore } from "./types";
 import { runDrafter } from "./personas/drafter";
 import { runPlanner } from "./personas/planner";
 import { runExecutor } from "./personas/executor";
@@ -47,6 +47,10 @@ export async function runAgentLoop(
   // R2.3 — token budget configuration (env-overridable)
   const PER_TICKET_BUDGET = Number(process.env.LLM_TOKEN_BUDGET_PER_TICKET || "50000");
   const PER_USER_DAY_BUDGET = Number(process.env.LLM_TOKEN_BUDGET_PER_USER_DAY || "200000");
+
+  // D0.2: loop deadline configuration (env-overridable, default 120000ms = 2 min)
+  const LOOP_DEADLINE_MS = Number(process.env.LOOP_DEADLINE_MS || "120000");
+  const startedAtMs = Date.now();
 
   // R2.3: pre-flight budget check — throws LLMBudgetExceededError if either
   // per-ticket or per-user-daily budget would be exceeded by the next call.
@@ -544,6 +548,10 @@ export async function runAgentLoop(
       let isLooping = true;
       while (isLooping) {
         // R2.3: budget pre-check before any LLM call in this iteration
+        // D0.2: check loop deadline at top of every iteration
+        if (Date.now() - startedAtMs > LOOP_DEADLINE_MS) {
+          throw new LoopTimeoutError(LOOP_DEADLINE_MS);
+        }
         await checkBudget(state);
 
         // Track planner step ID for actionPlanRef in Executor trace
@@ -570,9 +578,6 @@ export async function runAgentLoop(
         }
         // Stage 2: Planner Persona
         else if (state.activePersona === "PLANNER") {
-          if ((await agentRedis.client.get(simOfflineKey)) === "true") {
-            throw new Error("Simulated LLM Offline Crash Triggered during Planner");
-          }
 
           addTrace("PLANNER", "Handing context to Planner Persona for Action Plan compilation");
           state = await runPlanner(state);
