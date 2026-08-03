@@ -1,4 +1,5 @@
-import { AgentState, AgentTicket } from "../types";
+import { AgentState, AgentTicket, ExecutionTraceStep } from "../types";
+import { newTraceId } from "../helper/id";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import AgentTicketModel from "@/models/agentTicketModel";
 import Form from "@/models/formModel";
@@ -211,11 +212,22 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     };
   }
 
+
   // R1: Read-only short-circuit — if the skill is a pure read, bypass
   // Planner/Executor/Evaluator and go directly to Communicator.
   if (READ_ONLY_SKILLS.has(llmAnalysis.skill)) {
     const { executeAgentTool } = await import("../../lib/agentTools.js");
     const toolResult = await executeAgentTool(llmAnalysis.skill, llmAnalysis.requirements || {}, state.userId);
+    
+    // Add trace step for read-only shortcut (D0.10)
+    const readTraceStep: ExecutionTraceStep = {
+      stepId: newTraceId(),
+      timestamp: new Date().toLocaleTimeString(),
+      persona: "DRAFTER",
+      message: `Read query: ${llmAnalysis.skill}`,
+      payload: { tool: llmAnalysis.skill, params: llmAnalysis.requirements || {}, result: toolResult },
+    };
+    state.executionTrace?.push(readTraceStep);
     
     // Build minimal state for Communicator to render the read result
     return {
@@ -240,7 +252,6 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       llmRawOutput: rawContent,
     };
   }
-
   if (llmAnalysis.isVague || (llmAnalysis.isFollowUp && !llmAnalysis.isFollowUpConfirmed && llmAnalysis.clarifyingQuestion)) {
     return {
       ...state,
