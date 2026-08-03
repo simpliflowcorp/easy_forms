@@ -9,6 +9,7 @@ const AgentUsageSchema = new mongoose.Schema({
   completionTokens: { type: Number, required: true, default: 0 },
   totalTokens: { type: Number, required: true, default: 0 },
   costUsd: { type: Number, default: 0 },
+  latencyMs: { type: Number, index: true, default: 0 },
   createdAt: { type: Date, default: Date.now, index: true },
 });
 
