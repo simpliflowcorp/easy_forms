@@ -1,7 +1,7 @@
 ## Stage 1 Complete — Agent B
 
 - Tasks: B-S1.1 through B-S1.4 ✅
-- Final commit: 9dc92b2 (head of branch s1-agent-b)
+- Final commit: b3a947d (head of branch s1-agent-b; feature commits 9dc92b2 … f28cfb7)
 - tsc on my files: clean (project-wide `npx tsc --noEmit`: 0 errors)
 - lint on my files: clean (`npm run lint` passes; flat config lints only JS — TS/JSON/MD gated by typecheck)
 - Notes for integration
