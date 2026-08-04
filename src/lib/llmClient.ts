@@ -115,6 +115,8 @@ export interface LLMResult {
   /** D-S2.2 — estimated USD cost of this call (via costCalculator.ts).
    *  Additive; the loop's persistence path still computes its own estimate. */
   costUsd?: number;
+  /** D-S3.1 — true when served over a healthy SSE stream (callLLMStream). */
+  streamed?: boolean;
 }
 
 /** Normalize the raw provider usage blob (which may be `undefined`) into
@@ -680,4 +682,75 @@ export async function callLLM(
   options: LLMOptions = {},
 ): Promise<LLMResult> {
   return retryLLM(messages, options);
+}
+
+/**
+ * D-S3.1 — streaming LLM call for the Communicator persona.
+ *
+ * Frozen contract (Stage 3 §3.3, A-S3.2):
+ *   `callLLMStream(opts: { persona, messages, tools? }, onChunk: (delta: string) => void): Promise<LLMResult>`
+ *
+ * Behaviour:
+ * - Streams token deltas through `onChunk` using the existing retry/backoff
+ *   path (NVIDIA/Gemini OpenAI-compat SSE).
+ * - FAIL-OPEN (inspiration_breakdown §2): if the stream throws for ANY reason
+ *   (mid-stream socket reset, malformed SSE, provider refusing streaming),
+ *   retry ONCE as a plain non-streaming `messages.create` and return the full
+ *   body with `streamed: false`. Typed LLM errors from the fallback itself are
+ *   propagated unchanged.
+ * - `streamed: true` marks a result that came back over a healthy stream.
+ */
+export interface CallLLMStreamOptions {
+  persona: string;
+  messages: LLMMessage[];
+  tools?: any[];
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+  userId?: string;
+  ticketId?: string;
+  retry?: RetryOptions;
+}
+
+export async function callLLMStream(
+  opts: CallLLMStreamOptions,
+  onChunk: (delta: string) => void,
+): Promise<LLMResult> {
+  const streamOptions: LLMOptions = {
+    persona: opts.persona,
+    model: opts.model,
+    temperature: opts.temperature,
+    max_tokens: opts.max_tokens,
+    tools: opts.tools,
+    userId: opts.userId,
+    ticketId: opts.ticketId,
+    onChunk,
+  };
+
+  try {
+    const streamed = await retryLLM(opts.messages, streamOptions, opts.retry);
+    return { ...streamed, streamed: true };
+  } catch (streamErr) {
+    const log = child({
+      userId: opts.userId,
+      ticketId: opts.ticketId,
+      persona: opts.persona,
+    });
+    log.warn("llm_stream_fallback", {
+      reason: streamErr instanceof Error ? streamErr.message : String(streamErr),
+    });
+
+    // Fail-open: one non-streaming attempt; its typed error (if any) is final.
+    const fallbackOptions: LLMOptions = {
+      persona: opts.persona,
+      model: opts.model,
+      temperature: opts.temperature,
+      max_tokens: opts.max_tokens,
+      tools: opts.tools,
+      userId: opts.userId,
+      ticketId: opts.ticketId,
+    };
+    const fallback = await retryLLM(opts.messages, fallbackOptions, opts.retry);
+    return { ...fallback, streamed: false };
+  }
 }
