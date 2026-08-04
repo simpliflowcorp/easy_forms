@@ -81,10 +81,23 @@ const PersonaNode = ({ data }: any) => {
 
 const nodeTypes = { persona: PersonaNode };
 
+/**
+ * D-S3.7 — typed SSE/WS heartbeat events the visualizer renders live.
+ *   { type: "turn",     role: "EXECUTOR", ts: 1712345678901 }
+ *   { type: "complete", state: <AgentState>, ts }
+ */
+export interface AgentLiveEvent {
+  type: "turn" | "complete";
+  role?: string;
+  state?: AgentState;
+  ts: number;
+}
+
 interface AgentVisualizerProps {
   agentState: AgentState | null;
   isLoading: boolean;
   streamingContent?: { persona: string; content: string } | null;
+  liveEvents?: AgentLiveEvent[];
   onSendPrompt: (prompt: string) => void;
   onMerge: () => void;
   onResume: (ticketId: string) => void;
@@ -94,6 +107,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
   agentState,
   isLoading,
   streamingContent,
+  liveEvents = [],
   onSendPrompt,
   onMerge,
   onResume,
@@ -720,6 +734,24 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
               <Background color="#38bdf8" gap={32} size={1} className="opacity-15" />
             </ReactFlow>
           </div>
+
+          {/* D-S3.7 — Typed Heartbeat Rail (turn / complete SSE events) */}
+          {liveEvents.length > 0 && (
+            <div className="scifi-heartbeat-rail">
+              <div className="scifi-heartbeat-title">♢ HEARTBEAT</div>
+              <div className="scifi-heartbeat-list custom-scrollbar">
+                {liveEvents.slice(-24).map((evt, i) => (
+                  <div key={`${evt.ts}-${i}`} className="scifi-heartbeat-item">
+                    <span className="scifi-heartbeat-type">
+                      {evt.type === "turn" ? "TURN" : "COMPLETE"}
+                    </span>
+                    <span className="scifi-heartbeat-role">{evt.role ?? evt.state?.activePersona ?? "—"}</span>
+                    <span className="scifi-heartbeat-ts">{new Date(evt.ts).toLocaleTimeString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Bottom Dock (Agent Neural Comm-Link) */}
           <div className="scifi-dock">

@@ -144,3 +144,62 @@
   background: var(--secondary-bg);
   color: var(--primary);
 }
+
+.agent-thought-toolkind {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5ef0b0;
+  background: #163a34;
+  border: 1px solid #1f5a4e;
+  border-radius: 4px;
+}
+
+.scifi-heartbeat-rail {
+  border-top: 1px solid #1e3a5f;
+  background: #0b1326;
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.scifi-heartbeat-title {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 4px 12px;
+  color: #59d3ff;
+  background: #0d1830;
+}
+
+.scifi-heartbeat-list {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  max-height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.scifi-heartbeat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  border: 1px solid #22365b;
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: #9ec9ff;
+}
+
+.scifi-heartbeat-type {
+  color: #5ef0b0;
+  font-weight: 700;
+}
+
+.scifi-heartbeat-ts {
+  color: #64748b;
+}

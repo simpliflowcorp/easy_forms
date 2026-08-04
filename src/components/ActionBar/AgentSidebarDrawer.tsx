@@ -31,6 +31,14 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
   const [mounted, setMounted] = useState(false);
   const [showProcess, setShowProcess] = useState(false);
 
+  // D-S3.7 — surface new tool kinds (prefs / notifications / exports / views)
+  // in the trace visualization when the step payload carries toolKind.
+  const renderToolKind = (trace: any) => {
+    const kind = trace?.payload?.toolKind ?? trace?.toolKind;
+    if (!kind) return null;
+    return <span className="agent-thought-toolkind">{kind}</span>;
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -112,6 +120,7 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
                         <div key={trace.stepId || j} className="agent-thought-step">
                           <div className="agent-thought-message">
                             <strong>[{trace.persona}]</strong> {trace.message}
+                            {renderToolKind(trace)}
                           </div>
                           {trace.payload?.thoughtProcess && (
                             <div className="agent-thought-process">
@@ -161,6 +170,7 @@ export const AgentSidebarDrawer: React.FC<AgentSidebarDrawerProps> = ({
                   <div key={trace.stepId || i} className="agent-thought-step">
                     <div className="agent-thought-message">
                       <strong>[{trace.persona}]</strong> {trace.message}
+                      {renderToolKind(trace)}
                     </div>
                     {trace.payload?.thoughtProcess && (
                       <div className="agent-thought-process">

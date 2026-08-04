@@ -1,0 +1,192 @@
+// D-S3.7 — Agent Skills Drawer styles (docked right panel, scifi theme).
+
+.agent-skills-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(2, 8, 20, 0.55);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.agent-skills-drawer {
+  width: min(440px, 92vw);
+  height: 100%;
+  background: linear-gradient(180deg, #0b1326 0%, #0d1830 60%, #0b1326 100%);
+  border-left: 1px solid #1e3a5f;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  color: #dbe7ff;
+  font-family: ui-monospace, monospace;
+}
+
+.agent-skills-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #1e3a5f;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #6ee7ff;
+}
+
+.agent-skills-body {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.agent-skill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  background: rgba(20, 36, 66, 0.5);
+  margin-bottom: 8px;
+}
+
+.agent-skill-deprecated {
+  opacity: 0.5;
+}
+
+.agent-skill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.agent-skill-version {
+  color: #59d3ff;
+  font-size: 11px;
+}
+
+.agent-skill-badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.agent-skill-badge-builtin {
+  background: #1e3a5f;
+  color: #87c6ff;
+}
+
+.agent-skill-badge-user {
+  background: #163a34;
+  color: #5ef0b0;
+}
+
+.agent-skill-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.agent-skill-tools code {
+  font-size: 10px;
+  background: #0a1120;
+  border: 1px solid #22365b;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #9ec9ff;
+}
+
+.agent-skill-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.agent-skill-btn {
+  font-size: 11px;
+  font-family: inherit;
+  color: #bfe3ff;
+  background: transparent;
+  border: 1px solid #2a4a78;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.agent-skill-btn:hover {
+  background: #1c3357;
+}
+
+.agent-skill-btn-danger {
+  color: #ff9f9f;
+  border-color: #6b2c2c;
+}
+
+.agent-skill-btn-danger:hover {
+  background: #3a1a1a;
+}
+
+.agent-skills-test-result {
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+  background: #10203a;
+  border: 1px solid #2a4a78;
+  color: #bfe3ff;
+  white-space: pre-wrap;
+}
+
+.agent-skills-error {
+  color: #ff9f9f;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.agent-skills-edit {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #2a4a78;
+  border-radius: 8px;
+  background: #0e1a30;
+}
+
+.agent-skills-edit-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #59d3ff;
+}
+
+.agent-skills-label {
+  display: block;
+  font-size: 11px;
+  color: #9ec9ff;
+  margin-bottom: 8px;
+}
+
+.agent-skills-input {
+  width: 100%;
+  margin-top: 4px;
+  background: #0a1120;
+  border: 1px solid #22365b;
+  color: #e6f0ff;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.agent-skills-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
