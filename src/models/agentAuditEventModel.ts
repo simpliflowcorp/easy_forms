@@ -7,7 +7,7 @@ const AgentAuditEventSchema = new mongoose.Schema({
   action: { 
     type: String, 
     required: true,
-    enum: ["create_form", "update_form", "delete_form", "create_view"] 
+    enum: ["create_form", "update_form", "delete_form", "create_view", "update_view", "set_form_status", "update_form_metadata", "update_user", "mark_notification_read", "clear_notification"] 
   },
   serverDiff: { type: mongoose.Schema.Types.Mixed },
   outcome: { 

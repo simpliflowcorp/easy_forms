@@ -16,7 +16,8 @@
     "ws:server": "ts-node -r dotenv/config src/lib/wsServerEntry.ts",
     "dev:ws": "concurrently \"npm run dev\" \"npm run ws:server\"",
     "agent:eval": "ts-node -r dotenv/config tests/agent/eval/runner.ts",
-    "agent:eval:stub": "node --experimental-strip-types tests/agent/eval/stubRunner.ts"
+    "agent:eval:stub": "node --experimental-strip-types tests/agent/eval/stubRunner.ts",
+    "agent:validate-skills": "ts-node -r dotenv/config src/agent/skills/validator.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
