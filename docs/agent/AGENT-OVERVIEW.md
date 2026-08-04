@@ -167,6 +167,27 @@ Key loop invariants enforced in code:
 
 ---
 
+### Stage 1 Resolved
+
+Stage 1 (agent v3 defect-fix sprint) resolved the following P0 defects from `plans/agent_upgrade_v3.md`:
+
+| Defect | Description | Resolution |
+|---|---|---|
+| **D0.1** | Mongo↔Redis state drift | Write Mongo on every transition; Redis is rebuildable hot cache |
+| **D0.2** | Lock TTL shorter than worst-case loop | `LOOP_DEADLINE_MS` + `LOCK_TTL_MS` env-driven; lock heartbeat |
+| **D0.3** | Replan unreachable; 2nd retry wastes budget | 1st retry → Executor; 2nd → Planner with feedback; 3rd → ask user |
+| **D0.4** | Merge stats inflated | Split `mergedForms` into 6 raw counters (`{ mergedForms, mergedViews, updatesApplied, updatesMissed, deletesApplied, deletesMissed }`) |
+| **D0.5** | Simulated-offline check not hoisted out of branch logic | Single check at top of `while` loop, before persona dispatch |
+| **D0.6** | `llmRawOutput` stored un-redacted in trace | `redactTracePayload` recursive walker: key-based + value-based (email/phone/SSN/credit-card) redaction on `llmRawOutput` |
+| **D0.7** | No user-abort signal | `agent:abort:{ticketId}` Redis flag; `AgentCancelledError` → `CANCELLED` ticket status |
+| **D0.8** | Drafter prompt rule numbering jumps | JSON prompt renumbered contiguously 1..N |
+| **D0.9** | Communicator collapses typed errors to single branch | Branch on each domain error type; set `errorKind` field |
+| **D0.10** | Read-only shortcut bypasses trace | Minimal trace step pushed to `state.executionTrace` in Drafter's read shortcut |
+
+**Stage 1 Contracts Frozen:** `redactTracePayload` (Agent D), `stubRunner.registerRow` (Agent D), `MergeStats` (Agent B), `AgentCancelledError` / `CANCELLED` enum (Agent A → Agent C), `MemoryService` interface (Agent C).
+
+---
+
 ## Summary of recommended next steps (prioritised)
 
 **Quick wins (1-2 days each, high leverage, low risk):**
