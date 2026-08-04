@@ -29,6 +29,7 @@ export type ToolRef = {
 
 export interface NegativeTest {
   assert: string;
+  description?: string;
 }
 
 export interface SkillRegistry {

@@ -1,1 +1,89 @@
-[]
+[
+  {
+    "skillId": "build_form",
+    "name": "build_form",
+    "version": "1.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "create_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 2,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.elements.length >= 1", "description": "Form must have at least one field" }
+    ],
+    "dryRunShape": { "name": "string", "elements": "array" }
+  },
+  {
+    "skillId": "edit_form",
+    "name": "edit_form",
+    "version": "1.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "update_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for edit" }
+    ],
+    "dryRunShape": { "formId": "string", "updates": "object" }
+  },
+  {
+    "skillId": "delete_form_skill",
+    "name": "delete_form_skill",
+    "version": "1.0.0",
+    "permissionScope": "destructive_actions",
+    "tools": [
+      { "tool": "delete_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 1,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for delete" }
+    ],
+    "dryRunShape": { "formId": "string" }
+  },
+  {
+    "skillId": "filter_responses",
+    "name": "filter_responses",
+    "version": "1.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "query_responses", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 1,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for query" }
+    ],
+    "dryRunShape": { "formId": "string", "filters": "array" }
+  },
+  {
+    "skillId": "generate_analytics_skill",
+    "name": "generate_analytics_skill",
+    "version": "1.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "generate_analytics", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 1,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for analytics" }
+    ],
+    "dryRunShape": { "formId": "string" }
+  },
+  {
+    "skillId": "manage_custom_views",
+    "name": "manage_custom_views",
+    "version": "1.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "create_custom_view", "paramsFrom": "requirements" },
+      { "tool": "get_custom_views", "paramsFrom": "requirements" },
+      { "tool": "update_custom_view", "paramsFrom": "requirements" },
+      { "tool": "delete_custom_view", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 2,
+    "negativeTests": [
+      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for custom views" }
+    ],
+    "dryRunShape": { "formId": "string", "name": "string" }
+  }
+]
