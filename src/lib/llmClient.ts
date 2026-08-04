@@ -1,8 +1,64 @@
+import { computeCostUsd } from "./costCalculator.ts";
+import { child, logWarn } from "./logger.ts";
+
 export interface LLMMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   name?: string; // Used for tool responses
   tool_calls?: any[]; // Used when assistant calls a tool
+}
+
+/**
+ * Persona ids used for per-persona model + temperature resolution (L2.1).
+ * Canonical source of truth is Agent A's `src/agent/types.ts`
+ * (`PersonaStage`); this is the temperature-relevant subset. If Agent A ships
+ * a `Persona` union in `types.ts`, this type can be aliased to it at the
+ * integration gate — the record below stays structurally identical.
+ */
+export type Persona =
+  | "DRAFTER"
+  | "PLANNER"
+  | "EXECUTOR"
+  | "EVALUATOR"
+  | "COMMUNICATOR";
+
+/**
+ * L2.1 — per-persona temperature defaults.
+ * DRAFTER  0.2 (creative field drafting)
+ * PLANNER  0.2 (schema planning, still exploratory)
+ * EXECUTOR 0.0 (deterministic tool-call generation)
+ * EVALUATOR 0.0 (deterministic QA decisions)
+ * COMMUNICATOR 0.7 (natural, friendly user-facing replies)
+ */
+export const PERSONA_TEMPERATURES: Record<Persona, number> = {
+  DRAFTER: 0.2,
+  PLANNER: 0.2,
+  EXECUTOR: 0.0,
+  EVALUATOR: 0.0,
+  COMMUNICATOR: 0.7,
+};
+
+/** Env override per persona, e.g. LLM_MODEL_DRAFTER → DRAFTER. */
+const PERSONA_MODEL_ENV: Record<Persona, string> = {
+  DRAFTER: "LLM_MODEL_DRAFTER",
+  PLANNER: "LLM_MODEL_PLANNER",
+  EXECUTOR: "LLM_MODEL_EXECUTOR",
+  EVALUATOR: "LLM_MODEL_EVALUATOR",
+  COMMUNICATOR: "LLM_MODEL_COMMUNICATOR",
+};
+
+const PERSONA_LOOKUP: Record<string, Persona> = {
+  drafter: "DRAFTER",
+  planner: "PLANNER",
+  executor: "EXECUTOR",
+  evaluator: "EVALUATOR",
+  communicator: "COMMUNICATOR",
+};
+
+/** Case-insensitive persona normalization ("drafter" → "DRAFTER"). */
+export function normalizePersona(persona: string | undefined): Persona | undefined {
+  if (!persona) return undefined;
+  return PERSONA_LOOKUP[persona.trim().toLowerCase()];
 }
 
 export interface LLMOptions {
@@ -14,6 +70,17 @@ export interface LLMOptions {
   tools?: any[];
   tool_choice?: "auto" | "none" | { type: "function"; function: { name: string } };
   onChunk?: (chunk: string) => void;
+  /**
+   * L2.1 — optional persona id. When set and the caller did not pass an
+   * explicit `model`/`temperature`, they are resolved from the per-persona
+   * env overrides (`LLM_MODEL_DRAFTER` …) + `PERSONA_TEMPERATURES`. The
+   * resolution happens BEFORE the `__testRetryLLMOverride` test hook so
+   * stub assertions observe the resolved values in `options`.
+   */
+  persona?: string;
+  /** Optional correlation fields surfaced in the pino log line (D-S2.3). */
+  userId?: string;
+  ticketId?: string;
 }
 
 /**
@@ -45,6 +112,9 @@ export interface LLMResult {
   content: string;
   tool_calls?: any[];
   usage?: LLMUsage;
+  /** D-S2.2 — estimated USD cost of this call (via costCalculator.ts).
+   *  Additive; the loop's persistence path still computes its own estimate. */
+  costUsd?: number;
 }
 
 /** Normalize the raw provider usage blob (which may be `undefined`) into
@@ -158,24 +228,72 @@ function classifyError(err: any): Error {
   return err instanceof Error ? err : new Error(String(err));
 }
 
+/** Provider override used by the D-S2.2 fallback path. */
+export interface ProviderOverride {
+  provider?: string;
+  apiKey?: string;
+  baseUrl?: string;
+}
+
+/**
+ * L2.1 — resolve `model` + `temperature` for a call that carries a `persona`.
+ * - model: `LLM_MODEL_<PERSONA>` env override, falling back to `LLM_MODEL`
+ *   (which in turn falls back to the provider default inside `callOnce`).
+ * - temperature: `PERSONA_TEMPERATURES[persona]`.
+ * Explicit caller-supplied `options.model` / `options.temperature` always win.
+ */
+export function resolvePersonaLLMOptions(options: LLMOptions): Partial<LLMOptions> {
+  const persona = normalizePersona(options.persona);
+  if (!persona) return {};
+
+  const resolved: Partial<LLMOptions> = {};
+  if (!options.model) {
+    const envVar = PERSONA_MODEL_ENV[persona];
+    resolved.model = process.env[envVar] || process.env.LLM_MODEL;
+  }
+  if (options.temperature === undefined) {
+    resolved.temperature = PERSONA_TEMPERATURES[persona];
+  }
+  return resolved;
+}
+
+/** Per-persona resolved model (L2.1) for prompt-loader metadata. */
+export function personaModelFor(persona: string): string | undefined {
+  const normalized = normalizePersona(persona);
+  if (!normalized) return undefined;
+  return process.env[PERSONA_MODEL_ENV[normalized]] || process.env.LLM_MODEL;
+}
+
+/** Per-persona resolved temperature (L2.1) for prompt-loader metadata. */
+export function personaTemperatureFor(persona: string): number | undefined {
+  const normalized = normalizePersona(persona);
+  if (!normalized) return undefined;
+  return PERSONA_TEMPERATURES[normalized];
+}
+
 async function callOnce(
   messages: LLMMessage[],
   options: LLMOptions,
   timeoutMs: number,
+  providerOverride?: ProviderOverride,
 ): Promise<any> {
-  const provider = process.env.LLM_PROVIDER || "nvidia";
+  const provider = providerOverride?.provider || process.env.LLM_PROVIDER || "nvidia";
 
   let apiKey: string | undefined;
   let baseUrl: string;
   let defaultModel: string;
 
   if (provider === "google") {
-    apiKey = process.env.GEMINI_API_KEY;
-    baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    apiKey = providerOverride?.apiKey ?? process.env.GEMINI_API_KEY;
+    baseUrl =
+      providerOverride?.baseUrl ??
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
     defaultModel = process.env.LLM_MODEL || "gemini-2.0-flash";
   } else {
-    apiKey = process.env.NVIDIA_API_KEY;
-    baseUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+    apiKey = providerOverride?.apiKey ?? process.env.NVIDIA_API_KEY;
+    baseUrl =
+      providerOverride?.baseUrl ??
+      "https://integrate.api.nvidia.com/v1/chat/completions";
     defaultModel = process.env.LLM_MODEL || "meta/llama-3.1-8b-instruct";
   }
 
@@ -383,48 +501,174 @@ export const __testRetryLLMOverride = {
   current: undefined as ((messages: LLMMessage[], options: LLMOptions, retry: RetryOptions) => Promise<LLMResult>) | undefined,
 };
 
+/**
+ * D-S2.2 — primary attempt wrapped with a transparent secondary-provider
+ * fallback. ONLY `LLMOfflineError` triggers the fallback (a missing primary
+ * API key / DNS failure / auth rejection), and it fires exactly ONCE per
+ * call. `LLMRateLimitError`/`LLMTimeoutError`/`LLMHTTPError` keep their
+ * existing retry semantics untouched.
+ *
+ * Fallback config: LLM_FALLBACK_PROVIDER (nvidia|google), LLM_FALLBACK_MODEL,
+ * LLM_FALLBACK_API_KEY. When nothing is configured, the original error is
+ * propagated unchanged.
+ *
+ * Attribution: the fallback result's `usage.model` carries the fallback model
+ * id so `agentLoop.ts`'s AgentUsage row write attributes cost to the model
+ * that actually served the call; `costUsd` is computed via costCalculator.ts.
+ */
+async function callOnceWithFallback(
+  messages: LLMMessage[],
+  options: LLMOptions,
+  timeoutMs: number,
+): Promise<LLMResult> {
+  try {
+    const primary = await callOnce(messages, options, timeoutMs);
+    return attachCost(primary, options.model);
+  } catch (err: any) {
+    const fallbackModel = process.env.LLM_FALLBACK_MODEL;
+    const fallbackProvider = process.env.LLM_FALLBACK_PROVIDER;
+    if (!fallbackModel && !fallbackProvider) {
+      throw err;
+    }
+    if (!(err instanceof LLMOfflineError)) {
+      throw err;
+    }
+
+    const fallbackOptions: LLMOptions = {
+      ...options,
+      model: fallbackModel || options.model,
+    };
+    const fallbackOverride: ProviderOverride = fallbackProvider
+      ? { provider: fallbackProvider, apiKey: process.env.LLM_FALLBACK_API_KEY }
+      : {};
+
+    logWarn(
+      "llm_fallback",
+      {
+        persona: options.persona,
+        primaryModel: options.model,
+        fallbackModel: fallbackOptions.model,
+        reason: err.message,
+      },
+    );
+
+    try {
+      const fallback = await callOnce(messages, fallbackOptions, timeoutMs, fallbackOverride);
+      // Attribution contract: usage.model MUST carry the fallback model id.
+      if (fallback?.usage && fallbackModel) {
+        fallback.usage.model = fallbackModel;
+      }
+      return attachCost(fallback, fallbackOptions.model);
+    } catch (fallbackErr: any) {
+      // Fallback also failed — surface the original offline error (or the
+      // fallback's typed error if it is more informative and still typed).
+      if (
+        fallbackErr instanceof LLMOfflineError ||
+        fallbackErr instanceof LLMRateLimitError ||
+        fallbackErr instanceof LLMTimeoutError ||
+        fallbackErr instanceof LLMHTTPError
+      ) {
+        throw fallbackErr;
+      }
+      throw err;
+    }
+  }
+}
+
+/** Attach the estimated USD cost (D-S2.2) from costCalculator.ts. */
+function attachCost(result: any, model: string | undefined): LLMResult {
+  if (result && typeof result === "object") {
+    const usage = result.usage as LLMUsage | null | undefined;
+    if (usage) {
+      result.costUsd = computeCostUsd({
+        model: usage.model || model || "",
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+      });
+    }
+  }
+  return result as LLMResult;
+}
+
 export async function retryLLM(
   messages: LLMMessage[],
   options: LLMOptions = {},
   retry: RetryOptions = {},
 ): Promise<LLMResult> {
-  // Test-only override: allows tests to inject a mock implementation
-  if (__testRetryLLMOverride.current) {
-    return __testRetryLLMOverride.current(messages, options, retry);
-  }
+  // L2.1 — resolve per-persona model/temperature BEFORE the test hook so
+  // stub assertions observe the resolved values in `options`.
+  const effective = { ...options, ...resolvePersonaLLMOptions(options) };
 
-  const retries = Math.max(0, retry.retries ?? 3);
-  const baseMs = retry.baseMs ?? 500;
-  const jitterMs = retry.jitterMs ?? 250;
-  const timeoutMs =
-    retry.timeoutMs ?? (Number(process.env.LLM_TIMEOUT_MS) || 30_000);
+  const startedAt = Date.now();
+  const log = child({
+    userId: effective.userId,
+    ticketId: effective.ticketId,
+    persona: effective.persona,
+    model: effective.model,
+  });
+  const callLogger = (status: string, extra?: Record<string, unknown>) => {
+    log.info("llm_call", {
+      ms: Date.now() - startedAt,
+      status,
+      model: extra?.model ?? effective.model,
+      ...extra,
+    });
+  };
 
-  let lastErr: Error | null = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await callOnce(messages, options, timeoutMs);
-    } catch (err: any) {
-      lastErr = err;
-      const status = err?.status;
-
-      // LLMOfflineError is only retryable on the first attempt — a missing
-      // API key should not be retried; a transient DNS blip might recover.
-      const transientOffline = err instanceof LLMOfflineError && attempt === 0;
-
-      const shouldRetry =
-        attempt < retries &&
-        (err instanceof LLMRateLimitError ||
-          (err instanceof LLMHTTPError && RETRYABLE_STATUS.has(status || 0)) ||
-          err instanceof LLMTimeoutError ||
-          transientOffline);
-
-      if (!shouldRetry) throw err;
-
-      const backoff = baseMs * Math.pow(2, attempt) + Math.random() * jitterMs;
-      await sleep(backoff);
+  try {
+    // Test-only override: allows tests to inject a mock implementation
+    if (__testRetryLLMOverride.current) {
+      const result = await __testRetryLLMOverride.current(messages, effective, retry);
+      callLogger("ok", { model: result?.usage?.model ?? effective.model });
+      return result;
     }
+
+    const retries = Math.max(0, retry.retries ?? 3);
+    const baseMs = retry.baseMs ?? 500;
+    const jitterMs = retry.jitterMs ?? 250;
+    const timeoutMs =
+      retry.timeoutMs ?? (Number(process.env.LLM_TIMEOUT_MS) || 30_000);
+
+    let lastErr: Error | null = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const result = await callOnceWithFallback(messages, effective, timeoutMs);
+        callLogger("ok", { model: result?.usage?.model ?? effective.model });
+        return result;
+      } catch (err: any) {
+        lastErr = err;
+        const status = err?.status;
+
+        // LLMOfflineError is only retryable on the first attempt — a missing
+        // API key should not be retried; a transient DNS blip might recover.
+        const transientOffline = err instanceof LLMOfflineError && attempt === 0;
+
+        const shouldRetry =
+          attempt < retries &&
+          (err instanceof LLMRateLimitError ||
+            (err instanceof LLMHTTPError && RETRYABLE_STATUS.has(status || 0)) ||
+            err instanceof LLMTimeoutError ||
+            transientOffline);
+
+        if (!shouldRetry) {
+          callLogger(err.name || "error");
+          throw err;
+        }
+
+        const backoff = baseMs * Math.pow(2, attempt) + Math.random() * jitterMs;
+        await sleep(backoff);
+      }
+    }
+    callLogger(lastErr?.name || "error");
+    throw lastErr || new Error("LLM call failed after retries.");
+  } catch (err: any) {
+    log.error("llm_call_error", {
+      ms: Date.now() - startedAt,
+      status: err?.name || "error",
+      error: err?.message,
+    });
+    throw err;
   }
-  throw lastErr || new Error("LLM call failed after retries.");
 }
 
 /**

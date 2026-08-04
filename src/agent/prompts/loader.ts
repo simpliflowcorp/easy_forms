@@ -1,5 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
+import {
+  personaModelFor,
+  personaTemperatureFor,
+} from "@/lib/llmClient";
 
 const PROMPTS_DIR = path.join(process.cwd(), "src", "agent", "prompts");
 const DEFAULT_VERSION = process.env.AGENT_PROMPT_VERSION || "v1";
@@ -16,6 +20,15 @@ export interface PromptFile {
   systemPrompt: string;
   outputSchema: object;
   version: string;
+  /**
+   * D-S2.1 — resolved per-persona model + temperature (env overrides
+   * `LLM_MODEL_<PERSONA>` / `PERSONA_TEMPERATURES`). Exposed alongside the
+   * loaded prompt so persona callers can pass `persona` through to
+   * `retryLLM({ persona })` without re-resolving. Additive — existing
+   * callers that destructure only `systemPrompt`/`outputSchema` are unchanged.
+   */
+  model?: string;
+  temperature?: number;
 }
 
 interface ABConfig {
@@ -75,11 +88,14 @@ export function resolvePromptVersion(req: Request | null): string {
 /**
  * Loads the system prompt for a given persona and request context.
  * Returns the system prompt string and the output schema.
+ * D-S2.1: also returns the resolved `model` + `temperature` for the persona.
  */
 export function loadPersonaPrompt(persona: string, req: Request | null = null): {
   systemPrompt: string;
   outputSchema: object;
   version: string;
+  model?: string;
+  temperature?: number;
 } {
   const version = resolvePromptVersion(req);
   const filePath = getPersonaPromptFile(persona, version);
@@ -89,6 +105,8 @@ export function loadPersonaPrompt(persona: string, req: Request | null = null): 
     systemPrompt: promptFile.systemPrompt,
     outputSchema: promptFile.outputSchema,
     version: promptFile.version,
+    model: personaModelFor(persona),
+    temperature: personaTemperatureFor(persona),
   };
 }
 
