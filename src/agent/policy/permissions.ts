@@ -33,6 +33,24 @@ export const READ_ONLY_SKILLS = new Set([
   "manage_custom_views", // read-only custom view operations
 ]);
 
+/**
+ * Canonical enumeration of every togglable permission scope. Stage 1
+ * scaffolds the five Stage-2 catalog scopes (keys enum'd here, defaults
+ * unchanged in permissions.json — all `false` except `agent_audit`).
+ * `_always_allowed` is a pseudo-scope, not a toggled permission, so it is
+ * intentionally NOT listed here.
+ */
+export const ALL_SCOPES: ReadonlyArray<string> = [
+  "form_management",
+  "data_analytics",
+  "destructive_actions",
+  "skill_authoring",
+  "bulk_operations",
+  "system_admin",
+  "integration_management",
+  "agent_audit",
+];
+
 export interface PermissionCheckResult {
   allowed: boolean;
   scope?: string;
