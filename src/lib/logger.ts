@@ -22,7 +22,26 @@
 
 // Application Insights wiring is lazy + best-effort: sourcing it here keeps the
 // agent tree (Agent A's Stage-3 console→pino swap) importable without the SDK.
-import type * as TelemetryApi from "@opentelemetry/api";
+// `@opentelemetry/api` and `@azure/monitor-opentelemetry` are runtime-optional
+// (loaded via dynamic require() only when APPLICATIONINSIGHTS_CONNECTION_STRING
+// is set, wrapped in try/catch). To keep tsc green without forcing the deps on
+// every install, the OTel types below are a local minimal shape — not the full
+// @opentelemetry/api surface. Install @opentelemetry/api + @azure/monitor-
+// opentelemetry as optionalDependencies in production to enable the adapter.
+interface TelemetrySpan {
+  setAttribute(key: string, value: unknown): void;
+  setStatus(status: { code: number; message?: string }): void;
+  end(endTime?: number): void;
+  recordException(err: unknown): void;
+}
+interface TelemetryTracer {
+  startSpan(name: string, opts?: Record<string, unknown>): TelemetrySpan;
+}
+export const SpanStatusCode = { ERROR: 1, OK: 0 } as const;
+interface TelemetryApi {
+  trace: { getTracer(name: string, version?: string): TelemetryTracer };
+  SpanStatusCode: typeof SpanStatusCode;
+}
 
 /** Canonical context fields for agent LLMOps correlation. */
 export interface LogContext {
@@ -50,7 +69,7 @@ type Level = "info" | "warn" | "error";
 // ---------------------------------------------------------------------------
 
 let appInsightsSetupAttempted = false;
-let opentelemetry: typeof TelemetryApi | null = null;
+let opentelemetry: TelemetryApi | null = null;
 
 /** Severity mapping for the OTel trace (best-effort). */
 const SEVERITY_TEXT: Record<Level, string> = {
@@ -72,7 +91,9 @@ function ensureAppInsights(): void {
   if (!connectionString) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const azureMonitor = require("@azure/monitor-opentelemetry") as typeof import("@azure/monitor-opentelemetry");
+    const azureMonitor = require("@azure/monitor-opentelemetry") as {
+      useAzureMonitor(opts: { azureMonitorExporterOptions: { connectionString: string } }): void;
+    };
     // Apply the global distro for request/dependency auto-instrumentation.
     // `azureMonitorExporterOptions.connectionString` mirrors the env var
     // contract from the appinsights-instrumentation skill.
@@ -80,7 +101,7 @@ function ensureAppInsights(): void {
       azureMonitorExporterOptions: { connectionString },
     });
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    opentelemetry = require("@opentelemetry/api") as typeof TelemetryApi;
+    opentelemetry = require("@opentelemetry/api") as TelemetryApi;
   } catch {
     // App Insights is additive; a failing adapter must never break the app.
     opentelemetry = null;

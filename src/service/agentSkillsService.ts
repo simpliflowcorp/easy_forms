@@ -110,6 +110,8 @@ export async function registerSkill(
     maxIterations: skill.maxIterations ?? 3,
     negativeTests: skill.negativeTests || [],
     dryRunShape: skill.dryRunShape || {},
+    requiredParams: skill.requiredParams || [],
+    optionalParams: skill.optionalParams || [],
   };
 
   const row = await AgentSkillModel.findOneAndUpdate(
@@ -157,6 +159,8 @@ export async function updateSkill(
     maxIterations: patch.maxIterations ?? existing.definition?.maxIterations ?? 3,
     negativeTests: patch.negativeTests ?? existing.definition?.negativeTests ?? [],
     dryRunShape: patch.dryRunShape ?? existing.definition?.dryRunShape ?? {},
+    requiredParams: patch.requiredParams ?? existing.definition?.requiredParams ?? [],
+    optionalParams: patch.optionalParams ?? existing.definition?.optionalParams ?? [],
   };
 
   existing.version = merged.version;

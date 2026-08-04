@@ -17,7 +17,7 @@
  */
 
 import type { AgentAction, SandboxStoreState } from "../types";
-import { getAllowedTools, checkSkillToolAllowlist } from "../skills/loader";
+import { getAllowedTools, checkSkillToolAllowlist, type Permissions } from "../policy/permissions";
 
 export interface ExecutorInput {
   /** The action to execute. */
@@ -87,7 +87,7 @@ export abstract class ExecutorBase {
     
     // Then check B's centralized allow-list for this role
     const allowedTools = getAllowedTools(this.role);
-    if (!allowedTools.has(action.tool)) {
+    if (!allowedTools.includes(action.tool)) {
       return false;
     }
     
@@ -96,10 +96,13 @@ export abstract class ExecutorBase {
 
   /**
    * Check if a user-authored skill tool is allowed.
-   * Delegates to B's checkSkillToolAllowlist(skill, perms) (B-S3.2).
+   * Delegates to B's checkSkillToolAllowlist(skill, userPermissions) (B-S3.2).
    */
-  async checkSkillAllowlist(skillName: string, perms: Record<string, boolean>): Promise<boolean> {
-    return checkSkillToolAllowlist(skillName, perms);
+  async checkSkillAllowlist(
+    skill: { tools: { tool: string }[] },
+    userPermissions: Permissions,
+  ): Promise<{ allowed: boolean; reason?: string }> {
+    return checkSkillToolAllowlist(skill, userPermissions);
   }
 
   /**

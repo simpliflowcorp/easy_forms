@@ -42,15 +42,18 @@ export async function findUserSkillByName(userId: string, name: string): Promise
     const AgentSkillModel = (await Function('return import("@/models/AgentSkillModel")')() as any).default;
     const doc = await AgentSkillModel.findOne({ user: userId, name, deleted: { $ne: true } }).lean();
     if (!doc) return null;
+    const def = doc.definition as Partial<SkillDefinition> | undefined;
     return {
-      skillId: doc.skillId || doc._id.toString(),
+      skillId: (def?.skillId) || doc.skillId || doc._id.toString(),
       name: doc.name,
       version: doc.version || "1.0.0",
-      permissionScope: doc.permissionScope || "form_management",
-      tools: doc.tools || [],
-      maxIterations: doc.maxIterations || 3,
-      negativeTests: doc.negativeTests || [],
-      dryRunShape: doc.dryRunShape || {},
+      permissionScope: (def?.permissionScope) || doc.permissionScope || "form_management",
+      tools: (def?.tools) || doc.tools || [],
+      maxIterations: (def?.maxIterations) ?? doc.maxIterations ?? 3,
+      negativeTests: (def?.negativeTests) || doc.negativeTests || [],
+      dryRunShape: (def?.dryRunShape) || doc.dryRunShape || {},
+      requiredParams: (def?.requiredParams) || [],
+      optionalParams: (def?.optionalParams) || [],
     };
   } catch {
     // Agent C's model not yet deployed — return null
@@ -66,16 +69,21 @@ export async function listUserSkills(userId: string): Promise<SkillDefinition[]>
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const AgentSkillModel = (await Function('return import("@/models/AgentSkillModel")')() as any).default;
     const docs = await AgentSkillModel.find({ user: userId, deleted: { $ne: true } }).lean();
-    return docs.map((doc: any) => ({
-      skillId: doc.skillId || doc._id.toString(),
-      name: doc.name,
-      version: doc.version || "1.0.0",
-      permissionScope: doc.permissionScope || "form_management",
-      tools: doc.tools || [],
-      maxIterations: doc.maxIterations || 3,
-      negativeTests: doc.negativeTests || [],
-      dryRunShape: doc.dryRunShape || {},
-    }));
+    return docs.map((doc: any) => {
+      const def = doc.definition as Partial<SkillDefinition> | undefined;
+      return {
+        skillId: (def?.skillId) || doc.skillId || doc._id.toString(),
+        name: doc.name,
+        version: doc.version || "1.0.0",
+        permissionScope: (def?.permissionScope) || doc.permissionScope || "form_management",
+        tools: (def?.tools) || doc.tools || [],
+        maxIterations: (def?.maxIterations) ?? doc.maxIterations ?? 3,
+        negativeTests: (def?.negativeTests) || doc.negativeTests || [],
+        dryRunShape: (def?.dryRunShape) || doc.dryRunShape || {},
+        requiredParams: (def?.requiredParams) || [],
+        optionalParams: (def?.optionalParams) || [],
+      };
+    });
   } catch {
     return [];
   }
