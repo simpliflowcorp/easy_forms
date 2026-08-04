@@ -3,6 +3,7 @@ import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { parsePersona, EvaluatorOutputSchema, EvaluatorOutput } from "../helper/validate";
 import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
+import { resolveSkill } from "./skillRouter.js";
 
 type EvaluatorVerdict = EvaluatorOutput;
 
@@ -48,6 +49,57 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       evaluatorFeedback: feedback,
       evaluatorDecision: "ask_user",
     };
+  }
+
+  // A-S2.6: Negative-test mode — pre-execution deterministic checks from skill.negativeTests[]
+  // Run before LLM QA to catch structural issues early.
+  const firstAction = state.actionPlan[0];
+  const owningSkillName = firstAction?.owningSkill || state.requirements.skill;
+  if (owningSkillName) {
+    const skillResult = await resolveSkill(owningSkillName, state.userId);
+    if (skillResult.allowed && skillResult.skill && skillResult.skill.negativeTests) {
+      for (const test of skillResult.skill.negativeTests) {
+        try {
+          // Evaluate the assertion in a safe context
+          // The assertion can reference actionPlan, state, etc.
+          const actionPlan = state.actionPlan;
+          const state_ = state; // alias for assertion context
+          // eslint-disable-next-line no-eval
+          const pass = eval(test.assert);
+          if (!pass) {
+            const failMsg = test.description
+              ? `Negative test failed: ${test.description} (assert: ${test.assert})`
+              : `Negative test failed: ${test.assert}`;
+            if (state.iterationCount < state.maxIterations) {
+              const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+                state.iterationCount === 2 ? "replan" : "ask_user";
+              return {
+                ...state,
+                iterationCount: state.iterationCount + 1,
+                activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
+                evaluatorFeedback: failMsg,
+                evaluatorDecision: decision,
+                llmRawOutput: `Negative test failed: ${test.assert}`,
+              };
+            }
+            // Iterations exhausted
+            return {
+              ...state,
+              activePersona: "COMMUNICATOR",
+              isQuestion: true,
+              isComplete: false,
+              reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+              evaluatorFeedback: failMsg,
+              evaluatorDecision: "ask_user",
+              llmRawOutput: `Negative test failed: ${test.assert}`,
+            };
+          }
+        } catch (evalErr) {
+          // If eval fails, log and continue (don't block on test syntax errors)
+          console.warn(`[evaluator] Negative test eval error: ${test.assert}`, evalErr);
+        }
+      }
+    }
   }
 
   // Pass 2: LLM-based semantic QA. Verify that the results actually satisfy
