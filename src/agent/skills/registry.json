@@ -1,78 +1,90 @@
 [
   {
     "skillId": "build_form",
-    "name": "build_form",
-    "version": "1.0.0",
+    "name": "Build Form",
+    "version": "2.0.0",
     "permissionScope": "form_management",
     "tools": [
       { "tool": "create_form", "paramsFrom": "requirements" }
     ],
-    "maxIterations": 2,
+    "maxIterations": 3,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.elements.length >= 1", "description": "Form must have at least one field" }
+      { "assert": "create_form without name parameter is rejected" },
+      { "assert": "create_form with invalid element type (e.g. 99) is rejected" }
     ],
-    "dryRunShape": { "name": "string", "elements": "array" }
+    "dryRunShape": { "form": { "isSandbox": true, "idempotencyKey": "string" } }
   },
   {
     "skillId": "edit_form",
-    "name": "edit_form",
-    "version": "1.0.0",
+    "name": "Edit Form",
+    "version": "2.0.0",
     "permissionScope": "form_management",
     "tools": [
-      { "tool": "update_form", "paramsFrom": "requirements" }
+      { "tool": "update_form", "paramsFrom": "requirements" },
+      { "tool": "add_form_element", "paramsFrom": "requirements" },
+      { "tool": "update_form_element", "paramsFrom": "requirements" },
+      { "tool": "remove_form_element", "paramsFrom": "requirements" },
+      { "tool": "reorder_form_elements", "paramsFrom": "requirements" },
+      { "tool": "set_form_status", "paramsFrom": "requirements" },
+      { "tool": "update_form_metadata_settings", "paramsFrom": "requirements" }
     ],
     "maxIterations": 3,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for edit" }
+      { "assert": "edit_form on non-existent form returns error" },
+      { "assert": "remove_form_element without elementId or label is rejected" }
     ],
-    "dryRunShape": { "formId": "string", "updates": "object" }
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true }
   },
   {
     "skillId": "delete_form_skill",
-    "name": "delete_form_skill",
-    "version": "1.0.0",
+    "name": "Delete Form",
+    "version": "2.0.0",
     "permissionScope": "destructive_actions",
     "tools": [
       { "tool": "delete_form", "paramsFrom": "requirements" }
     ],
-    "maxIterations": 1,
+    "maxIterations": 2,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for delete" }
+      { "assert": "delete_form on another user's form is rejected" },
+      { "assert": "double delete is idempotent and safe" }
     ],
-    "dryRunShape": { "formId": "string" }
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true }
   },
   {
     "skillId": "filter_responses",
-    "name": "filter_responses",
-    "version": "1.0.0",
+    "name": "Filter Responses",
+    "version": "2.0.0",
     "permissionScope": "data_analytics",
     "tools": [
       { "tool": "query_responses", "paramsFrom": "requirements" }
     ],
-    "maxIterations": 1,
+    "maxIterations": 3,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for query" }
+      { "assert": "query_responses with missing formId is rejected" },
+      { "assert": "cross-tenant form access via different formId is blocked" }
     ],
-    "dryRunShape": { "formId": "string", "filters": "array" }
+    "dryRunShape": { "results": [] }
   },
   {
     "skillId": "generate_analytics_skill",
-    "name": "generate_analytics_skill",
-    "version": "1.0.0",
+    "name": "Generate Analytics",
+    "version": "2.0.0",
     "permissionScope": "data_analytics",
     "tools": [
-      { "tool": "generate_analytics", "paramsFrom": "requirements" }
+      { "tool": "generate_analytics", "paramsFrom": "requirements" },
+      { "tool": "dashboard_stats", "paramsFrom": "context" }
     ],
-    "maxIterations": 1,
+    "maxIterations": 3,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for analytics" }
+      { "assert": "analytics on another user's form is blocked" },
+      { "assert": "malformed metrics array returns schema error" }
     ],
-    "dryRunShape": { "formId": "string" }
+    "dryRunShape": { "results": {} }
   },
   {
     "skillId": "manage_custom_views",
-    "name": "manage_custom_views",
-    "version": "1.0.0",
+    "name": "Manage Custom Views",
+    "version": "2.0.0",
     "permissionScope": "data_analytics",
     "tools": [
       { "tool": "create_custom_view", "paramsFrom": "requirements" },
@@ -80,10 +92,11 @@
       { "tool": "update_custom_view", "paramsFrom": "requirements" },
       { "tool": "delete_custom_view", "paramsFrom": "requirements" }
     ],
-    "maxIterations": 2,
+    "maxIterations": 3,
     "negativeTests": [
-      { "assert": "actionPlan[0].params.formId != null", "description": "Form ID is required for custom views" }
+      { "assert": "create_custom_view without formId is rejected" },
+      { "assert": "delete_custom_view for another user's form is blocked" }
     ],
-    "dryRunShape": { "formId": "string", "name": "string" }
+    "dryRunShape": { "view": { "isSandbox": true } }
   }
 ]

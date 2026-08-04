@@ -27,14 +27,103 @@
  */
 import Form from "@/models/formModel";
 import CustomView from "@/models/customViewModel";
+import User from "@/models/userModel";
 import mongoose from "mongoose";
 import { sandboxRedisStore } from "./sandboxRedisStore.js";
 import AgentAuditEvent from "@/models/agentAuditEventModel";
 import PendingMerge from "@/models/PendingMerge";
-import type { MergeStats } from "./types.js";
+import type { MergeStats, MergeableKind } from "./types.js";
+import { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
 
 // Re-export the frozen contract for existing importers of sandboxMerge.
-export type { MergeStats } from "./types.js";
+export type { MergeStats, MergeableKind } from "./types.js";
+export { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
+
+/**
+ * B-S2.9: Apply a user update with USER_SAFE_FIELDS validation.
+ * Rejects any field not in the allowlist with UserUnsafeFieldError.
+ */
+async function applyUserUpdate(
+  userId: string,
+  ticketId: string,
+  upd: { id: string; idempotencyKey: string; expectedUpdatedAt?: Date },
+  updates: Record<string, any>,
+  session: mongoose.ClientSession,
+  stats: MergeStats,
+): Promise<void> {
+  // Flatten dot-path keys from the updates to validate each leaf
+  const unsafeFields: string[] = [];
+  const topKeys = Object.keys(updates);
+  for (const k of topKeys) {
+    if (USER_SAFE_FIELDS.has(k)) continue;
+    // For nested objects (profile, preferences, notificationSettings), check sub-keys
+    if (typeof updates[k] === "object" && updates[k] !== null) {
+      const subObj = updates[k];
+      for (const sk of Object.keys(subObj)) {
+        const dotted = `${k}.${sk}`;
+        if (!USER_SAFE_FIELDS.has(dotted)) {
+          // Check one level deeper (e.g., notificationSettings.popup.formExpired)
+          if (typeof subObj[sk] === "object" && subObj[sk] !== null) {
+            for (const dk of Object.keys(subObj[sk])) {
+              const deepDotted = `${k}.${sk}.${dk}`;
+              if (!USER_SAFE_FIELDS.has(deepDotted)) {
+                unsafeFields.push(deepDotted);
+              }
+            }
+          } else {
+            unsafeFields.push(dotted);
+          }
+        }
+      }
+    } else {
+      // Direct unsafe field (e.g., password, isAdmin)
+      unsafeFields.push(k);
+    }
+  }
+
+  if (unsafeFields.length > 0) {
+    throw new UserUnsafeFieldError(unsafeFields);
+  }
+
+  // Apply the safe update to User
+  const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id) };
+  if (upd.expectedUpdatedAt) filter.updatedAt = upd.expectedUpdatedAt;
+
+  // Flatten nested updates into dot-notation for $set
+  const flatUpdates: Record<string, any> = {};
+  for (const k of topKeys) {
+    if (typeof updates[k] === "object" && updates[k] !== null && USER_SAFE_FIELDS.has(k)) {
+      for (const sk of Object.keys(updates[k])) {
+        flatUpdates[`${k}.${sk}`] = updates[k][sk];
+      }
+    } else {
+      flatUpdates[k] = updates[k];
+    }
+  }
+
+  const res = await User.updateOne(filter, { $set: flatUpdates }, { session });
+  if (res.matchedCount > 0) {
+    stats.updatesApplied++;
+    await AgentAuditEvent.create([{
+      ticketId,
+      userId,
+      resourceId: String(upd.id),
+      action: "update_user",
+      serverDiff: flatUpdates,
+      outcome: "success",
+    }], { session });
+  } else {
+    stats.updatesMissed++;
+    await AgentAuditEvent.create([{
+      ticketId,
+      userId,
+      resourceId: String(upd.id),
+      action: "update_user",
+      serverDiff: flatUpdates,
+      outcome: "concurrency_miss",
+    }], { session });
+  }
+}
 
 async function mergeFormsAndIntents(
   userId: string,
@@ -79,8 +168,30 @@ async function mergeFormsAndIntents(
     }
   }
 
-  // 2. Updates — apply with optimistic concurrency.
+  // 2. Updates — apply with optimistic concurrency, routed by _mergeKind.
   for (const upd of store.updates) {
+    const mergeKind: MergeableKind = (upd.updates as any)?._mergeKind || "form_update";
+    const cleanUpdates = { ...upd.updates };
+    delete (cleanUpdates as any)._mergeKind;
+
+    // B-S2.8: Route by merge kind
+    if (mergeKind === "user_update") {
+      await applyUserUpdate(userId, ticketId, upd, cleanUpdates, session, stats);
+      continue;
+    }
+
+    let model: mongoose.Model<any>;
+    let actionLabel: string;
+    if (mergeKind === "view_update") {
+      model = CustomView;
+      actionLabel = "update_view";
+    } else {
+      model = Form;
+      actionLabel = mergeKind === "form_status" ? "set_form_status"
+        : mergeKind === "form_metadata" ? "update_form_metadata"
+        : "update_form";
+    }
+
     const filter: Record<string, any> = {
       _id: new mongoose.Types.ObjectId(upd.id),
       user: userId,
@@ -88,28 +199,26 @@ async function mergeFormsAndIntents(
     if (upd.expectedUpdatedAt) {
       filter.updatedAt = upd.expectedUpdatedAt;
     }
-    const updateOp = { $set: upd.updates };
-    const res = await Form.updateOne(filter, updateOp, { session });
+    const updateOp = { $set: cleanUpdates };
+    const res = await model.updateOne(filter, updateOp, { session });
     if (res.matchedCount > 0) {
       stats.updatesApplied++;
       await AgentAuditEvent.create([{
         ticketId,
         userId,
         resourceId: String(upd.id),
-        action: "update_form",
-        serverDiff: upd.updates,
+        action: actionLabel,
+        serverDiff: cleanUpdates,
         outcome: "success"
       }], { session });
     } else {
-      // Optimistic-concurrency check failed: form was modified between
-      // sandbox snapshot and merge. Track as missed and audit.
       stats.updatesMissed++;
       await AgentAuditEvent.create([{
         ticketId,
         userId,
         resourceId: String(upd.id),
-        action: "update_form",
-        serverDiff: upd.updates,
+        action: actionLabel,
+        serverDiff: cleanUpdates,
         outcome: "concurrency_miss"
       }], { session });
     }
