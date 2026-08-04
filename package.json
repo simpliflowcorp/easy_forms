@@ -18,6 +18,7 @@
     "agent:eval": "node --experimental-strip-types tests/agent/eval/stubRunner.ts",
     "agent:eval:stub": "node --experimental-strip-types tests/agent/eval/stubRunner.ts",
     "agent:eval:live": "ts-node -r dotenv/config tests/agent/eval/runner.ts",
+    "agent:load": "node --experimental-strip-types tests/agent/multi-agent/load_test.ts",
     "agent:validate-skills": "ts-node -r dotenv/config src/agent/skills/validator.ts"
   },
   "dependencies": {
