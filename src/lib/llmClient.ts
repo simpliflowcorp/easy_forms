@@ -125,9 +125,11 @@ export class LLMParseError extends Error {
 /** R2.3 — thrown when per-ticket or per-user-daily token budget is exceeded.
  *  Evaluator / loop catches this and routes to COMMUNICATOR with a friendly message. */
 export class LLMBudgetExceededError extends Error {
-  constructor(message: string, public budgetType: "per_ticket" | "per_day") {
+  public budgetType: "per_ticket" | "per_day";
+  constructor(message: string, budgetType: "per_ticket" | "per_day") {
     super(message);
     this.name = "LLMBudgetExceededError";
+    this.budgetType = budgetType;
   }
 }
 
