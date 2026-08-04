@@ -4,6 +4,20 @@ This document specifies data parameter schemas, field types, and rules required 
 
 ---
 
+## Permission Scopes (Stage 1 scaffold)
+
+The following scope keys are enumerated in `policy/permissions.ts`/`permissions.json`.
+They default to `false` (except `agent_audit`) — no Stage 1 tool maps to them yet.
+Their tool catalogs arrive with Stage 2; these entries are stub descriptions only.
+
+- **`skill_authoring`** — Authoring and registering skills in the Skills Registry.
+- **`bulk_operations`** — Batched multi-form / multi-view operations.
+- **`system_admin`** — Platform-level administrative tooling.
+- **`integration_management`** — Managing external integrations and webhooks.
+- **`agent_audit`** — Reading agent audit event logs (default enabled).
+
+---
+
 ## Tool Schemas & Parameter Guidelines
 
 ### 1. `create_form`

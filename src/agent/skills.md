@@ -1,5 +1,11 @@
 # Agent Skills Registry
 
+> **DEPRECATED (writing)** — Starting Stage 2, skills become first-class in
+> `src/agent/skills/registry.json` (typed by `src/agent/skills/types.ts` and
+> loaded by `src/agent/skills/loader.ts`). This file documents the legacy
+> inline skill descriptions and remains the human-readable reference until
+> the registry is populated and the Skill Router (Stage 2) takes over.
+
 This document lists all supported skills in Easy Forms, their description, mapped execution tools, and required permission scopes.
 
 ---

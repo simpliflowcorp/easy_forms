@@ -94,9 +94,11 @@ export class LLMOfflineError extends Error {
   }
 }
 export class LLMRateLimitError extends Error {
-  constructor(message: string, public status: number = 429) {
+  public status: number;
+  constructor(message: string, status: number = 429) {
     super(message);
     this.name = "LLMRateLimitError";
+    this.status = status;
   }
 }
 export class LLMTimeoutError extends Error {
@@ -106,9 +108,11 @@ export class LLMTimeoutError extends Error {
   }
 }
 export class LLMHTTPError extends Error {
-  constructor(public status: number, message: string) {
+  public status: number;
+  constructor(status: number, message: string) {
     super(message);
     this.name = "LLMHTTPError";
+    this.status = status;
   }
 }
 export class LLMParseError extends Error {
@@ -121,9 +125,11 @@ export class LLMParseError extends Error {
 /** R2.3 — thrown when per-ticket or per-user-daily token budget is exceeded.
  *  Evaluator / loop catches this and routes to COMMUNICATOR with a friendly message. */
 export class LLMBudgetExceededError extends Error {
-  constructor(message: string, public budgetType: "per_ticket" | "per_day") {
+  public budgetType: "per_ticket" | "per_day";
+  constructor(message: string, budgetType: "per_ticket" | "per_day") {
     super(message);
     this.name = "LLMBudgetExceededError";
+    this.budgetType = budgetType;
   }
 }
 

@@ -3,6 +3,11 @@
     "form_management": true,
     "data_analytics": true,
     "destructive_actions": false,
+    "skill_authoring": false,
+    "bulk_operations": false,
+    "system_admin": false,
+    "integration_management": false,
+    "agent_audit": true,
     "allowed_tools": [
       "create_form",
       "update_form",

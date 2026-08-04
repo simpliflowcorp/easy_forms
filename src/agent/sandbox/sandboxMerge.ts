@@ -31,15 +31,10 @@ import mongoose from "mongoose";
 import { sandboxRedisStore } from "./sandboxRedisStore.js";
 import AgentAuditEvent from "@/models/agentAuditEventModel";
 import PendingMerge from "@/models/PendingMerge";
+import type { MergeStats } from "./types.js";
 
-export interface MergeStats {
-  mergedForms: number;
-  mergedViews: number;
-  updatesApplied: number;
-  updatesMissed: number;
-  deletesApplied: number;
-  deletesMissed: number;
-}
+// Re-export the frozen contract for existing importers of sandboxMerge.
+export type { MergeStats } from "./types.js";
 
 async function mergeFormsAndIntents(
   userId: string,
@@ -320,7 +315,7 @@ async function mergeSandboxToProductionStandalone(
         $set: { 
           status: "COMPLETED",
           snapshot: {
-            mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+            mergedForms: stats.mergedForms,
             mergedViews: stats.mergedViews,
             updatesApplied: stats.updatesApplied,
             updatesMissed: stats.updatesMissed,
@@ -334,7 +329,7 @@ async function mergeSandboxToProductionStandalone(
     await sandboxRedisStore.resetStore(userId, ticketId);
     
     return {
-      mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+      mergedForms: stats.mergedForms,
       mergedViews: stats.mergedViews,
       updatesApplied: stats.updatesApplied,
       updatesMissed: stats.updatesMissed,
@@ -362,9 +357,9 @@ export async function mergeSandboxToProduction(
   const snapshot = await sandboxRedisStore.get(userId, ticketId);
 
   // Note: this is invoked directly in agentLoop's
-  // `mergeApproved` branch. We intentionally surface a richer stats object
-  // than the signature claims — agentLoop only reads mergedForms / mergedViews
-  // for its reply text, so the extra keys are informational and ignored.
+  // `mergeApproved` branch. The returned shape is exactly `MergeStats` —
+  // six raw counters with no cross-counter aggregation (D0.4). Unlike the
+  // previous shape, `mergedForms` does NOT include updates or deletes.
   
   // Try transactional merge first (requires replica set)
   const session = await mongoose.startSession();
@@ -377,7 +372,7 @@ export async function mergeSandboxToProduction(
     await sandboxRedisStore.resetStore(userId, ticketId);
 
     return {
-      mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+      mergedForms: stats.mergedForms,
       mergedViews: stats.mergedViews,
       updatesApplied: stats.updatesApplied,
       updatesMissed: stats.updatesMissed,
