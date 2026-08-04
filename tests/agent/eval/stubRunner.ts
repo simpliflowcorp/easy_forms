@@ -15,8 +15,8 @@
  *   or: npm run agent:eval:stub
  */
 
-import { __testRetryLLMOverride } from "../../../src/lib/llmClient.ts";
-import type { LLMMessage, LLMOptions, LLMResult, RetryOptions } from "../../../src/lib/llmClient.ts";
+import { __testRetryLLMOverride } from "../../../src/lib/llmClient";
+import type { LLMMessage, LLMOptions, LLMResult, RetryOptions } from "../../../src/lib/llmClient";
 
 // ─── Types (frozen contract) ─────────────────────────────────────────────
 
