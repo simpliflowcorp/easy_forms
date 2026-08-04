@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import type { MergeStats } from "./sandbox/types.js";
 
 export type PersonaStage =
   | "DRAFTER"
@@ -44,6 +45,7 @@ export interface AgentAction {
   requiresConfirmation?: boolean;
   result?: any;
   error?: string;
+  owningSkill?: string; // A-S2.2: the skill that owns this action
 }
 
 /** Single canonical definition of a pending mutation to be reflected into Mongo at merge.
@@ -155,6 +157,7 @@ export interface AgentState {
   // Accumulated context
   requirements: {
     skill?: string;
+    skills?: string[]; // A-S2.1: multi-skill support
     formTitle?: string;
     formDescription?: string;
     fields?: Array<{ label: string; type: number; required?: boolean; options?: any[] }>;
@@ -178,8 +181,12 @@ export interface AgentState {
   userContext?: {
     profile?: any;
     preferences?: any;
+    recurringFields?: any; // A-S2.5: populated from memory hydration
   };
   recentContext?: any[];
+
+  // A-S2.5: Memory hydration from MemoryService
+  memory?: Record<string, any>;
 
   // Execution Telemetry Trace Log
   executionTrace?: ExecutionTraceStep[];
@@ -210,6 +217,9 @@ export interface AgentState {
   // R1: flag indicating this is a read-only query that bypasses
   // Planner/Executor/Evaluator and goes directly DRAFTER → COMMUNICATOR.
   isReadOnly?: boolean;
+
+  // A-S2.7: Merge stats for selective merge reply
+  mergeStats?: MergeStats;
 
   // Streaming callback injected by agentLoop
   onChunk?: (chunk: string) => void;
