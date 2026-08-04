@@ -1,1 +1,102 @@
-[]
+[
+  {
+    "skillId": "build_form",
+    "name": "Build Form",
+    "version": "2.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "create_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "create_form without name parameter is rejected" },
+      { "assert": "create_form with invalid element type (e.g. 99) is rejected" }
+    ],
+    "dryRunShape": { "form": { "isSandbox": true, "idempotencyKey": "string" } }
+  },
+  {
+    "skillId": "edit_form",
+    "name": "Edit Form",
+    "version": "2.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "update_form", "paramsFrom": "requirements" },
+      { "tool": "add_form_element", "paramsFrom": "requirements" },
+      { "tool": "update_form_element", "paramsFrom": "requirements" },
+      { "tool": "remove_form_element", "paramsFrom": "requirements" },
+      { "tool": "reorder_form_elements", "paramsFrom": "requirements" },
+      { "tool": "set_form_status", "paramsFrom": "requirements" },
+      { "tool": "update_form_metadata_settings", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "edit_form on non-existent form returns error" },
+      { "assert": "remove_form_element without elementId or label is rejected" }
+    ],
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true }
+  },
+  {
+    "skillId": "delete_form_skill",
+    "name": "Delete Form",
+    "version": "2.0.0",
+    "permissionScope": "destructive_actions",
+    "tools": [
+      { "tool": "delete_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 2,
+    "negativeTests": [
+      { "assert": "delete_form on another user's form is rejected" },
+      { "assert": "double delete is idempotent and safe" }
+    ],
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true }
+  },
+  {
+    "skillId": "filter_responses",
+    "name": "Filter Responses",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "query_responses", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "query_responses with missing formId is rejected" },
+      { "assert": "cross-tenant form access via different formId is blocked" }
+    ],
+    "dryRunShape": { "results": [] }
+  },
+  {
+    "skillId": "generate_analytics_skill",
+    "name": "Generate Analytics",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "generate_analytics", "paramsFrom": "requirements" },
+      { "tool": "dashboard_stats", "paramsFrom": "context" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "analytics on another user's form is blocked" },
+      { "assert": "malformed metrics array returns schema error" }
+    ],
+    "dryRunShape": { "results": {} }
+  },
+  {
+    "skillId": "manage_custom_views",
+    "name": "Manage Custom Views",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "create_custom_view", "paramsFrom": "requirements" },
+      { "tool": "get_custom_views", "paramsFrom": "requirements" },
+      { "tool": "update_custom_view", "paramsFrom": "requirements" },
+      { "tool": "delete_custom_view", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "create_custom_view without formId is rejected" },
+      { "assert": "delete_custom_view for another user's form is blocked" }
+    ],
+    "dryRunShape": { "view": { "isSandbox": true } }
+  }
+]

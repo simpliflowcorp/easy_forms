@@ -106,6 +106,28 @@ const TOOL_TO_SCOPE: Record<string, string> = {
   update_custom_view: "data_analytics",
   delete_custom_view: "data_analytics",
   run_database_query: "data_analytics",
+  // B-S2.1: Element ops
+  add_form_element: "form_management",
+  update_form_element: "form_management",
+  remove_form_element: "form_management",
+  reorder_form_elements: "form_management",
+  // B-S2.2: Form lifecycle
+  set_form_status: "form_management",
+  update_form_metadata_settings: "form_management",
+  // B-S2.3: User/account
+  update_user_profile: "form_management",
+  update_user_preferences: "form_management",
+  update_notification_settings: "form_management",
+  // B-S2.4: Notifications (exempt from sandbox, but permission-gated)
+  list_notifications: "data_analytics",
+  mark_notification_read: "data_analytics",
+  clear_notification: "data_analytics",
+  // B-S2.5: Reads
+  dashboard_stats: "data_analytics",
+  list_agent_audit_events: "agent_audit",
+  list_agent_tickets: "agent_audit",
+  // B-S2.6: Exports
+  export_form: "data_analytics",
 };
 
 export function checkToolPermission(tool: string | undefined): PermissionCheckResult {
