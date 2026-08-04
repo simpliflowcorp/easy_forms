@@ -5,6 +5,13 @@
 > loaded by `src/agent/skills/loader.ts`). This file documents the legacy
 > inline skill descriptions and remains the human-readable reference until
 > the registry is populated and the Skill Router (Stage 2) takes over.
+>
+> **Stage 3 UI:** skills are also authorable at runtime through the agent
+> panel — `AgentSkillsDrawer` lists/creates/edits (version-bumps)/deletes user
+> skills via `/api/agent/skills` (see `docs/agent/API.md` §2.3). Built-ins
+> (from `registry.json`) are read-only. The `SkillDefinition` shape
+> (`name`, `tools[]`, `maxIterations`, `negativeTests[]`) is enforced by
+> `src/service/agentSkillsService.ts`.
 
 This document lists all supported skills in Easy Forms, their description, mapped execution tools, and required permission scopes.
 

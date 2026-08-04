@@ -168,3 +168,12 @@ User profile/preference mutations are filtered at the merge layer. Only these fi
 **REVOKED**: `password`, `email`, `isGoogleAuth`, `isAdmin`, `isVerified`, `forgetPasswordToken`, `forgetPasswordExpiry`, `verifyToken`, `verifyTokenExpiry`, `secondaryEmail`, `secondaryEmailVerifyCode`, `secondaryVerifyCodeExpiry`, `GoogleSheetAccessToken`.
 
 Any attempt to set a revoked field is rejected with `UserUnsafeFieldError` at merge time. This prevents catastrophic privilege escalation via the chat.
+
+---
+
+## Skills Authoring (Stage 3)
+
+- **Contract:** every skill definition must satisfy the frozen `SkillDefinition` shape: `{ name, tools: ToolRef[], maxIterations, negativeTests[] }` with `ToolRef = { tool, paramsFrom: "requirements" | "memory" | "context" }` and `NegativeTest = { assert, description? }`.
+- **Runtime authoring:** `POST /api/agent/skills` upserts on `(userId, name)` (idempotent, 400 on invalid shape); `PUT /api/agent/skills/[id]` edits (version bump); `DELETE` soft-deletes. Built-ins from `registry.json` are read-only. See `docs/agent/API.md` §2.3.
+- **UI:** `AgentSkillsDrawer` in the agent panel: list / test / edit / delete. Heartbeat events (`{type:"turn"}`) render in `AgentVisualizer` — see `docs/agent/ARCHITECTURE.md`.
+- **Tool-call inheritance:** a skill's `tools` must be a subset of `ALLOWED_TOOLS` for the loop context; cross-scope tools are filtered out at binding time.

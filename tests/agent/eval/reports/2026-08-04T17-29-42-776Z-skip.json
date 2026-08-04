@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-08-04T17:29:42.776Z",
+  "kind": "live",
+  "skipped": true,
+  "reason": "--skip flag (no agent code change to evaluate)",
+  "summary": {
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "total": 0
+  },
+  "results": []
+}
