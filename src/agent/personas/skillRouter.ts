@@ -13,6 +13,7 @@
  */
 import type { SkillDefinition, SkillRegistry, ToolRef } from "../skills/types";
 import { loadSkillRegistry } from "../skills/loader";
+import { logWarn } from "@/lib/logger";
 
 // AgentSkillModel is owned by Agent C (src/models/AgentSkillModel.ts).
 // In Stage 2, it may not exist yet; we import dynamically and handle gracefully.
@@ -61,7 +62,7 @@ export async function resolveSkill(
       }
     } catch (err) {
       // If the model exists but query fails, log and fall through to built-ins
-      console.warn(`[skillRouter] User skill lookup failed for ${skillName}:`, err);
+      logWarn(`[skillRouter] User skill lookup failed for ${skillName}:`, { error: String(err) });
     }
   }
 

@@ -5,6 +5,7 @@ import { newActionId } from "../helper/id";
 import { safeJSON } from "../helper/jsonParse";
 import { loadPersonaPrompt } from "../prompts/loader";
 import { resolveSkill, resolveSkills, buildActionPlanFromSkill } from "./skillRouter.js";
+import { logWarn, logError } from "@/lib/logger";
 
 const FIELD_TYPES = new Set([1, 2, 3, 4, 5]);
 const FILTER_OPS = new Set(["equals", "contains", "gt", "gte", "lt", "lte", "ne"]);
@@ -182,7 +183,7 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
 
   if (skillNames.length === 0) {
     // Fallback: no skill specified, use old behavior (full tool schema)
-    console.warn("[planner] No skill in requirements, falling back to full tool schema");
+    logWarn("[planner] No skill in requirements, falling back to full tool schema");
   } else {
     // Resolve skills via Skill Router
     const skillResult = await resolveSkills(skillNames, state.userId);
@@ -274,7 +275,7 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       }
       // Non-fatal: keep going with an empty plan; Evaluator will mark as failed
       // and either retry or surface to the user.
-      console.error("Planner LLM Error:", error.message);
+      logError("Planner LLM Error:", { error: error.message });
       state.llmRawOutput = `Error calling Planner LLM: ${error.message}`;
       return {
         ...state,
@@ -386,7 +387,7 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
     if (error instanceof LLMOfflineError) {
       throw error;
     }
-    console.error("Planner LLM Error:", error.message);
+    logError("Planner LLM Error:", { error: error.message });
     state.llmRawOutput = `Error calling Planner LLM: ${error.message}`;
     return {
       ...state,

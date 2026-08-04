@@ -15,6 +15,7 @@ import User from "@/models/userModel";
 import { LLMBudgetExceededError, LLMRateLimitError, LLMTimeoutError, LLMHTTPError } from "@/lib/llmClient";
 import { READ_ONLY_SKILLS } from "./policy/permissions";
 import { resolveSkill, resolveSkills } from "./personas/skillRouter.js";
+import { logWarn, child } from "@/lib/logger";
 
 export async function runAgentLoop(
   userId: string,
@@ -153,7 +154,7 @@ export async function runAgentLoop(
         totalTokens,
         costUsd: Number((totalTokens * 0.0001 / 1000).toFixed(6)),
       }).catch((err) => {
-        console.warn(`[agentLoop] Failed to persist AgentUsage for ${persona}:`, err.message);
+        logWarn(`[agentLoop] Failed to persist AgentUsage for ${persona}:`, { error: err.message });
       });
     }
   };
@@ -519,7 +520,7 @@ export async function runAgentLoop(
           };
         }
       } catch (e) {
-        console.warn(`[agentLoop] failed to fetch userContext for ${userId}`, e);
+        logWarn(`[agentLoop] failed to fetch userContext for ${userId}`, { error: String(e) });
       }
     }
 
@@ -744,9 +745,7 @@ export async function runAgentLoop(
     if (lock) {
       await lock.release();
       if (lock.stale()) {
-        console.warn(
-          `[agentLoop] user ${userId} ticket ${state?.ticket?.ticketId} — agent lock expired mid-run. User should retry if state looks stale.`,
-        );
+        logWarn(`[agentLoop] user ${userId} ticket ${state?.ticket?.ticketId} — agent lock expired mid-run. User should retry if state looks stale.`);
       }
     }
   }

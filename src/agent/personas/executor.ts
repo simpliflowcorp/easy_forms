@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import Form from "../../models/formModel.js";
 import CustomView from "../../models/customViewModel.js";
 import User from "../../models/userModel.js";
+import { logInfo } from "@/lib/logger";
 
 /**
  * B-S2.1: Compute the updated elements array for element-level mutations.
@@ -79,9 +80,10 @@ export async function runExecutor(state: AgentState): Promise<AgentState> {
   // itself; here we only consume the feedback as a logged breadcrumb.
   const lastFeedback = state.evaluatorFeedback || "";
   if (lastFeedback) {
-    console.log(
-      `[Executor] retrying with Evaluator feedback: ${lastFeedback} (iteration ${state.iterationCount}/${state.maxIterations})`,
-    );
+    logInfo(`[Executor] retrying with Evaluator feedback`, {
+      feedback: lastFeedback,
+      iteration: `${state.iterationCount}/${state.maxIterations}`,
+    });
   }
 
   for (let i = 0; i < updatedPlan.length; i++) {
