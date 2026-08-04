@@ -341,6 +341,12 @@ export async function executeAgentTool(
       return { signedUrl, expiresAt: new Date(expiresAt).toISOString(), format };
     }
 
+    // B-S3.5: Google Sheets integration stubs (phase-7 placeholder)
+    case "link_google_sheet":
+    case "sync_to_sheet":
+    case "unlink_google_sheet":
+      throw new Error(`${tool} is not yet implemented (integration_management scope, phase 7 placeholder).`);
+
     default:
       throw new Error(`Unknown or unauthorized tool action: ${tool}`);
   }

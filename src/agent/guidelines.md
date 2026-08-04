@@ -168,3 +168,41 @@ User profile/preference mutations are filtered at the merge layer. Only these fi
 **REVOKED**: `password`, `email`, `isGoogleAuth`, `isAdmin`, `isVerified`, `forgetPasswordToken`, `forgetPasswordExpiry`, `verifyToken`, `verifyTokenExpiry`, `secondaryEmail`, `secondaryEmailVerifyCode`, `secondaryVerifyCodeExpiry`, `GoogleSheetAccessToken`.
 
 Any attempt to set a revoked field is rejected with `UserUnsafeFieldError` at merge time. This prevents catastrophic privilege escalation via the chat.
+
+---
+
+## B-S3.5: Google Sheets Integration Stubs (Phase 7)
+
+### 21. `link_google_sheet` (Phase 7 placeholder)
+- **Parameters**: `formId`: string (Required), `sheetId`: string (Required)
+- **Scope**: `integration_management` (default `false`)
+- **Status**: Throws `NotImplementedError` until phase 7 implementation.
+
+### 22. `sync_to_sheet` (Phase 7 placeholder)
+- **Parameters**: `formId`: string (Required)
+- **Scope**: `integration_management` (default `false`)
+- **Status**: Throws `NotImplementedError`.
+
+### 23. `unlink_google_sheet` (Phase 7 placeholder)
+- **Parameters**: `formId`: string (Required)
+- **Scope**: `integration_management` (default `false`)
+- **Status**: Throws `NotImplementedError`.
+
+---
+
+## B-S3.1: Executor Role Partition
+
+Tools are partitioned into exactly 4 executor roles:
+
+| Role | Tools |
+|------|------|
+| `executor_forms` | `create_form`, `update_form`, `delete_form`, `add_form_element`, `update_form_element`, `remove_form_element`, `reorder_form_elements`, `set_form_status`, `update_form_metadata_settings` |
+| `executor_views` | `create_custom_view`, `update_custom_view`, `delete_custom_view`, `get_custom_views` |
+| `executor_responses` | `run_database_query`, `query_responses`, `generate_analytics`, `export_form` |
+| `executor_generic` | `update_user_profile`, `update_user_preferences`, `update_notification_settings`, `list_notifications`, `mark_notification_read`, `clear_notification`, `dashboard_stats`, `list_agent_audit_events`, `list_agent_tickets`, `link_google_sheet`, `sync_to_sheet`, `unlink_google_sheet` |
+
+Each tool belongs to exactly one role. Verification runs at import time in `permissions.ts`.
+
+## B-S3.4: Skill Merge Extension
+
+User skill mutations go through the sandbox with `MergeableKind`s `skill_create`, `skill_update`, `skill_soft_delete`. Merge is gated by `skill_authoring` scope and writes to Agent C's `AgentSkillModel` with `$setOnInsert` idempotency on `(user, name, version)`.
