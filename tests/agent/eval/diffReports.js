@@ -55,13 +55,17 @@ function main() {
       console.error(`No reports directory at ${REPORT_DIR}`);
       process.exit(1);
     }
-    files = fs
+    // Prefer the ISO-named reports (<ISO>.json) written by runner/stubRunner;
+    // fall back to any report file (incl. legacy stub-report-*.json) if none.
+    const candidates = fs
       .readdirSync(REPORT_DIR)
       .filter((f) => f.endsWith(".json"))
-      .filter((f) => !f.startsWith("trace-"))
-      .map((f) => path.join(REPORT_DIR, f))
-      .sort()
-      .slice(-2);
+      .filter((f) => !f.startsWith("trace-"));
+    const iso = candidates.filter((f) => /^\d{4}-\d{2}-\d{2}T/.test(f)).sort();
+    const selected = iso.length >= 2
+      ? iso.slice(-2)
+      : candidates.sort().slice(-2);
+    files = selected.map((f) => path.join(REPORT_DIR, f));
   }
 
   if (files.length < 2) {
