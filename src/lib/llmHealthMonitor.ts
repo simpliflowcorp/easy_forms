@@ -1,7 +1,11 @@
 import Redis from "ioredis";
+import { child } from "./logger.ts";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const pubClient = new Redis(redisUrl);
+
+// D-S2.3 — structured pino logger for the health monitor
+const log = child({ component: "llmHealthMonitor" });
 
 // Use global object to prevent multiple intervals during Next.js HMR
 declare global {
@@ -55,7 +59,7 @@ function resolveHealthProbe():
 export const startLlmHealthMonitor = () => {
   if (global._llmHealthMonitorInterval) return; // Already running
 
-  console.log("🚀 Starting centralized LLM Health Monitor...");
+  log.info("starting_llm_health_monitor");
 
   const checkHealth = async () => {
     try {
@@ -70,6 +74,7 @@ export const startLlmHealthMonitor = () => {
       if ("status" in probe) {
         if (global._llmHealthLastStatus !== "unknown") {
           global._llmHealthLastStatus = "unknown";
+          log.warn("llm_health_unknown", { reason: probe.reason });
           await pubClient.publish(
             "agent:llm_health",
             JSON.stringify({ status: "unknown", reason: probe.reason }),
@@ -93,6 +98,10 @@ export const startLlmHealthMonitor = () => {
       // Only broadcast if the status has changed or is uninitialized
       if (global._llmHealthLastStatus !== newStatus) {
         global._llmHealthLastStatus = newStatus;
+        log.info("llm_health_changed", {
+          status: newStatus,
+          provider: probeProvider,
+        });
         await pubClient.publish(
           "agent:llm_health",
           JSON.stringify({ status: newStatus, provider: probeProvider }),
@@ -101,6 +110,7 @@ export const startLlmHealthMonitor = () => {
     } catch {
       if (global._llmHealthLastStatus !== "offline") {
         global._llmHealthLastStatus = "offline";
+        log.error("llm_health_offline");
         await pubClient.publish(
           "agent:llm_health",
           JSON.stringify({ status: "offline" }),

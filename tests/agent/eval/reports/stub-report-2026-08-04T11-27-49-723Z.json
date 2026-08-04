@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-08-04T11:27:49.724Z",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "total": 1
+  },
+  "results": [
+    {
+      "id": "skeleton_smoke",
+      "prompt": "ping",
+      "passed": true
+    }
+  ]
+}
