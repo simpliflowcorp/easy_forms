@@ -6,6 +6,17 @@ import Form from "@/models/formModel";
 import { checkPermission, READ_ONLY_SKILLS } from "../policy/permissions";
 import { parsePersona, DrafterOutputSchema } from "../helper/validate";
 import { loadPersonaPrompt } from "../prompts/loader";
+import { resolveSkill } from "./skillRouter.js";
+
+// MemoryService is owned by Agent C (src/agent/memory/service.ts).
+// In Stage 2, it may not exist yet; we import dynamically and handle gracefully.
+let memoryService: any = null;
+try {
+  memoryService = require("@/agent/memory").memoryService;
+} catch {
+  // Service not yet implemented — memory hydration will be skipped.
+  memoryService = null;
+}
 
 export async function runDrafter(state: AgentState): Promise<AgentState> {
   const { userId } = state;
@@ -50,6 +61,35 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
   // Fetch existing form names to help Drafter resolve titles.
   const existingForms = await Form.find({ user: userId }).select("name").limit(20).lean();
   const formNames = existingForms.map((f: any) => f.name).join(", ");
+
+  // A-S2.5: Memory hydration — fetch recurring fields and recent failures
+  // Inject into state.userContext for the Planner to use
+  if (memoryService) {
+    try {
+      const recurringFields = await memoryService.getMemory(userId, "recurring_fields");
+      const recentFailures = await memoryService.recentFailures(userId, 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      state.memory = {
+        recurringFields: Array.isArray(recurringFields) ? recurringFields[0]?.value : recurringFields?.value,
+        recentFailures: recentFailures.map((f: any) => ({
+          promptHash: f.promptHash,
+          lastError: f.lastError,
+          count: f.count,
+          lastAt: f.lastAt,
+        })),
+      };
+      
+      // Also merge recurring fields into userContext for the Planner
+      if (state.memory.recurringFields) {
+        state.userContext = {
+          ...state.userContext,
+          recurringFields: state.memory.recurringFields,
+        };
+      }
+    } catch (err) {
+      console.warn(`[drafter] Memory hydration failed:`, err);
+    }
+  }
 
   let llmAnalysis: any = null;
   let rawContent: string = "";
@@ -215,17 +255,31 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
 
   // R1: Read-only short-circuit — if the skill is a pure read, bypass
   // Planner/Executor/Evaluator and go directly to Communicator.
+  // A-S2.3: Route via Skill Router instead of hardcoded dispatch.
   if (READ_ONLY_SKILLS.has(llmAnalysis.skill)) {
+    const skillResult = await resolveSkill(llmAnalysis.skill, state.userId);
+    if (!skillResult.allowed || !skillResult.skill) {
+      return {
+        ...state,
+        activePersona: "REJECTED",
+        isQuestion: true,
+        reply: skillResult.reason || `Unknown read-only skill: ${llmAnalysis.skill}`,
+        llmRawOutput: rawContent,
+      };
+    }
+    
+    // Use the skill's first tool (read-only skills typically have one tool)
+    const readTool = skillResult.skill.tools[0]?.tool || llmAnalysis.skill;
     const { executeAgentTool } = await import("../../lib/agentTools.js");
-    const toolResult = await executeAgentTool(llmAnalysis.skill, llmAnalysis.requirements || {}, state.userId);
+    const toolResult = await executeAgentTool(readTool, llmAnalysis.requirements || {}, state.userId);
     
     // Add trace step for read-only shortcut (D0.10)
     const readTraceStep: ExecutionTraceStep = {
       stepId: newTraceId(),
       timestamp: new Date().toLocaleTimeString(),
       persona: "DRAFTER",
-      message: `Read query: ${llmAnalysis.skill}`,
-      payload: { tool: llmAnalysis.skill, params: llmAnalysis.requirements || {}, result: toolResult },
+      message: `Read query: ${readTool} (via skill: ${llmAnalysis.skill})`,
+      payload: { tool: readTool, params: llmAnalysis.requirements || {}, result: toolResult, skill: llmAnalysis.skill },
     };
     state.executionTrace?.push(readTraceStep);
     
@@ -238,17 +292,18 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       isQuestion: false,
       actionPlan: [{
         id: "read_1",
-        tool: llmAnalysis.skill,
+        tool: readTool,
         params: llmAnalysis.requirements || {},
         result: toolResult,
         status: "done",
-        description: `Read query: ${llmAnalysis.skill}`,
+        description: `Read query: ${readTool} (via skill: ${llmAnalysis.skill})`,
+        owningSkill: llmAnalysis.skill,
       }],
       requirements: {
         ...state.requirements,
         skill: llmAnalysis.skill,
       },
-      drafterMessage: `Drafter classified as read-only: ${llmAnalysis.skill}.`,
+      drafterMessage: `Drafter classified as read-only: ${llmAnalysis.skill} (via Skill Router).`,
       llmRawOutput: rawContent,
     };
   }

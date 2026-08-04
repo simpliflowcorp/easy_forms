@@ -4,6 +4,7 @@ import { agentToolsSchema } from "../tools";
 import { newActionId } from "../helper/id";
 import { safeJSON } from "../helper/jsonParse";
 import { loadPersonaPrompt } from "../prompts/loader";
+import { resolveSkill, resolveSkills, buildActionPlanFromSkill } from "./skillRouter.js";
 
 const FIELD_TYPES = new Set([1, 2, 3, 4, 5]);
 const FILTER_OPS = new Set(["equals", "contains", "gt", "gte", "lt", "lte", "ne"]);
@@ -115,6 +116,50 @@ function describeTool(tool: string, params: any): string {
   }
 }
 
+/**
+ * Build the LLM prompt for parameter generation based on the skill's tool templates.
+ * The LLM fills in the params for each tool based on requirements, userContext, and memory.
+ */
+function buildMixerPrompt(
+  skillTools: { tool: string; paramsFrom: "requirements" | "memory" | "context"; owningSkill: string }[],
+  requirements: Record<string, any>,
+  userContext: Record<string, any> | undefined,
+  memory: Record<string, any> | undefined,
+  feedbackPreamble: string,
+  currentPrompt: string,
+  drafterMessage: string
+): string {
+  const toolDescriptions = skillTools.map((st) => {
+    // Find the tool schema from agentToolsSchema
+    const toolSchema = agentToolsSchema.find((ts: any) => ts.function.name === st.tool);
+    const paramsSchema = toolSchema?.function?.parameters?.properties || {};
+    const required = toolSchema?.function?.parameters?.required || [];
+    
+    return `- ${st.tool} (from skill: ${st.owningSkill}, paramsFrom: ${st.paramsFrom}): ${JSON.stringify({ properties: paramsSchema, required })}`;
+  }).join("\n");
+
+  const memoryStr = memory ? JSON.stringify(memory, null, 2) : "{}";
+  const userContextStr = userContext ? JSON.stringify(userContext, null, 2) : "{}";
+  const requirementsStr = JSON.stringify(requirements, null, 2);
+
+  return `${feedbackPreamble}User Request: ${currentPrompt}
+
+USER PREFERENCES AND PROFILE:
+${userContextStr}
+
+MEMORY (recurring fields, recent failures):
+${memoryStr}
+
+Drafter Context: ${drafterMessage || ""}
+Extracted Requirements: ${requirementsStr}
+
+AVAILABLE TOOLS FROM SKILL TEMPLATE(S):
+${toolDescriptions}
+
+Generate the parameters for each tool above. The tool calls must match the schemas exactly.
+Return ONLY the function calls — no additional text.`;
+}
+
 export async function runPlanner(state: AgentState): Promise<AgentState> {
   const { prompt, resumedPrompt, drafterMessage } = state;
   const currentPrompt = resumedPrompt ?? prompt;
@@ -127,6 +172,172 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
     ? `Previous plan failed. Feedback: ${state.evaluatorFeedback}. Adjust the action plan accordingly.\n\n`
     : "";
 
+  // A-S2.2: Get the skill(s) from requirements and resolve via Skill Router
+  const skillNames: string[] = [];
+  if (state.requirements.skills && Array.isArray(state.requirements.skills)) {
+    skillNames.push(...state.requirements.skills);
+  } else if (state.requirements.skill) {
+    skillNames.push(state.requirements.skill);
+  }
+
+  if (skillNames.length === 0) {
+    // Fallback: no skill specified, use old behavior (full tool schema)
+    console.warn("[planner] No skill in requirements, falling back to full tool schema");
+  } else {
+    // Resolve skills via Skill Router
+    const skillResult = await resolveSkills(skillNames, state.userId);
+    
+    if (!skillResult.allowed || !skillResult.skills.length) {
+      return {
+        ...state,
+        actionPlan: [{
+          id: newActionId(),
+          tool: "_skill_resolution_failed",
+          description: `Skill resolution failed: ${skillResult.reason}`,
+          params: {},
+          status: "error",
+          error: skillResult.reason,
+        }],
+        activePersona: "EXECUTOR_SANDBOX",
+      };
+    }
+
+    // Build action plan templates from skills
+    const skillTemplates = skillResult.skills.flatMap((skill: any) =>
+      buildActionPlanFromSkill(skill, state.requirements, state.userContext, state.memory as any)
+    );
+
+    // If only one tool and it's a simple read, we might not need LLM
+    // But for now, always use LLM to fill params (Mixer behavior)
+
+    let tool_calls: any[] | undefined;
+    let thoughtProcess = "";
+    let rawResponse: any;
+
+    try {
+      // R7: Load prompt from versioned file
+      const { systemPrompt } = loadPersonaPrompt("planner");
+      
+      // Build the mixer prompt with only the skill's tools
+      const mixerPrompt = buildMixerPrompt(
+        skillTemplates,
+        state.requirements,
+        state.userContext,
+        state.memory as any,
+        feedbackPreamble,
+        currentPrompt,
+        drafterMessage || ""
+      );
+
+      rawResponse = await retryLLM(
+        [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: mixerPrompt,
+          },
+        ],
+        {
+          tools: agentToolsSchema.filter((t: any) => skillTemplates.some((st: any) => st.tool === t.function.name)),
+          tool_choice: "auto",
+          onChunk: state.onChunk,
+        },
+      );
+
+      thoughtProcess = rawResponse?.content?.trim() || "No reasoning provided.";
+      tool_calls = rawResponse?.tool_calls;
+
+      // R2.2: capture LLM usage for token tracking
+      if (rawResponse?.usage) {
+        state.lastLLMUsage = rawResponse.usage;
+      }
+
+      // Phase 3.3: removed the `<|python_tag|> / True/False/None` Llama-3.1
+      // text fallback. That fallback hard-coded Llama-specific syntax quirks
+      // into supposedly-generic code AND silently truncated multi-call plans
+      // to ONE action. Quarantined to `legacy/llama3Fallback.ts` gated behind
+      // LLM_ALLOW_LEGACY_FALLBACK=1 for evaluation purposes; by default we
+      // require proper function-calling output and surface a clean
+      // LLMParseError otherwise.
+      if (process.env.LLM_ALLOW_LEGACY_FALLBACK === "1" && !tool_calls && thoughtProcess) {
+        const { parseLlama3PythonTag } = await import("../legacy/llama3Fallback.js");
+        tool_calls = parseLlama3PythonTag(thoughtProcess) || undefined;
+      }
+    } catch (error: any) {
+      if (error instanceof LLMOfflineError) {
+        // Upstream should not silently fall through; propagate so the loop can
+        // save to Mongo as LLM_ERROR (proper status code per #21).
+        throw error;
+      }
+      // Non-fatal: keep going with an empty plan; Evaluator will mark as failed
+      // and either retry or surface to the user.
+      console.error("Planner LLM Error:", error.message);
+      state.llmRawOutput = `Error calling Planner LLM: ${error.message}`;
+      return {
+        ...state,
+        actionPlan: [],
+        activePersona: "EXECUTOR_SANDBOX",
+      };
+    }
+
+    if (tool_calls && tool_calls.length > 0) {
+      for (const tc of tool_calls) {
+        let toolArgs: any = {};
+        try {
+          toolArgs = JSON.parse(tc.function.arguments);
+        } catch {
+          // LLM may emit arguments as a Python-like literal; safe fallback.
+          toolArgs = safeJSON(tc.function.arguments) || {};
+        }
+        const reason = validateToolParams(tc.function.name, toolArgs);
+        
+        // Find the owning skill for this tool
+        const owningSkill = skillTemplates.find((st: any) => st.tool === tc.function.name)?.owningSkill || skillNames[0];
+        
+        actions.push({
+          id: tc.id || newActionId(),
+          tool: tc.function.name,
+          description: describeTool(tc.function.name, toolArgs),
+          params: toolArgs,
+          status: reason ? "error" : "pending",
+          error: reason || undefined,
+          owningSkill, // A-S2.2: Each action gains owningSkill
+        });
+      }
+    } else {
+      // No tool calls means the LLM didn't follow the function-calling contract.
+      // Flag a sentinel action so the Evaluator/loop can decide to retry or ask user.
+      actions.push({
+        id: newActionId(),
+        tool: "_no_tool_call",
+        description: "Planner produced no tool calls. Evaluator should retry or surface to user.",
+        params: {},
+        status: "error",
+        error: "Planner LLM did not emit a tool call. (LLM_ALLOW_LEGACY_FALLBACK not set or no <|python_tag|> in response.)",
+        owningSkill: skillNames[0],
+      });
+    }
+
+    state.llmRawOutput = JSON.stringify(
+      {
+        thoughtProcess,
+        tool_calls: tool_calls || [],
+      },
+      null,
+      2,
+    );
+
+    return {
+      ...state,
+      actionPlan: actions,
+      activePersona: "EXECUTOR_SANDBOX",
+    };
+  }
+
+  // Fallback: no skill specified, use old behavior (full tool schema)
   let tool_calls: any[] | undefined;
   let thoughtProcess = "";
   let rawResponse: any;
@@ -167,25 +378,14 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       state.lastLLMUsage = rawResponse.usage;
     }
 
-    // Phase 3.3: removed the `<|python_tag|> / True/False/None` Llama-3.1
-    // text fallback. That fallback hard-coded Llama-specific syntax quirks
-    // into supposedly-generic code AND silently truncated multi-call plans
-    // to ONE action. Quarantined to `legacy/llama3Fallback.ts` gated behind
-    // LLM_ALLOW_LEGACY_FALLBACK=1 for evaluation purposes; by default we
-    // require proper function-calling output and surface a clean
-    // LLMParseError otherwise.
     if (process.env.LLM_ALLOW_LEGACY_FALLBACK === "1" && !tool_calls && thoughtProcess) {
       const { parseLlama3PythonTag } = await import("../legacy/llama3Fallback.js");
       tool_calls = parseLlama3PythonTag(thoughtProcess) || undefined;
     }
   } catch (error: any) {
     if (error instanceof LLMOfflineError) {
-      // Upstream should not silently fall through; propagate so the loop can
-      // save to Mongo as LLM_ERROR (proper status code per #21).
       throw error;
     }
-    // Non-fatal: keep going with an empty plan; Evaluator will mark as failed
-    // and either retry or surface to the user.
     console.error("Planner LLM Error:", error.message);
     state.llmRawOutput = `Error calling Planner LLM: ${error.message}`;
     return {
@@ -201,7 +401,6 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       try {
         toolArgs = JSON.parse(tc.function.arguments);
       } catch {
-        // LLM may emit arguments as a Python-like literal; safe fallback.
         toolArgs = safeJSON(tc.function.arguments) || {};
       }
       const reason = validateToolParams(tc.function.name, toolArgs);
@@ -212,11 +411,10 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
         params: toolArgs,
         status: reason ? "error" : "pending",
         error: reason || undefined,
+        owningSkill: state.requirements.skill || "unknown", // Fallback owningSkill
       });
     }
   } else {
-    // No tool calls means the LLM didn't follow the function-calling contract.
-    // Flag a sentinel action so the Evaluator/loop can decide to retry or ask user.
     actions.push({
       id: newActionId(),
       tool: "_no_tool_call",
@@ -224,6 +422,7 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       params: {},
       status: "error",
       error: "Planner LLM did not emit a tool call. (LLM_ALLOW_LEGACY_FALLBACK not set or no <|python_tag|> in response.)",
+      owningSkill: state.requirements.skill || "unknown",
     });
   }
 
@@ -233,8 +432,8 @@ export async function runPlanner(state: AgentState): Promise<AgentState> {
       tool_calls: tool_calls || [],
     },
     null,
-  2,
-);
+    2,
+  );
 
   return {
     ...state,
