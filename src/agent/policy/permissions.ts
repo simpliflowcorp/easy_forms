@@ -1,4 +1,5 @@
 import permissionsConfig from "../permissions.json";
+import type { ExecutorRole } from "@/agent/types";
 
 /**
  * Single source of truth for capability checks. Maps each skill in skills.md
@@ -143,5 +144,102 @@ export function checkToolPermission(tool: string | undefined): PermissionCheckRe
     : { allowed: false, scope, reason: `Permission scope '${scope}' is disabled in permissions.json.` };
 }
 
+// B-S3.5: Scope gating for Google Sheets stubs
+const TOOL_TO_SCOPE_INTEGRATION: Record<string, string> = {
+  link_google_sheet: "integration_management",
+  sync_to_sheet: "integration_management",
+  unlink_google_sheet: "integration_management",
+};
+// Merge integration scopes BEFORE computing ALLOWED_TOOLS
+Object.assign(TOOL_TO_SCOPE, TOOL_TO_SCOPE_INTEGRATION);
+
 /** Canonical list of tools the Executor will actually run. Anything else is a hallucination. */
 export const ALLOWED_TOOLS: ReadonlyArray<string> = Object.keys(TOOL_TO_SCOPE);
+
+// ─── B-S3.1: Role-allowed-tools helper ───────────────────────────────
+// Partition of ALL tools by ExecutorRole. Every tool appears in EXACTLY
+// one role. A's executors/base.ts dispatcher calls this.
+// Overlap means the partition is wrong, not intentional.
+const ROLE_TOOL_MAP: Record<ExecutorRole, readonly string[]> = {
+  executor_forms: [
+    "create_form", "update_form", "delete_form", "read_form",
+    "add_form_element", "update_form_element", "remove_form_element", "reorder_form_elements",
+    "set_form_status", "update_form_metadata_settings",
+  ],
+  executor_views: [
+    "create_custom_view", "update_custom_view", "delete_custom_view", "get_custom_views",
+  ],
+  executor_responses: [
+    "run_database_query", "query_responses", "generate_analytics", "export_form",
+  ],
+  executor_generic: [
+    "update_user_profile", "update_user_preferences", "update_notification_settings",
+    "list_notifications", "mark_notification_read", "clear_notification",
+    "dashboard_stats", "list_agent_audit_events", "list_agent_tickets",
+    // B-S3.5: external integration stubs — gated off by integration_management scope
+    "link_google_sheet", "sync_to_sheet", "unlink_google_sheet",
+  ],
+};
+
+/** Return the strict tool subset allowed for a given executor role. */
+export function getAllowedTools(role: ExecutorRole): readonly string[] {
+  return ROLE_TOOL_MAP[role] ?? [];
+}
+
+/**
+ * B-S3.1 verification invariant: every tool in ALLOWED_TOOLS appears in exactly one role.
+ * Run at import time so CI catches partition drift immediately.
+ */
+{
+  const seen = new Set<string>();
+  const overlap: string[] = [];
+  for (const role of Object.keys(ROLE_TOOL_MAP) as ExecutorRole[]) {
+    for (const t of ROLE_TOOL_MAP[role]) {
+      if (seen.has(t)) overlap.push(t);
+      seen.add(t);
+    }
+  }
+  if (overlap.length > 0) {
+    throw new Error(`B-S3.1 PARTITION ERROR: tools appear in more than one role: ${overlap.join(", ")}`);
+  }
+  // Check coverage
+  const missing = (ALLOWED_TOOLS as readonly string[]).filter(t => !seen.has(t));
+  if (missing.length > 0) {
+    throw new Error(`B-S3.2 COVERAGE ERROR: tools in ALLOWED _TOOLS but not in any role: ${missing.join(", ")}`);
+  }
+}
+
+// ─── B-S3.2: Skill-tool allowlist check ──────────────────────────────
+// A's executors/base.ts calls this before any user-skill tool dispatch.
+export interface Permissions {
+  scopes: string[];
+  userId?: string;
+}
+
+export function checkSkillToolAllowlist(
+  skill: { tools: { tool: string }[] },
+  userPermissions: Permissions,
+): { allowed: boolean; reason?: string } {
+  const roleUnion = new Set<string>();
+  for (const role of Object.keys(ROLE_TOOL_MAP) as ExecutorRole[]) {
+    for (const t of ROLE_TOOL_MAP[role]) roleUnion.add(t);
+  }
+
+  for (const tRef of skill.tools) {
+    const tool = tRef.tool;
+    // 1. Must be in the role union.
+    if (!roleUnion.has(tool)) {
+      return { allowed: false, reason: `Tool "${tool}" is not allow-list in any executor role.` };
+    }
+    // 2. Must be covered by user permission scopes.
+    const scope = TOOL_TO_SCOPE[tool];
+    if (!scope) {
+      return { allowed: false, reason: `Tool "${tool}" has no permission-scope mapping.` };
+    }
+    if (scope !== "_always_allowed" && !userPermissions.scopes.includes(scope)) {
+      return { allowed: false, reason: `Scope "${scope}" missing for tool "${tool}".` };
+    }
+  }
+
+  return { allowed: true };
+}
