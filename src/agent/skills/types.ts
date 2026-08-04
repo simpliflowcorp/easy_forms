@@ -20,6 +20,8 @@ export interface SkillDefinition {
   maxIterations: number;
   negativeTests: NegativeTest[];
   dryRunShape: Record<string, unknown>;
+  requiredParams: string[];
+  optionalParams: string[];
 }
 
 export type ToolRef = {
@@ -29,7 +31,7 @@ export type ToolRef = {
 
 export interface NegativeTest {
   assert: string;
-  description?: string;
+  description: string;
 }
 
 export interface SkillRegistry {

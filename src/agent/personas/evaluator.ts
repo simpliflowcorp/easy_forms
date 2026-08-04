@@ -4,6 +4,7 @@ import { parsePersona, EvaluatorOutputSchema, EvaluatorOutput } from "../helper/
 import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
 import { resolveSkill } from "./skillRouter.js";
+import { logWarn } from "@/lib/logger";
 
 type EvaluatorVerdict = EvaluatorOutput;
 
@@ -96,7 +97,7 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
           }
         } catch (evalErr) {
           // If eval fails, log and continue (don't block on test syntax errors)
-          console.warn(`[evaluator] Negative test eval error: ${test.assert}`, evalErr);
+          logWarn(`[evaluator] Negative test eval error: ${test.assert}`, { error: String(evalErr) });
         }
       }
     }

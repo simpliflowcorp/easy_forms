@@ -29,6 +29,9 @@ export function loadSkillRegistry(): SkillDefinition[] {
   }
 }
 
+// Re-export for convenience
+export type { SkillDefinition } from "./types";
+
 /**
  * B-S3.4: Find a user-authored skill by name from the AgentSkillModel.
  * Returns null if the model is not yet available (Agent C not implemented).

@@ -9,7 +9,8 @@ export type PersonaStage =
   | "COMMUNICATOR"
   | "AWAITING_USER_APPROVAL"
   | "MERGED_TO_PRODUCTION"
-  | "REJECTED";
+  | "REJECTED"
+  | "LLM_ERROR";
 
 export type TicketStage = "STAGE_1" | "STAGE_2" | "STAGE_3";
 
@@ -32,7 +33,7 @@ export interface AgentTicket {
   prompt: string;
   formId?: string;
   createdAt: string;
-  status: "OPEN" | "PROCESSING" | "RESOLVED" | "REJECTED" | "LLM_ERROR" | "CANCELLED";
+  status: "OPEN" | "PROCESSING" | "RESOLVED" | "REJECTED" | "LLM_ERROR" | "CANCELLED" | "AWAITING_USER_APPROVAL";
   errorKind?: ErrorKind;
 }
 
@@ -445,6 +446,13 @@ export interface BudgetSnapshot {
     perUserDay: number;
     perToolCall: number;
   };
+}
+
+export interface BudgetConfig {
+  perExecution: number;
+  perTask: number;
+  perUserDay: number;
+  perToolCall: number;
 }
 
 export interface AuditEntry {

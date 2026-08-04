@@ -1,5 +1,5 @@
 /**
- * ExecutorBase — abstract base class for Stage 3 domain executors.
+ * ExecutorBase — abstract base class for Stage 3 domain executors (A-S3.6).
  * 
  * Stage 3 splits the monolithic Executor persona into domain-specific
  * executors that run in parallel under the Orchestrator:
@@ -14,10 +14,10 @@
  * - Reports progress via checkpoints to the Orchestrator
  * - Handles idempotency keys and optimistic concurrency (expectedUpdatedAt)
  * - Emits structured results for the Critic to verify
- * 
- * Stage 2: Empty scaffold — no implementation. Stage 3 fills this.
  */
+
 import type { AgentAction, SandboxStoreState } from "../types";
+import { getAllowedTools, checkSkillToolAllowlist } from "../skills/loader";
 
 export interface ExecutorInput {
   /** The action to execute. */
@@ -48,6 +48,8 @@ export interface ExecutorOutput {
   success: boolean;
   /** Any error message. */
   error?: string;
+  /** Token usage from the execution. */
+  usage?: { totalTokens: number; costUsd: number };
   /** Checkpoint data for rollback. */
   checkpoint?: {
     sandboxSnapshotSha256: string;
@@ -75,9 +77,29 @@ export abstract class ExecutorBase {
 
   /**
    * Validate that this executor can handle the given action.
+   * Uses B's getAllowedTools(role) for tool allow-list enforcement.
    */
   canHandle(action: AgentAction): boolean {
-    return this.tools.includes(action.tool);
+    // First check our own tool list
+    if (!this.tools.includes(action.tool)) {
+      return false;
+    }
+    
+    // Then check B's centralized allow-list for this role
+    const allowedTools = getAllowedTools(this.role);
+    if (!allowedTools.has(action.tool)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Check if a user-authored skill tool is allowed.
+   * Delegates to B's checkSkillToolAllowlist(skill, perms) (B-S3.2).
+   */
+  async checkSkillAllowlist(skillName: string, perms: Record<string, boolean>): Promise<boolean> {
+    return checkSkillToolAllowlist(skillName, perms);
   }
 
   /**
@@ -90,4 +112,29 @@ export abstract class ExecutorBase {
    * Cleanup after execution (release temp resources, etc.).
    */
   abstract cleanup(): Promise<void>;
+}
+
+/**
+ * Dispatcher function to route an action to the correct executor.
+ * Used by the Orchestrator to delegate task execution.
+ */
+export async function dispatchToExecutor(
+  action: AgentAction,
+  role: "executor_forms" | "executor_responses" | "executor_views" | "executor_generic",
+  input: Omit<ExecutorInput, "action">
+): Promise<ExecutorOutput> {
+  // Import executors dynamically
+  const mod = await import(`./${role}`);
+  const executor = mod[`${role}Executor`] || mod.default;
+  
+  if (!executor || !executor.canHandle(action)) {
+    return {
+      sandbox: input.sandbox,
+      action: { ...action, status: "error", error: `No executor for tool: ${action.tool}` },
+      success: false,
+      error: `Tool ${action.tool} not handled by ${role}`,
+    };
+  }
+
+  return executor.execute({ ...input, action });
 }

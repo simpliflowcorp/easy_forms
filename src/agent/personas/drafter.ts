@@ -7,6 +7,7 @@ import { checkPermission, READ_ONLY_SKILLS } from "../policy/permissions";
 import { parsePersona, DrafterOutputSchema } from "../helper/validate";
 import { loadPersonaPrompt } from "../prompts/loader";
 import { resolveSkill } from "./skillRouter.js";
+import { logWarn, logInfo } from "@/lib/logger";
 
 // MemoryService is owned by Agent C (src/agent/memory/service.ts).
 // In Stage 2, it may not exist yet; we import dynamically and handle gracefully.
@@ -87,7 +88,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
         };
       }
     } catch (err) {
-      console.warn(`[drafter] Memory hydration failed:`, err);
+      logWarn(`[drafter] Memory hydration failed:`, { error: String(err) });
     }
   }
 
@@ -121,7 +122,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
     );
 
     rawContent = message?.content || "";
-    console.log("LLM Raw Output:", rawContent);
+    logInfo("LLM Raw Output:", { rawContent });
 
     // R2.2: capture LLM usage for token tracking
     if (message?.usage) {
@@ -142,7 +143,7 @@ export async function runDrafter(state: AgentState): Promise<AgentState> {
       state.llmRawOutput = `LLMOfflineError: ${err.message}`;
       return { ...state, activePersona: "DRAFTER", isQuestion: true };
     }
-    console.warn("LLM Drafter call failed or timed out. Error:", err.message);
+    logWarn("LLM Drafter call failed or timed out. Error:", { error: err.message });
     rawContent = `Error: ${err.message}`;
   }
 

@@ -3,6 +3,7 @@ import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
 import type { MergeStats } from "../sandbox/types.js";
+import { logError } from "@/lib/logger";
 
 /** Format read-only tool results for direct display without LLM call. */
 function formatReadOnlyResults(state: AgentState): string {
@@ -173,7 +174,7 @@ ${checkboxLines}
       isComplete: state.isComplete ?? false,
     };
   } catch (error: any) {
-    console.error("Communicator LLM Error:", error.message);
+    logError("Communicator LLM Error:", { error: error.message });
     
     // Handle LLMOfflineError explicitly - set ticket status to LLM_ERROR
     // and clear isComplete so the loop's post-Communicator persistence
