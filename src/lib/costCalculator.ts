@@ -78,4 +78,167 @@ export function computeCostUsd(input: ComputeCostInput): number {
   return Number(cost.toFixed(6));
 }
 
-export default { computeCostUsd, resolveCostTable, MODEL_COST_TABLE };
+/**
+ * D-S3.4 — per-provider default rate cards (USD per 1M tokens).
+ * Used when a model id doesn't match the model table but the serving provider
+ * is known (e.g. any provider-agnostic id on the NVIDIA NIM path).
+ */
+export const PROVIDER_DEFAULTS: Record<string, CostTableEntry> = {
+  nvidia: { inputPerM: 0.2, outputPerM: 0.2 },
+  google: { inputPerM: 0.1, outputPerM: 0.4 },
+  openai: { inputPerM: 0.5, outputPerM: 1.5 },
+  anthropic: { inputPerM: 3.0, outputPerM: 15.0 },
+  deepseek: { inputPerM: 0.27, outputPerM: 1.1 },
+  other: DEFAULT_COST_PER_M,
+};
+
+/** D-S3.4 — price for a (provider, model) pair: `{ in, out }` USD per 1M tokens. */
+export function priceFor(
+  provider: string | undefined,
+  model: string,
+): { in: number; out: number } {
+  const entry = resolveCostTable(model || "");
+  // A model-table match wins; otherwise fall back to the provider's card,
+  // then to the generic default.
+  let effective: CostTableEntry = entry;
+  if (entry === DEFAULT_COST_PER_M) {
+    const provDefault = provider
+      ? PROVIDER_DEFAULTS[provider.toLowerCase()]
+      : undefined;
+    effective = provDefault ?? DEFAULT_COST_PER_M;
+  }
+  return { in: effective.inputPerM, out: effective.outputPerM };
+}
+
+/** Infer the serving provider from a model id (best-effort, for grouping). */
+export function inferProviderFromModel(model: string): string {
+  const m = (model || "").toLowerCase();
+  if (m.includes("gemini")) return "google";
+  if (m.includes("claude")) return "anthropic";
+  if (m.includes("gpt")) return "openai";
+  if (m.includes("nvidia") || m.includes("meta/") || m.includes("llama")) return "nvidia";
+  if (m.includes("deepseek")) return "deepseek";
+  if (m.includes("mistral") || m.includes("mixtral") || m.includes("qwen") || m.includes("phi")) {
+    return "nvidia";
+  }
+  return "other";
+}
+
+/** D-S3.4 — aggregated usage summary for a user. */
+export interface UsageDayRow {
+  date: string; // YYYY-MM-DD (UTC)
+  calls: number;
+  tokens: number;
+  costUsd: number;
+}
+
+export interface UsageProviderRow {
+  provider: string;
+  calls: number;
+  tokens: number;
+  costUsd: number;
+}
+
+export interface UsageSummaryResult {
+  userId: string;
+  calls: number;
+  totalTokens: number;
+  totalCostUsd: number;
+  perDay: UsageDayRow[];
+  perProvider: UsageProviderRow[];
+  generatedAt: string;
+}
+
+/** Load the AgentUsage model lazily so the pure module stays importable. */
+function loadUsageModel(): any {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("@/models/agentUsageModel").default;
+  } catch {
+    return null;
+  }
+}
+
+function toUtcDay(ts: Date | string | number | undefined): string {
+  const d = ts instanceof Date ? ts : new Date(ts ?? Date.now());
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
+  ).padStart(2, "0")}`;
+}
+
+function roundUsd(n: number): number {
+  return Number(n.toFixed(6));
+}
+
+/**
+ * Derive all-time token + dollar usage with per-day and per-provider
+ * breakdowns from `AgentUsage` rows (read-only; never mutates).
+ *
+ * `modelLoader` is injectable for tests that cannot reach Mongo; the default
+ * loads the real Mongoose model.
+ */
+export async function usageSummary(
+  userId: string,
+  modelLoader: () => any = loadUsageModel,
+): Promise<UsageSummaryResult | null> {
+  const Usage = modelLoader();
+  if (!Usage) return null;
+
+  const rows = await Usage.find({ userId })
+    .lean()
+    .sort({ createdAt: 1 })
+    .exec();
+
+  const perDayMap = new Map<string, UsageDayRow>();
+  const perProviderMap = new Map<string, UsageProviderRow>();
+
+  let totalTokens = 0;
+  let totalCostUsd = 0;
+
+  for (const row of rows) {
+    const model = row.model || "";
+    const tokens = Number(row.totalTokens) || 0;
+    const cost = Number(row.costUsd) || 0;
+    const provider = inferProviderFromModel(model);
+
+    totalTokens += tokens;
+    totalCostUsd += cost;
+
+    const date = toUtcDay(row.createdAt);
+    const day = perDayMap.get(date) ?? { date, calls: 0, tokens: 0, costUsd: 0 };
+    day.calls += 1;
+    day.tokens += tokens;
+    day.costUsd = roundUsd(day.costUsd + cost);
+    perDayMap.set(date, day);
+
+    const prov = perProviderMap.get(provider) ?? {
+      provider,
+      calls: 0,
+      tokens: 0,
+      costUsd: 0,
+    };
+    prov.calls += 1;
+    prov.tokens += tokens;
+    prov.costUsd = roundUsd(prov.costUsd + cost);
+    perProviderMap.set(provider, prov);
+  }
+
+  return {
+    userId,
+    calls: rows.length,
+    totalTokens,
+    totalCostUsd: roundUsd(totalCostUsd),
+    perDay: [...perDayMap.values()],
+    perProvider: [...perProviderMap.values()],
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export default {
+  computeCostUsd,
+  resolveCostTable,
+  priceFor,
+  usageSummary,
+  inferProviderFromModel,
+  MODEL_COST_TABLE,
+};
