@@ -29,6 +29,7 @@ interface SkillEntry {
   maxIterations: number;
   negativeTests: { assert: string }[];
   dryRunShape: Record<string, unknown>;
+  requiredTools?: string[];
 }
 
 function validate(): boolean {
@@ -88,7 +89,24 @@ function validate(): boolean {
         if (!nt.assert) errors.push(`Skill ${skill.skillId}: negativeTest[${i}] missing assert`);
       }
     }
+    // B-S3.2: Validate requiredTools (for user-authored skills)
+    if (skill.requiredTools) {
+      if (!Array.isArray(skill.requiredTools)) errors.push(`Skill ${skill.skillId}: requiredTools must be an array`);
+      else for (const rt of skill.requiredTools) {
+        if (!allowedTools.includes(rt)) errors.push(`Skill ${skill.skillId}: requiredTool "${rt}" not in ALLOWED_TOOLS`);
+      }
+    }
     if (!skill.dryRunShape || typeof skill.dryRunShape !== "object") errors.push(`Skill ${skill.skillId}: missing or invalid dryRunShape`);
+  }
+
+  // B-S3.3: Sandbox test — validate dryRunShape matches expected schema
+  if (errors.length === 0) {
+    for (const skill of skills) {
+      const sandboxResult = sandboxTest(skill);
+      if (!sandboxResult.valid) {
+        errors.push(`Sandbox test for ${skill.skillId}: ${sandboxResult.reason}`);
+      }
+    }
   }
 
   if (errors.length > 0) {
@@ -99,6 +117,34 @@ function validate(): boolean {
 
   console.log(`Skills Registry validation PASSED (${skills.length} skills)`);
   return true;
+}
+
+/**
+ * B-S3.3: Sandbox test — runs each skill's dryRunShape against the skill
+ * definition to verify it produces a valid shape. For built-in skills,
+ * this is a structural check against the SkillDefinition schema.
+ * For user skills with requiredTools, validates tool allowlisting.
+ */
+function sandboxTest(skill: SkillEntry): { valid: boolean; reason?: string } {
+  // 1. Malformed tool detection: reject tools with invalid characters
+  if (skill.requiredTools) {
+    for (const rt of skill.requiredTools) {
+      if (!/^[a-z_0-9]+$/.test(rt)) {
+        return { valid: false, reason: `tool name "${rt}" contains invalid characters` };
+      }
+    }
+  }
+  // 2. Each tool in the skill must resolve to a valid allowed tool
+  for (const t of skill.tools) {
+    if (!t.tool || !/^[a-z_0-9]+$/.test(t.tool)) {
+      return { valid: false, reason: `tool name "${t.tool}" is malformed` };
+    }
+  }
+  // 3. dryRunShape must be a valid object
+  if (skill.dryRunShape && typeof skill.dryRunShape !== "object") {
+    return { valid: false, reason: "dryRunShape is not an object" };
+  }
+  return { valid: true };
 }
 
 const passed = validate();

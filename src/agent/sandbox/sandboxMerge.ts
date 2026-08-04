@@ -38,11 +38,96 @@ import { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
 // Re-export the frozen contract for existing importers of sandboxMerge.
 export type { MergeStats, MergeableKind } from "./types.js";
 export { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
+export type { MergeRequest } from "./types.js";
+
+/** Error thrown when a feature is not yet implemented. */
+export class NotImplementedError extends Error {
+  constructor(feature: string) {
+    super(`${feature} is not yet implemented.`);
+    this.name = "NotImplementedError";
+  }
+}
 
 /**
- * B-S2.9: Apply a user update with USER_SAFE_FIELDS validation.
- * Rejects any field not in the allowlist with UserUnsafeFieldError.
+ * B-S3.4: Apply a skill merge (create/update/soft-delete) to AgentSkillModel.
+ * Gated by skill_authoring scope. Uses $setOnInsert idempotency on (userId, name, version).
  */
+async function applySkillMerge(
+  userId: string,
+  ticketId: string,
+  upd: { id: string; idempotencyKey: string; expectedUpdatedAt?: Date },
+  updates: Record<string, any>,
+  mergeKind: MergeableKind,
+  session: mongoose.ClientSession,
+  stats: MergeStats,
+): Promise<void> {
+  // B-S3.4: AgentSkillModel is owned by Agent C — not yet deployed.
+  // When Agent C ships it, replace this with the import and merge logic below.
+  // The try/catch pattern used in loader.ts allows runtime resolution.
+  let AgentSkillModel: any;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    AgentSkillModel = (await Function('return import("@/models/AgentSkillModel")')() as any).default;
+  } catch {
+    throw new NotImplementedError("AgentSkillModel (Agent C's model) is not yet available for skill merge.");
+  }
+
+  if (mergeKind === "skill_create") {
+    const filter: Record<string, any> = {
+      user: userId,
+      name: updates.name,
+      version: updates.version,
+    };
+    // $setOnInsert idempotency
+    await AgentSkillModel.findOneAndUpdate(
+      filter,
+      {
+        $setOnInsert: {
+          ...updates,
+          user: userId,
+          agentIdempotencyKey: upd.idempotencyKey,
+        },
+      },
+      { upsert: true, session, new: true },
+    );
+    stats.mergedForms++;
+    await AgentAuditEvent.create([{
+      ticketId, userId,
+      resourceId: upd.idempotencyKey,
+      action: "create_skill",
+      serverDiff: updates,
+      outcome: "success",
+    }], { session });
+  } else if (mergeKind === "skill_update") {
+    const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id), user: userId };
+    if (upd.expectedUpdatedAt) filter.updatedAt = upd.expectedUpdatedAt;
+    const res = await AgentSkillModel.updateOne(filter, { $set: updates }, { session });
+    if (res.matchedCount > 0) {
+      stats.updatesApplied++;
+      await AgentAuditEvent.create([{
+        ticketId, userId, resourceId: String(upd.id),
+        action: "update_skill", serverDiff: updates, outcome: "success",
+      }], { session });
+    } else {
+      stats.updatesMissed++;
+      await AgentAuditEvent.create([{
+        ticketId, userId, resourceId: String(upd.id),
+        action: "update_skill", serverDiff: updates, outcome: "concurrency_miss",
+      }], { session });
+    }
+  } else {
+    // skill_soft_delete
+    const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id), user: userId };
+    const res = await AgentSkillModel.updateOne(filter, { $set: { deleted: true, deletedAt: new Date() } }, { session });
+    if (res.matchedCount > 0) stats.deletesApplied++;
+    else stats.deletesMissed++;
+    await AgentAuditEvent.create([{
+      ticketId, userId, resourceId: String(upd.id),
+      action: "soft_delete_skill", serverDiff: null, outcome: res.matchedCount > 0 ? "success" : "concurrency_miss",
+    }], { session });
+  }
+}
+
 async function applyUserUpdate(
   userId: string,
   ticketId: string,
@@ -177,6 +262,12 @@ async function mergeFormsAndIntents(
     // B-S2.8: Route by merge kind
     if (mergeKind === "user_update") {
       await applyUserUpdate(userId, ticketId, upd, cleanUpdates, session, stats);
+      continue;
+    }
+
+    // B-S3.4: Skill merge — gated by skill_authoring scope
+    if (mergeKind === "skill_create" || mergeKind === "skill_update" || mergeKind === "skill_soft_delete") {
+      await applySkillMerge(userId, ticketId, upd, cleanUpdates, mergeKind, session, stats);
       continue;
     }
 

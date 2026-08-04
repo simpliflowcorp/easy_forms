@@ -33,7 +33,21 @@ export type MergeableKind =
   | "view_delete"
   | "user_update"
   | "form_status"
-  | "form_metadata";
+  | "form_metadata"
+  | "skill_create"
+  | "skill_update"
+  | "skill_soft_delete";
+
+/**
+ * B-S3.4: MergeRequest — passed from the orchestrator when user confirms merge.
+ * mergeApprovedActionIds restricts which actions to merge (empty = all).
+ * Stage-2 gap filled here (was absent at draft time).
+ */
+export interface MergeRequest {
+  ticketId: string;
+  userId: string;
+  mergeApprovedActionIds: string[];
+}
 
 /**
  * B-S2.9: USER_SAFE_FIELDS — allowlist for user profile/preference mutations.
