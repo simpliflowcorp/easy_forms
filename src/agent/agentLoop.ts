@@ -14,6 +14,7 @@ import AgentUsageModel from "@/models/agentUsageModel";
 import User from "@/models/userModel";
 import { LLMBudgetExceededError, LLMRateLimitError, LLMTimeoutError, LLMHTTPError } from "@/lib/llmClient";
 import { READ_ONLY_SKILLS } from "./policy/permissions";
+import { resolveSkill, resolveSkills } from "./personas/skillRouter.js";
 
 export async function runAgentLoop(
   userId: string,
@@ -552,6 +553,28 @@ export async function runAgentLoop(
       );
       captureLLMUsage(state, "DRAFTER");
       await persistStateToRedis(state);
+
+      // A-S2.4: Resolve skill(s) at ticket start and override maxIterations
+      // Multi-skill: use the highest maxIterations among resolved skills, capped at 4
+      if (!state.isReadOnly && !state.isQuestion && state.activePersona !== "REJECTED") {
+        const skillNames: string[] = [];
+        if (state.requirements.skills && Array.isArray(state.requirements.skills)) {
+          skillNames.push(...state.requirements.skills);
+        } else if (state.requirements.skill) {
+          skillNames.push(state.requirements.skill);
+        }
+        
+        if (skillNames.length > 0) {
+          const skillResult = await resolveSkills(skillNames, state.userId);
+          if (skillResult.allowed && skillResult.skills.length > 0) {
+            // Use the highest maxIterations among skills
+            const maxIter = Math.max(...skillResult.skills.map(s => s.maxIterations || 3));
+            // Cap multi-skill at 4, single skill at their defined value
+            state.maxIterations = skillNames.length > 1 ? Math.min(maxIter, 4) : maxIter;
+            addTrace("DRAFTER", `Per-skill maxIterations set to ${state.maxIterations} (skills: ${skillNames.join(", ")})`);
+          }
+        }
+      }
 
       // Handle early returns from Drafter
       if (state.activePersona === "REJECTED" || state.isQuestion || state.isComplete) {
