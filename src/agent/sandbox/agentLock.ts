@@ -1,4 +1,4 @@
-import { AgentBusyError } from "../types.js";
+import { AgentBusyError, LoopTimeoutError } from "../types.js";
 import { agentRedis } from "./agentRedis.js";
 import { READ_ONLY_SKILLS } from "../policy/permissions.js";
 
@@ -9,12 +9,12 @@ import { READ_ONLY_SKILLS } from "../policy/permissions.js";
  * user without blocking each other, while mutations must be exclusive.
  *
  * Implementation:
- * - Write lock: `agent_lock:write:{userId}` — exclusive, TTL 60s, Lua CAS release
+ * - Write lock: `agent_lock:write:{userId}` — exclusive, TTL based on LOOP_DEADLINE_MS, Lua CAS release
  * - Read lock:  `agent_lock:read:{userId}` — shared, TTL 5s, counter-based
  *                Multiple readers increment/decrement; writer waits for counter to hit 0.
  *
  * Writer protocol:
- *   1. SET agent_lock:write:{userId} NX PX 60000 (fail → AgentBusyError)
+ *   1. SET agent_lock:write:{userId} NX PX <WRITE_LOCK_TTL_MS> (fail → AgentBusyError)
  *   2. Wait for agent_lock:read:{userId} counter to reach 0 (poll with TTL)
  *   3. Proceed with mutation
  *
@@ -24,10 +24,14 @@ import { READ_ONLY_SKILLS } from "../policy/permissions.js";
  *   3. DECR agent_lock:read:{userId} on cleanup
  *
  * TTL notes: read lock TTL is short (5s) so stale readers auto-expire quickly.
- * Writer TTL is longer (60s) to cover full mutation+merge cycle.
+ * Writer TTL is derived from LOOP_DEADLINE_MS (default 120000) to cover the
+ * worst-case loop execution plus a 5s buffer.
  */
 
-const WRITE_LOCK_TTL_MS = 60_000;
+// LOOP_DEADLINE_MS is the maximum time the agent loop is allowed to run.
+// Default 120000ms (2 minutes). The lock TTL is max(LOOP_DEADLINE_MS, 60000) + 5000.
+const LOOP_DEADLINE_MS = Number(process.env.LOOP_DEADLINE_MS || "120000");
+const WRITE_LOCK_TTL_MS = Math.max(LOOP_DEADLINE_MS, 60_000) + 5_000;
 const READ_LOCK_TTL_MS = 5_000;
 
 const WRITE_RELEASE_SCRIPT = `

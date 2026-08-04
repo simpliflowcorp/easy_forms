@@ -12,7 +12,16 @@ export type PersonaStage =
 
 export type TicketStage = "STAGE_1" | "STAGE_2" | "STAGE_3";
 
+export type EvaluatorDecision = "retry" | "replan" | "ask_user" | "complete";
 
+export type ErrorKind =
+  | "timeout"
+  | "rate_limit"
+  | "http_5xx"
+  | "offline"
+  | "cancelled"
+  | "oom"
+  | "unknown";
 
 export interface AgentTicket {
   ticketId: string;
@@ -22,7 +31,8 @@ export interface AgentTicket {
   prompt: string;
   formId?: string;
   createdAt: string;
-  status: "OPEN" | "PROCESSING" | "RESOLVED" | "REJECTED" | "LLM_ERROR";
+  status: "OPEN" | "PROCESSING" | "RESOLVED" | "REJECTED" | "LLM_ERROR" | "CANCELLED";
+  errorKind?: ErrorKind;
 }
 
 export interface AgentAction {
@@ -103,6 +113,28 @@ export class AgentBusyError extends Error {
   }
 }
 
+/** Thrown when the agent loop exceeds LOOP_DEADLINE_MS. */
+export class LoopTimeoutError extends Error {
+  public readonly code = "LOOP_TIMEOUT";
+  public readonly deadlineMs: number;
+  constructor(deadlineMs: number) {
+    super(`Agent loop exceeded deadline of ${deadlineMs}ms`);
+    this.name = "LoopTimeoutError";
+    this.deadlineMs = deadlineMs;
+  }
+}
+
+/** Thrown when the user aborts a running agent loop via the abort API. */
+export class AgentCancelledError extends Error {
+  public readonly code = "AGENT_CANCELLED";
+  public readonly ticketId: string;
+  constructor(ticketId: string) {
+    super(`Agent loop cancelled by user for ticket ${ticketId}`);
+    this.name = "AgentCancelledError";
+    this.ticketId = ticketId;
+  }
+}
+
 export interface ExecutionTraceStep {
   stepId: string;
   timestamp: string;
@@ -155,6 +187,12 @@ export interface AgentState {
   // Output messages for UI
   drafterMessage?: string;
   evaluatorFeedback?: string;
+  evaluatorDecision?: EvaluatorDecision;
+  priorPlans?: Array<{
+    iteration: number;
+    actionPlan: AgentAction[];
+    feedback: string;
+  }>;
   llmRawOutput?: string;
   isQuestion?: boolean;
   reply?: string;
@@ -192,4 +230,224 @@ export interface AgentState {
     byPersona: Record<string, { prompt: number; completion: number; total: number }>;
     estimatedCost: number;
   };
+}
+
+/* ============================================================
+ * Stage 3 Contract Interfaces (frozen in Stage 1, impl in Stage 3)
+ * These are interface-only exports — no implementation in Stage 1.
+ * ============================================================ */
+
+export type ExecutorRole = "executor_forms" | "executor_responses" | "executor_views" | "executor_generic";
+
+export type ExecutionStatus =
+  | "planning"
+  | "executing"
+  | "verifying"
+  | "awaiting_approval"
+  | "completed"
+  | "failed"
+  | "partial"
+  | "cancelled";
+
+export interface Checkpoint {
+  checkpointId: string;
+  taskId: string;
+  taskStateSnapshot: Record<string, any>;
+  sandboxSnapshotSha256: string;
+  memoryPointers: string[];
+  ts: number;
+}
+
+export interface TaskState {
+  taskId: string;
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  result?: any;
+  error?: string;
+  startedAt?: number;
+  completedAt?: number;
+  retryCount: number;
+}
+
+export interface TaskNode {
+  taskId: string;
+  role: ExecutorRole;
+  skill: string;
+  tool: string;
+  params: Record<string, any>;
+  dependsOn: string[];
+  timeoutMs: number;
+  retryPolicy: RetryPolicy;
+  metadata: {
+    isDestructive: boolean;
+    requiresConfirmation: boolean;
+    idempotencyKey: string;
+    estimatedTokens: number;
+  };
+  successCriteria: SuccessCriterion[];
+}
+
+export interface TaskEdge {
+  from: string;
+  to: string;
+  type: "dependency" | "conditional" | "loop";
+  condition?: string;
+}
+
+export interface RetryPolicy {
+  maxRetries: number;
+  backoffMs: number;
+  retryableErrors: string[];
+}
+
+export interface SuccessCriterion {
+  type: "tool_success" | "schema_match" | "value_check" | "custom";
+  specification: any;
+}
+
+export interface FixDirective {
+  taskId: string;
+  action: "retry" | "replan" | "replace_tool" | "adjust_params";
+  detail: string;
+}
+
+export interface Finding {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  category: string;
+  message: string;
+  relatedTaskId?: string;
+  evidence?: any;
+}
+
+export interface CriticVerdict {
+  verdict: "pass" | "conditional_pass" | "fail" | "escalate";
+  score: number;
+  findings: Finding[];
+  requiredFixes: FixDirective[];
+  retryGuidance?: string;
+  escalationReason?: string;
+}
+
+export interface ExecutionPlan {
+  planId: string;
+  goal: string;
+  tasks: TaskNode[];
+  edges: TaskEdge[];
+  checkpoints: Checkpoint[];
+  estimatedCost: CostEstimate;
+  riskAssessment: Risk[];
+  fallbackPlan?: ExecutionPlan;
+  metadata: {
+    createdBy: "pi_planner" | "planner";
+    model: string;
+    tokenEstimate: number;
+  };
+}
+
+export interface CostEstimate {
+  estimatedTokens: number;
+  estimatedCostUsd: number;
+  breakdown: Record<string, number>;
+}
+
+export interface Risk {
+  id: string;
+  severity: "low" | "medium" | "high";
+  description: string;
+  mitigation?: string;
+}
+
+export interface MemoryScope {
+  read: string[];
+  write: string[];
+  query?: string;
+}
+
+export interface MemoryPointer {
+  type: "episodic" | "semantic" | "procedural";
+  key: string;
+  relevance: number;
+}
+
+export interface AgentContext {
+  preferences: UserPreferences;
+  recentTraces: ExecutionTraceStep[];
+  relevantSkills: SkillDefinition[];
+  procedural: ProceduralMemory[];
+}
+
+export interface UserPreferences {
+  preferredFieldTypes: Record<string, number>;
+  namingPatterns: string[];
+  viewConfigs: Record<string, any>;
+}
+
+export interface SkillDefinition {
+  skillId: string;
+  name: string;
+  version: string;
+  permissionScope: string;
+  tools: ToolRef[];
+  maxIterations: number;
+  negativeTests: NegativeTest[];
+  dryRunShape: Record<string, any>;
+  requiredParams: string[];
+  optionalParams: string[];
+}
+
+export interface ToolRef {
+  tool: string;
+  paramsFrom: "requirements" | "memory" | "context";
+}
+
+export interface NegativeTest {
+  assert: string;
+  description: string;
+}
+
+export interface ProceduralMemory {
+  pattern: string;
+  frequency: number;
+  proposedSkill: SkillDefinition;
+  confidence: number;
+}
+
+export interface ExecutionState {
+  executionId: string;
+  userId: string;
+  sessionId?: string;
+  status: ExecutionStatus;
+  plan: ExecutionPlan;
+  taskStates: Map<string, TaskState>;
+  checkpoints: Checkpoint[];
+  budget: BudgetSnapshot;
+  auditLog: AuditEntry[];
+  memoryPointers: MemoryPointer[];
+}
+
+export interface BudgetSnapshot {
+  totalTokens: number;
+  totalCostUsd: number;
+  perTask: Record<string, { tokens: number; costUsd: number }>;
+  perUserDay: number;
+  limits: {
+    perTicket: number;
+    perUserDay: number;
+    perToolCall: number;
+  };
+}
+
+export interface AuditEntry {
+  executionId: string;
+  taskId?: string;
+  role: string;
+  event: "plan_start" | "tool_call" | "tool_result" | "verification" | "retry" | "checkpoint" | "merge";
+  payload: any;
+  metrics: {
+    tokens: number;
+    latencyMs: number;
+    costUsd: number;
+  };
+  rationale: string;
+  ts: number;
 }
