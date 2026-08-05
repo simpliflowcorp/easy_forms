@@ -9,6 +9,12 @@ import type {
   MemoryPointer,
 } from "@/agent/types";
 
+export interface FormVersionPointer {
+  taskId: string;
+  formId: string;
+  versionId: string;
+}
+
 export interface IOrchestratorExecutionDocument {
   _id?: string;
   executionId: string;
@@ -19,6 +25,7 @@ export interface IOrchestratorExecutionDocument {
   taskStates: Map<string, TaskState> | Record<string, TaskState>;
   agentStates?: Record<string, any>;
   memoryPointers?: MemoryPointer[] | string[];
+  formVersionPointers?: FormVersionPointer[];
   budgetConsumed?: BudgetSnapshot | Record<string, any>;
   checkpoints?: Checkpoint[];
   auditLog?: AuditEntry[];
@@ -50,6 +57,13 @@ const OrchestratorExecutionSchema = new mongoose.Schema(
     taskStates: { type: mongoose.Schema.Types.Mixed, default: {} },
     agentStates: { type: mongoose.Schema.Types.Mixed, default: {} },
     memoryPointers: [{ type: mongoose.Schema.Types.Mixed }],
+    formVersionPointers: [
+      {
+        taskId: { type: String, required: true },
+        formId: { type: String, required: true },
+        versionId: { type: String, required: true },
+      },
+    ],
     budgetConsumed: { type: mongoose.Schema.Types.Mixed, default: {} },
     checkpoints: [{ type: mongoose.Schema.Types.Mixed }],
     auditLog: [{ type: mongoose.Schema.Types.Mixed }],
