@@ -8,6 +8,13 @@
  *   3. 0 auth bypass — role-mismatched / cross-tenant / destructive intents
  *                      are all denied
  *
+ * Stage 4 (D-S4.3): a second 100-concurrent wave exercises the LLMOps tier
+ * path (`callLLMTiered` with a mocked LLM) and asserts:
+ *   - P99 < 30 s through the tiered wrapper (Track B LLMOps)
+ *   - tier attribution: tierHint "draft" + cheap env -> cheap model used AND
+ *     the AgentUsage row payload carries tier "draft"
+ *   - escalation: ticketCostUsd > 0.10 -> verify-tier (strong) model used
+ *
  * Orchestrator hook-in: when Agent A's `src/agent/orchestrator/loop.ts`
  * exists (integration gate), its `Orchestrator.execute` is used via dynamic
  * import and the assertions run against real `ExecutionState` results. Until
@@ -22,6 +29,12 @@ const ORCHESTRATOR_PATH = new URL(
   "../../../src/agent/orchestrator/loop.ts",
   import.meta.url,
 );
+
+import {
+  callLLMTiered,
+  __testRetryLLMOverride,
+  __testTieredUsageHook,
+} from "../../../src/lib/llmClient.ts";
 
 /** Frozen executor roles (src/agent/types.ts ExecutorRole). */
 export type ExecutorRole =
@@ -225,6 +238,97 @@ function p99(latencies: number[]): number {
   return sorted[Math.max(0, idx)];
 }
 
+// ---------------------------------------------------------------------------
+// Stage 4 (D-S4.3/D-S4.4): tier-routing load wave — 100 concurrent LLM calls
+// through callLLMTiered with a mocked LLM; asserts the tier SLAs hold at
+// scale and that tier attribution / escalation behave per the D-S4.4 policy.
+// ---------------------------------------------------------------------------
+
+export interface TierLoadReport {
+  total: number;
+  p99Ms: number;
+  slaP99: boolean;
+  cheapModelUsed: boolean;
+  draftTierAttributed: boolean;
+  escalatedModelUsed: boolean;
+}
+
+export async function runTierRoutingLoad(count = 100): Promise<TierLoadReport> {
+  const cheapModel = "llama-3.1-8b-instruct";
+  const strongModel = "gemini-2.0-flash";
+  const prevModelEnv = process.env.LLM_MODEL_DRAFT_TIER;
+  const prevStrongEnv = process.env.LLM_MODEL_VERIFY_TIER;
+  const prevOverride = __testRetryLLMOverride.current;
+  const prevUsageHook = __testTieredUsageHook.current;
+
+  const observedModels: string[] = [];
+  const usageRows: Array<Record<string, unknown>> = [];
+  const started = Date.now();
+
+  try {
+    process.env.LLM_MODEL_DRAFT_TIER = cheapModel;
+    process.env.LLM_MODEL_VERIFY_TIER = strongModel;
+    __testRetryLLMOverride.current = async (_messages, options) => {
+      observedModels.push(options.model ?? "");
+      return {
+        role: "assistant",
+        content: '{"ok": true}',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15, model: options.model ?? "" },
+      };
+    };
+    __testTieredUsageHook.current = (row) => usageRows.push(row);
+
+    const intents = Array.from({ length: count }, (_, i) =>
+      i % 2 === 0
+        ? { persona: "draft", tierHint: "draft" as const, ticketCostUsd: 0.01 }
+        : { persona: "draft", tierHint: "draft" as const, ticketCostUsd: 0.5 },
+    );
+
+    const results = await Promise.all(
+      intents.map((opts) =>
+        callLLMTiered({
+          persona: opts.persona,
+          tierHint: opts.tierHint,
+          ticketCostUsd: opts.ticketCostUsd,
+          messages: [{ role: "user" as const, content: "build a contact form" }],
+          userId: "load_user",
+          ticketId: "t_tier_load",
+        }),
+      ),
+    );
+    const p99Ms = p99(results.map(() => Date.now() - started));
+
+    const cheapCalls = observedModels.filter((m) => m === cheapModel).length;
+    const strongCalls = observedModels.filter((m) => m === strongModel).length;
+    const draftRows = usageRows.filter((r) => r.tier === "draft");
+    const escalatedRows = usageRows.filter((r) => r.tier === "verify");
+
+    const report: TierLoadReport = {
+      total: count,
+      p99Ms: Math.round(p99Ms),
+      slaP99: p99Ms < 30_000,
+      cheapModelUsed: cheapCalls > 0,
+      draftTierAttributed: draftRows.length > 0,
+      escalatedModelUsed: strongCalls > 0 && escalatedRows.length > 0,
+    };
+
+    console.log(`   tier calls: ${report.total} (cheap=${cheapCalls}, strong=${strongCalls})`);
+    console.log(`   tier P99 latency: ${report.p99Ms}ms (SLA < 30000ms: ${report.slaP99})`);
+    console.log(`   cheap model used for draft: ${report.cheapModelUsed}`);
+    console.log(`   tier="draft" attributed in AgentUsage rows: ${report.draftTierAttributed} (${draftRows.length} rows)`);
+    console.log(`   escalation >$0.10 -> verify tier: ${report.escalatedModelUsed} (${escalatedRows.length} rows)`);
+
+    return report;
+  } finally {
+    if (prevModelEnv === undefined) delete process.env.LLM_MODEL_DRAFT_TIER;
+    else process.env.LLM_MODEL_DRAFT_TIER = prevModelEnv;
+    if (prevStrongEnv === undefined) delete process.env.LLM_MODEL_VERIFY_TIER;
+    else process.env.LLM_MODEL_VERIFY_TIER = prevStrongEnv;
+    __testRetryLLMOverride.current = prevOverride;
+    __testTieredUsageHook.current = prevUsageHook;
+  }
+}
+
 export interface LoadTestReport {
   total: number;
   completed: number;
@@ -285,13 +389,24 @@ export async function runLoadTest(count = 100): Promise<LoadTestReport> {
 }
 
 async function main() {
+  console.log("── Stage 4 tier-routing load wave ──");
+  const tierReport = await runTierRoutingLoad(100);
+  const tierPass =
+    tierReport.slaP99 &&
+    tierReport.cheapModelUsed &&
+    tierReport.draftTierAttributed &&
+    tierReport.escalatedModelUsed;
+
+  console.log("── Multi-agent load wave ──");
   const report = await runLoadTest(100);
   const pass =
     report.slaP99 && report.slaDataLoss && report.slaAuthBypass;
-  console.log(`\n${pass ? "✅ ALL SLAs MET" : "❌ SLA VIOLATION"}`);
-  process.exit(pass ? 0 : 1);
+  const allPass = pass && tierPass;
+  console.log(
+    `\n${allPass ? "✅ ALL SLAs MET" : "❌ SLA VIOLATION"} (multi-agent ${pass ? "green" : "RED"}, tier routing ${tierPass ? "green" : "RED"})`,
+  );
+  process.exit(allPass ? 0 : 1);
 }
-
 const isMain =
   typeof process !== "undefined" &&
   Array.isArray(process.argv) &&
