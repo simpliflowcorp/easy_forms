@@ -17,6 +17,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { ALLOWED_TOOLS } from "../policy/permissions";
+import { evalNegativeTest } from "./safeAssert";
 
 const REGISTRY_PATH = path.join(process.cwd(), "src", "agent", "skills", "registry.json");
 
@@ -119,11 +120,24 @@ function validate(): boolean {
   return true;
 }
 
+/** B-S4.3: Synthetic context for assert validation in sandboxTest */
+function makeSyntheticContext() {
+  const actionPlan = [{
+    id: "synthetic", tool: "read_form",
+    description: "test", params: { elements: [] },
+    status: "pending" as const,
+  }];
+  return { actionPlan, state: { actionPlan } as any };
+}
+
 /**
  * B-S3.3: Sandbox test — runs each skill's dryRunShape against the skill
  * definition to verify it produces a valid shape. For built-in skills,
  * this is a structural check against the SkillDefinition schema.
  * For user skills with requiredTools, validates tool allowlisting.
+ *
+ * B-S4.3: Additionally runs each negativeTests[] assert through
+ * evalNegativeTest; reject unparseable assert strings.
  */
 function sandboxTest(skill: SkillEntry): { valid: boolean; reason?: string } {
   // 1. Malformed tool detection: reject tools with invalid characters
@@ -138,6 +152,32 @@ function sandboxTest(skill: SkillEntry): { valid: boolean; reason?: string } {
   for (const t of skill.tools) {
     if (!t.tool || !/^[a-z_0-9]+$/.test(t.tool)) {
       return { valid: false, reason: `tool name "${t.tool}" is malformed` };
+    }
+  }
+  // B-S4.3: Validate negativeTest assert strings through safeAssert
+  if (skill.negativeTests && Array.isArray(skill.negativeTests)) {
+    const ctx = makeSyntheticContext();
+    for (let i = 0; i < skill.negativeTests.length; i++) {
+      const nt = skill.negativeTests[i];
+      if (typeof nt.assert === "string") {
+        const result = evalNegativeTest(
+          { assert: nt.assert } as any,
+          ctx,
+        );
+        // Only reject PARSE errors (structural issues like unmatched brackets).
+        // Descriptive assertion strings (e.g. "create_form without name...")
+        // that evaluate to false are accepted — they are descriptive labels
+        // meant for the Evaluator's LLM persona at runtime.
+        if (result.reason && (
+          result.reason.includes("Parse error") ||
+          result.reason.includes("Evaluation error")
+        )) {
+          return {
+            valid: false,
+            reason: `Skill ${skill.skillId}: negativeTest[${i}] unparseable: ${result.reason}`,
+          };
+        }
+      }
     }
   }
   // 3. dryRunShape must be a valid object

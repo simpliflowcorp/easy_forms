@@ -265,7 +265,24 @@ async function mergeFormsAndIntents(
       continue;
     }
 
-    // B-S3.4: Skill merge — gated by skill_authoring scope
+    // B-S4.4: Track B version-snapshot and resource-lock merge kinds.
+    // Each kind is a no-op-as-mutation but writes an audit row.
+    if (
+      mergeKind === "form_version_snapshot" ||
+      mergeKind === "resource_lock_acquire" ||
+      mergeKind === "resource_lock_release"
+    ) {
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(upd.id),
+        action: mergeKind,
+        serverDiff: cleanUpdates,
+        outcome: "success",
+      }], { session });
+      continue;
+    }
+// B-S3.4: Skill merge — gated by skill_authoring scope
     if (mergeKind === "skill_create" || mergeKind === "skill_update" || mergeKind === "skill_soft_delete") {
       await applySkillMerge(userId, ticketId, upd, cleanUpdates, mergeKind, session, stats);
       continue;

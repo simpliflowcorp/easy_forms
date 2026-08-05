@@ -206,3 +206,45 @@ Each tool belongs to exactly one role. Verification runs at import time in `perm
 ## B-S3.4: Skill Merge Extension
 
 User skill mutations go through the sandbox with `MergeableKind`s `skill_create`, `skill_update`, `skill_soft_delete`. Merge is gated by `skill_authoring` scope and writes to Agent C's `AgentSkillModel` with `$setOnInsert` idempotency on `(user, name, version)`.
+
+## B-S4.5: Permissions Shape Stability
+
+The `Permissions` type exported from `policy/permissions.ts` is frozen as:
+
+```typescript
+export interface Permissions {
+  scopes: string[];
+  userId?: string;
+}
+```
+
+This is the ONLY shape accepted by `getAllowedTools(role)` and `checkSkillToolAllowlist(skill, userPermissions)`. Do NOT mutate it to a `Record<string, boolean>` shape (the v3 drift class). All callers — the executor dispatcher, the skill-tool allowlist checker, and the role partition — consume this single shape.
+
+The `permissions.json` top-level `permissions` block maps scope keys to `true`/`false` booleans. The five permission scopes that gate agent tools are:
+- `form_management`, `data_analytics`, `destructive_actions`, `system_admin`, `agent_audit`
+
+## B-S4.4: Track B Merge Kinds
+
+Three new `MergeableKind`s added for Track B (form versioning + resource locking):
+
+| Kind | Behavior |
+|------|----------|
+| `form_version_snapshot` | No-op-as-mutation; writes `AgentAuditEvent` row. Gated by existing transaction. C's `FormVersionModel` consumes the snapshot when available. |
+| `resource_lock_acquire` | No-op-as-mutation; writes `AgentAuditEvent` row. A's `orchestrator/lock.ts` acquires the lock; the audit row records intent. |
+| `resource_lock_release` | No-op-as-mutation; writes `AgentAuditEvent` row. Released by A when the ticket completes or aborts. |
+
+## B-S4.1: safeAssert — Negative Test Evaluator
+
+`src/agent/skills/safeAssert.ts` exports `evalNegativeTest(test, ctx)` which replaces all `eval()` calls on skill assertion strings. The evaluator is a recursive-descent parser restricted to:
+
+- Root identifiers: `actionPlan`, `state`
+- Property access: `.IDENT`, `[NUM]`
+- Comparisons: `===`, `!==`, `==`, `!=`, `>`, `<`, `>=`, `<=`
+- Logic: `&&`, `||`, `!`, `( ... )`
+- Literals: numbers, strings, `true`, `false`, `null`
+
+Banned tokens are rejected at lexer time: `require`, `import`, `eval`, `Function`, `process`, `globalThis`, `window`, `constructor`, `__proto__`, `prototype`, and chain-injection primitives.
+
+Assert fields may also be functions: `(ctx: NegEwalContext) => boolean`. If a function is provided, it is called directly — no string parsing occurs.
+
+`NegEvalContext = { actionPlan: AgentAction[]; state: AgentState }` is frozen; Agent C is flagged to co-export from `memory/types.ts`.
