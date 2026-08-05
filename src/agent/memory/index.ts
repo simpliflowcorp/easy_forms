@@ -5,3 +5,4 @@ export * from "./context";
 export * from "./vector";
 export * from "./preferences";
 export * from "./procedural";
+export * from "./skillFactory";
