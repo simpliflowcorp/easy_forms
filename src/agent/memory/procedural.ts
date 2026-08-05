@@ -3,6 +3,7 @@ import { connectDB } from "@/dbConfig/dbConfig";
 import Form from "@/models/formModel";
 import AgentTicket from "@/models/agentTicketModel";
 import type { SkillDefinition } from "@/agent/types";
+import { makeSkillDefinition } from "./skillFactory";
 
 function getUserMatchCondition(userId: string): any {
   if (mongoose.Types.ObjectId.isValid(userId)) {
@@ -61,7 +62,7 @@ export async function proposeSkillFromPatterns(
 
   // Pattern detection: If user has created 3+ NPS/pulse/comment forms, propose `weekly_pulse`
   if (npsFormCount >= 3 || (npsFormCount >= 2 && commentsFormCount >= 1) || commentsFormCount >= 3) {
-    const proposal: SkillDefinition = {
+    const proposal = makeSkillDefinition({
       skillId: "skill_weekly_pulse",
       name: "weekly_pulse",
       version: "1.0.0",
@@ -83,7 +84,7 @@ export async function proposeSkillFromPatterns(
       },
       requiredParams: ["title"],
       optionalParams: ["frequency", "description"],
-    };
+    });
     return proposal;
   }
 

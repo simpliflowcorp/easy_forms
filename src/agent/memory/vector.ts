@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { connectDB } from "@/dbConfig/dbConfig";
+import { redactPII } from "@/agent/helper/redact";
 import AgentMemoryModel from "@/models/AgentMemoryModel";
 
 export interface VectorRecord {
@@ -47,8 +48,8 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /**
- * Generates vector embedding for text.
- * Uses EMBEDDING_MODEL if configured, otherwise falls back to a deterministic 128-dim hash vector.
+ * Generates vector embedding for text using configured provider.
+ * Gated behind EMBEDDING_MODEL env var with deterministic fallback for dev/testing.
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   const modelName = process.env.EMBEDDING_MODEL;
@@ -92,6 +93,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 /**
  * Inserts or updates an embedding in the database.
+ * PII-redacts metadata/text if REDACT_EMBEDDINGS is enabled or by default.
  */
 export async function insertEmbedding(
   id: string,
@@ -100,16 +102,21 @@ export async function insertEmbedding(
   text: string = ""
 ): Promise<void> {
   await connectDB();
+
+  const shouldRedact = process.env.REDACT_EMBEDDINGS !== "false";
+  const finalMetadata = shouldRedact ? redactPII(metadata) : metadata;
+  const finalText = shouldRedact && typeof text === "string" ? redactPII(text) : text;
+
   await VectorEmbeddingModel.findOneAndUpdate(
     { id },
-    { id, embedding, metadata, text },
+    { id, embedding, metadata: finalMetadata, text: finalText },
     { upsert: true, new: true }
   );
 }
 
 /**
  * Searches for top-k vectors closest to queryEmbedding.
- * Attempts Mongo Atlas `$vectorSearch`. If not supported/configured, falls back to in-memory cosine search or keyword search.
+ * Uses Mongo Atlas `$vectorSearch` when MONGO_ATLAS_VECTOR_INDEX is configured, otherwise falls back to keyword / cosine similarity search.
  */
 export async function search(
   queryEmbedding: number[],
@@ -118,38 +125,42 @@ export async function search(
 ): Promise<SearchResult[]> {
   await connectDB();
 
-  // Try Mongo Atlas Vector Search pipeline
-  try {
-    const pipeline: any[] = [
-      {
-        $vectorSearch: {
-          index: "vector_index",
-          path: "embedding",
-          queryVector: queryEmbedding,
-          numCandidates: k * 10,
-          limit: k,
-          filter: filters,
-        },
-      },
-      {
-        $project: {
-          id: 1,
-          metadata: 1,
-          score: { $meta: "vectorSearchScore" },
-        },
-      },
-    ];
+  const atlasIndex = process.env.MONGO_ATLAS_VECTOR_INDEX;
 
-    const results = await VectorEmbeddingModel.aggregate(pipeline);
-    if (results && results.length > 0) {
-      return results.map((r: any) => ({
-        id: r.id,
-        score: r.score || 0,
-        metadata: r.metadata || {},
-      }));
+  // Try Mongo Atlas Vector Search pipeline if MONGO_ATLAS_VECTOR_INDEX is configured or in Atlas env
+  if (atlasIndex) {
+    try {
+      const pipeline: any[] = [
+        {
+          $vectorSearch: {
+            index: atlasIndex,
+            path: "embedding",
+            queryVector: queryEmbedding,
+            numCandidates: k * 10,
+            limit: k,
+            filter: filters,
+          },
+        },
+        {
+          $project: {
+            id: 1,
+            metadata: 1,
+            score: { $meta: "vectorSearchScore" },
+          },
+        },
+      ];
+
+      const results = await VectorEmbeddingModel.aggregate(pipeline);
+      if (results && results.length > 0) {
+        return results.map((r: any) => ({
+          id: r.id,
+          score: r.score || 0,
+          metadata: r.metadata || {},
+        }));
+      }
+    } catch {
+      // Fall through to dev fallback
     }
-  } catch {
-    // Atlas Vector Search not available in dev env — fall through to in-memory / keyword search
   }
 
   // Fallback 1: Calculate Cosine Similarity over stored VectorEmbeddings

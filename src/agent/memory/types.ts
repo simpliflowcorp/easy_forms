@@ -1,3 +1,5 @@
+import type { AgentAction, AgentState } from "@/agent/types";
+
 export interface AgentMemory {
   userId: string;
   key: string;
@@ -44,4 +46,9 @@ export interface MemoryService {
   recentFailures(userId: string, sinceMs: number): Promise<AgentFailure[]>;
   summarize(ticketId: string): Promise<string>;
   assembleContext(userId: string, scope: MemoryScope): Promise<AgentContext>;
+}
+
+export interface NegEvalContext {
+  actionPlan: AgentAction[];
+  state: AgentState;
 }
