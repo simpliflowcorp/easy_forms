@@ -178,10 +178,15 @@ export class CriticImpl extends CriticBase {
       for (const test of skill.negativeTests) {
         try {
           // Evaluate assertion in context of task result
-          const actionPlan = [{ tool: task.tool, params: task.params, result: state.result }];
+          const actionPlan = [{ tool: task.tool, params: task.params, result: state.result, id: "synth", description: "synthetic", status: "done" as const }];
           const state_ = { actionPlan, task, result: state.result };
-          // eslint-disable-next-line no-eval
-          const pass = eval(test.assert);
+          // B-S4.1: use safeAssert.evalNegativeTest instead of eval()
+          const { evalNegativeTest } = require("../skills/safeAssert") as typeof import("../skills/safeAssert");
+          const evalResult = evalNegativeTest(
+            test.assert,
+            { actionPlan, state: state_ as any, getAction: (i: number) => actionPlan[i], hasTool: (t: string) => actionPlan.some((a: any) => a.tool === t), getResults: (t: string) => [] },
+          );
+          const pass = evalResult.pass;
           
           if (!pass) {
             findings.push({

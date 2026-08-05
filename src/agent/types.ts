@@ -411,8 +411,11 @@ export interface ToolRef {
   paramsFrom: "requirements" | "memory" | "context";
 }
 
+// NegativeTest is canonical from skills/types.ts — kept here for backward compat via the SkillDefinition cross-ref.
+// A-S4.2: assert is now a union (string | safe function) to close the eval() security gap (B-S4.1 safeAssert).
 export interface NegativeTest {
-  assert: string;
+  assert: string | ((ctx: any) => boolean);
+  id?: string;
   description: string;
 }
 

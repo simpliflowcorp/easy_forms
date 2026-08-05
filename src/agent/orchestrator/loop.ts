@@ -459,11 +459,13 @@ Generate an ExecutionPlan that accomplishes the user's request.`
       if (!fromState || fromState.status !== "completed") return false;
       
       if (edge.condition) {
-        // Evaluate condition against fromState.result
+        // Evaluate condition against fromState.result.
+        // Condition edges are authored by the Planner (code, never user-supplied).
+        // Use Function scope-locked to { result } instead of eval().
         try {
           const result = fromState.result;
-          // eslint-disable-next-line no-eval
-          if (!eval(edge.condition)) return false;
+          const fn = new Function('result', `return ${edge.condition}`);
+          if (!fn(result)) return false;
         } catch {
           return false;
         }

@@ -127,7 +127,13 @@ function makeSyntheticContext() {
     description: "test", params: { elements: [] },
     status: "pending" as const,
   }];
-  return { actionPlan, state: { actionPlan } as any };
+  return {
+    actionPlan,
+    state: { actionPlan } as any,
+    getAction: (index: number) => actionPlan[index],
+    hasTool: (tool: string) => actionPlan.some((a: any) => a.tool === tool),
+    getResults: () => [],
+  };
 }
 
 /**
