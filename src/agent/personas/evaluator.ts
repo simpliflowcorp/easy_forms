@@ -5,6 +5,7 @@ import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
 import { resolveSkill } from "./skillRouter.js";
 import { logWarn } from "@/lib/logger";
+import { evalNegativeTest, createNegEvalContext, type NegativeTestAssert } from "../skills/safeAssert.js";
 
 type EvaluatorVerdict = EvaluatorOutput;
 
@@ -59,45 +60,70 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
   if (owningSkillName) {
     const skillResult = await resolveSkill(owningSkillName, state.userId);
     if (skillResult.allowed && skillResult.skill && skillResult.skill.negativeTests) {
+      // Build safe evaluation context once per skill
+      const ctx = createNegEvalContext(state);
       for (const test of skillResult.skill.negativeTests) {
-        try {
-          // Evaluate the assertion in a safe context
-          // The assertion can reference actionPlan, state, etc.
-          const actionPlan = state.actionPlan;
-          const state_ = state; // alias for assertion context
-          // eslint-disable-next-line no-eval
-          const pass = eval(test.assert);
-          if (!pass) {
-            const failMsg = test.description
-              ? `Negative test failed: ${test.description} (assert: ${test.assert})`
-              : `Negative test failed: ${test.assert}`;
-            if (state.iterationCount < state.maxIterations) {
-              const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
-                state.iterationCount === 2 ? "replan" : "ask_user";
-              return {
-                ...state,
-                iterationCount: state.iterationCount + 1,
-                activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
-                evaluatorFeedback: failMsg,
-                evaluatorDecision: decision,
-                llmRawOutput: `Negative test failed: ${test.assert}`,
-              };
-            }
-            // Iterations exhausted
+        // Support both string assertions and function assertions (B's Stage 4 union type)
+        const assert = test.assert as NegativeTestAssert;
+        const result = evalNegativeTest(assert, ctx);
+        
+        if (result.error) {
+          // Parse error or evaluation error - log and treat as test failure
+          logWarn(`[evaluator] Negative test evaluation error: ${test.assert}`, { error: result.error });
+          const failMsg = test.description
+            ? `Negative test failed: ${test.description} (assert: ${test.assert}) - ${result.error}`
+            : `Negative test failed: ${test.assert} - ${result.error}`;
+          if (state.iterationCount < state.maxIterations) {
+            const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+              state.iterationCount === 2 ? "replan" : "ask_user";
             return {
               ...state,
-              activePersona: "COMMUNICATOR",
-              isQuestion: true,
-              isComplete: false,
-              reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+              iterationCount: state.iterationCount + 1,
+              activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
               evaluatorFeedback: failMsg,
-              evaluatorDecision: "ask_user",
+              evaluatorDecision: decision,
+              llmRawOutput: `Negative test failed: ${test.assert} - ${result.error}`,
+            };
+          }
+          return {
+            ...state,
+            activePersona: "COMMUNICATOR",
+            isQuestion: true,
+            isComplete: false,
+            reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+            evaluatorFeedback: failMsg,
+            evaluatorDecision: "ask_user",
+            llmRawOutput: `Negative test failed: ${test.assert} - ${result.error}`,
+          };
+        }
+        
+        if (!result.pass) {
+          const failMsg = test.description
+            ? `Negative test failed: ${test.description} (assert: ${test.assert})`
+            : `Negative test failed: ${test.assert}`;
+          if (state.iterationCount < state.maxIterations) {
+            const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+              state.iterationCount === 2 ? "replan" : "ask_user";
+            return {
+              ...state,
+              iterationCount: state.iterationCount + 1,
+              activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
+              evaluatorFeedback: failMsg,
+              evaluatorDecision: decision,
               llmRawOutput: `Negative test failed: ${test.assert}`,
             };
           }
-        } catch (evalErr) {
-          // If eval fails, log and continue (don't block on test syntax errors)
-          logWarn(`[evaluator] Negative test eval error: ${test.assert}`, { error: String(evalErr) });
+          // Iterations exhausted
+          return {
+            ...state,
+            activePersona: "COMMUNICATOR",
+            isQuestion: true,
+            isComplete: false,
+            reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+            evaluatorFeedback: failMsg,
+            evaluatorDecision: "ask_user",
+            llmRawOutput: `Negative test failed: ${test.assert}`,
+          };
         }
       }
     }

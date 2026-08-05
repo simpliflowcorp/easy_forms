@@ -271,7 +271,7 @@ export interface Checkpoint {
 
 export interface TaskState {
   taskId: string;
-  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  status: "pending" | "running" | "completed" | "failed" | "skipped" | "waiting";
   result?: any;
   error?: string;
   startedAt?: number;
