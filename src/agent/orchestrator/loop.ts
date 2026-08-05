@@ -20,7 +20,7 @@ import { mergeSandboxToProduction } from "../sandbox/sandboxMerge.js";
 import { agentRedis } from "../sandbox/agentRedis.js";
 import { callLLM, retryLLM } from "@/lib/llmClient.js";
 import { loadSkillRegistry } from "../skills/loader.js";
-import { checkToolPermission } from "../policy/permissions.js";
+import { checkToolPermission, getAllowedTools } from "../policy/permissions.js";
 import { newTraceId } from "../helper/id.js";
 import AgentTicketModel from "@/models/agentTicketModel.js";
 import AgentUsageModel from "@/models/agentUsageModel.js";
@@ -320,7 +320,11 @@ Generate an ExecutionPlan that accomplishes the user's request.`
   /** Run Critic pre-flight validation (A-S3.5). */
   private async runCriticPreflight(): Promise<CriticVerdict> {
     const critic = await getCritic();
-    const allowedTools = this.getAllowedToolsForPlan();
+    // Collect all tools from the plan and check against B's role-based allow-list
+    const allowedTools = new Set<string>();
+    for (const role of ["executor_forms", "executor_responses", "executor_views", "executor_generic"] as ExecutorRole[]) {
+      for (const t of getAllowedTools(role)) allowedTools.add(t);
+    }
     
     const findings: Finding[] = [];
     
@@ -378,15 +382,6 @@ Generate an ExecutionPlan that accomplishes the user's request.`
     });
 
     return verdict;
-  }
-
-  /** Get allowed tools from skills registry. */
-  private getAllowedToolsForPlan(): Set<string> {
-    const tools = new Set<string>();
-    for (const task of this.plan!.tasks) {
-      tools.add(task.tool);
-    }
-    return tools;
   }
 
   /** Execute the plan topologically (A-S3.6). */

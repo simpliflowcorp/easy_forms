@@ -6,6 +6,9 @@
  * agent generates a SkillDefinition, validates via B's SkillRegistry.validate / sandboxTest,
  * stores via B's skill merge into C's AgentSkillModel, records audit event.
  * Gated by the `skill_authoring` permission scope (default false).
+ * 
+ * A-S4.6: Uses makeSkillDefinition factory to ensure requiredParams/optionalParams
+ * defaults and prevent drift bugs.
  */
 
 import { AgentState } from "../types";
@@ -17,6 +20,7 @@ import AgentSkillModel from "@/models/AgentSkillModel";
 import { newTraceId } from "../helper/id";
 import { logInfo, logError } from "@/lib/logger";
 import type { SkillDefinition } from "../types.js";
+import { makeSkillDefinition, validateSkillDefinition } from "../skills/skillFactory.js";
 
 export interface SkillAuthorResult {
   success: boolean;
@@ -59,7 +63,21 @@ export async function generateSkillFromDescription(
       temperature: 0.2,
     });
 
-    const skillDef = JSON.parse(response.content) as SkillDefinition;
+    const rawSkillDef = JSON.parse(response.content) as SkillDefinition;
+    
+    // A-S4.6: Apply factory defaults to ensure requiredParams/optionalParams are present
+    const skillDef = makeSkillDefinition({
+      skillId: rawSkillDef.skillId,
+      name: rawSkillDef.name,
+      version: rawSkillDef.version,
+      permissionScope: rawSkillDef.permissionScope,
+      tools: rawSkillDef.tools,
+      maxIterations: rawSkillDef.maxIterations,
+      negativeTests: rawSkillDef.negativeTests,
+      dryRunShape: rawSkillDef.dryRunShape,
+      requiredParams: rawSkillDef.requiredParams,
+      optionalParams: rawSkillDef.optionalParams,
+    });
     
     // Validate the generated skill
     const validation = await validateSkill(skillDef);
@@ -90,22 +108,18 @@ export async function generateSkillFromDescription(
 
 /**
  * Validate a SkillDefinition against the frozen contract.
- * Delegates to B's skills.validator (B-S3.3).
+ * Delegates to B's skills.validator (B-S3.3) and local factory validation.
+ * A-S4.6: Uses makeSkillDefinition factory validation to ensure defaults.
  */
 export async function validateSkill(skill: SkillDefinition): Promise<{ valid: boolean; errors: string[] }> {
-  const errors: string[] = [];
+  // First, run factory validation (catches missing requiredParams/optionalParams etc.)
+  const factoryValidation = validateSkillDefinition(skill);
+  if (!factoryValidation.valid) {
+    return factoryValidation;
+  }
 
-  // Required fields
-  if (!skill.skillId) errors.push("skillId is required");
-  if (!skill.name) errors.push("name is required");
-  if (!skill.version) errors.push("version is required");
-  if (!skill.permissionScope) errors.push("permissionScope is required");
-  if (!Array.isArray(skill.tools) || skill.tools.length === 0) errors.push("tools array is required");
-  if (typeof skill.maxIterations !== "number" || skill.maxIterations < 1) errors.push("maxIterations must be >= 1");
-  if (!Array.isArray(skill.negativeTests)) errors.push("negativeTests array is required");
-  if (!skill.dryRunShape || typeof skill.dryRunShape !== "object") errors.push("dryRunShape is required");
-  if (!Array.isArray(skill.requiredParams)) errors.push("requiredParams array is required");
-  if (!Array.isArray(skill.optionalParams)) errors.push("optionalParams array is required");
+  // Then run additional structural checks
+  const errors: string[] = [];
 
   // Validate each tool reference
   for (const toolRef of skill.tools) {
@@ -118,6 +132,7 @@ export async function validateSkill(skill: SkillDefinition): Promise<{ valid: bo
   // Validate negative tests
   for (const test of skill.negativeTests) {
     if (!test.assert) errors.push("Each negative test must have an 'assert' field");
+    if (!test.description) errors.push("Each negative test must have a 'description' field");
   }
 
   return { valid: errors.length === 0, errors };

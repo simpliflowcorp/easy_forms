@@ -5,11 +5,18 @@
  * interface. Controlled by AGENT_V3_ENABLED env flag.
  * 
  * TEMPORARY: Delete once in-flight tickets drain.
+ * 
+ * DRAIN PROCEDURE (A-S4.3):
+ * 1. Query prod AgentTicketModel for tickets with status in [AWAITING_USER_APPROVAL, EXECUTOR_SANDBOX, PLANNER]
+ *    and createdAt < <ship-tag-date> (v3-stage-3-complete tag date).
+ * 2. If zero rows exist, Stage 4 follow-up PR deletes legacyShim.ts + the AGENT_V3_ENABLED switch.
+ * 3. Do NOT delete legacyShim.ts in Stage 4 — schedule the delete as a Stage-4-exit + separate small PR.
  */
 
 import { AgentState } from "../types";
 import { orchestrator } from "./index";
 import { ExecutionStatus } from "../types";
+import AgentTicketModel from "@/models/agentTicketModel.js";
 
 /** Legacy function signature from agentLoop.ts. */
 export interface LegacyRunAgentLoopOptions {
@@ -237,9 +244,16 @@ export async function runAgentLoopLegacy(options: LegacyRunAgentLoopOptions): Pr
 
 /**
  * Check if v3 orchestrator is enabled.
+ * 
+ * A-S4.3: Pin default to true (hierarchical path is the v3 ship state
+ * per the post-Stage-3 audit). The flag can still be set to "false"
+ * for emergency rollback to the legacy linear path.
  */
 export function isV3Enabled(): boolean {
-  return process.env.AGENT_V3_ENABLED === "true";
+  // Default to true — v3 is the shipped path
+  const val = process.env.AGENT_V3_ENABLED;
+  if (val === undefined) return true;
+  return val === "true";
 }
 
 /**
@@ -251,4 +265,38 @@ export function getAgentRunner() {
   }
   // Import legacy dynamically to avoid circular deps
   return require("../agentLoop").runAgentLoop;
+}
+
+/**
+ * A-S4.3: Drain check utility.
+ * Queries production for in-flight tickets that would be affected by legacy path removal.
+ * 
+ * @param shipTagDate - ISO date string of the v3-stage-3-complete tag (ship date)
+ * @returns Promise resolving to count of in-flight legacy-path tickets
+ */
+export async function checkLegacyDrain(shipTagDate: string): Promise<number> {
+  const cutoff = new Date(shipTagDate);
+  const count = await AgentTicketModel.countDocuments({
+    status: { $in: ["AWAITING_USER_APPROVAL", "PROCESSING"] },
+    createdAt: { $lt: cutoff },
+  });
+  return count;
+}
+
+/**
+ * A-S4.3: Human-readable drain status for logging / monitoring.
+ */
+export async function getLegacyDrainStatus(shipTagDate: string): Promise<{
+  drained: boolean;
+  count: number;
+  message: string;
+}> {
+  const count = await checkLegacyDrain(shipTagDate);
+  return {
+    drained: count === 0,
+    count,
+    message: count === 0
+      ? "All pre-ship tickets drained. Safe to remove legacyShim.ts in follow-up PR."
+      : `${count} pre-ship ticket(s) still in-flight. Legacy path must remain.`,
+  };
 }
