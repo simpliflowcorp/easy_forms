@@ -81,6 +81,8 @@ export interface LLMOptions {
   /** Optional correlation fields surfaced in the pino log line (D-S2.3). */
   userId?: string;
   ticketId?: string;
+  /** D-S4.4 — LLMOps tier of this call (draft|plan|verify|communicate). Additive. */
+  tier?: string;
 }
 
 /**
@@ -753,4 +755,208 @@ export async function callLLMStream(
     const fallback = await retryLLM(opts.messages, fallbackOptions, opts.retry);
     return { ...fallback, streamed: false };
   }
+}
+
+// ---------------------------------------------------------------------------
+// D-S4.4 — LLMOps tier routing (Track B, frozen contract).
+// ---------------------------------------------------------------------------
+
+/**
+ * Routing tier. Frozen Stage 4 contract (s4_prep.md §2):
+ *   interface LLMRoutingTier { tier: "draft" | "plan" | "verify" | "communicate";
+ *                               model: string; maxTokens: number }
+ * Exported from `src/lib/llmClient.ts` together with `resolveTier` and
+ * `callLLMTiered`. Additive — `callLLM`/`callLLMStream`/`retryLLM` keep their
+ * v3 signatures; A's personas route through `callLLMTiered` via a 1-line
+ * passthrough that adds `tierHint` (no persona file signature change).
+ */
+export type LLMRoutingTierName = "draft" | "plan" | "verify" | "communicate";
+
+export interface LLMRoutingTier {
+  tier: LLMRoutingTierName;
+  model: string;
+  maxTokens: number;
+}
+
+/** Cheap-model bucket: draft + communicate personas (D-S4.4 policy). */
+const CHEAP_TIERS: ReadonlySet<LLMRoutingTierName> = new Set(["draft", "communicate"]);
+
+/** Strong-model bucket: plan + verify personas (D-S4.4 policy). */
+const STRONG_TIERS: ReadonlySet<LLMRoutingTierName> = new Set(["plan", "verify"]);
+
+/** Persona → tier mapping (per the D-S4.4 policy). */
+const PERSONA_TIER: Record<Persona, LLMRoutingTierName> = {
+  DRAFTER: "draft",
+  COMMUNICATOR: "communicate",
+  PLANNER: "plan",
+  EVALUATOR: "verify",
+  EXECUTOR: "plan",
+};
+
+/** Escalation threshold: a ticket that already cost > $0.10 gets the strong
+ *  model for the rest of its turns (small budgets deserve the strong model —
+ *  avoids cheap-model loops). */
+export const TIER_ESCALATION_COST_USD = 0.1;
+
+/**
+ * Resolve the routing tier for a persona (or explicit `tierHint`).
+ *
+ * Policy (D-S4.4):
+ *  - draft/communicate personas route to the cheap model by default
+ *  - plan/verify personas route to the strong model
+ *  - when cumulative `ticketCostUsd > 0.10`, ESCALATE to the strong model
+ *    (returned tier becomes "verify" so the AgentUsage row records where the
+ *    call actually ran)
+ *
+ * Model resolution:
+ *  - cheap:  `LLM_MODEL_DRAFT_TIER` env, fallback `LLM_MODEL`
+ *  - strong: `LLM_MODEL_VERIFY_TIER` env, fallback `LLM_MODEL`
+ * maxTokens: `LLM_MAX_TOKENS_DRAFT_TIER` (default 512) /
+ *            `LLM_MAX_TOKENS_VERIFY_TIER` (default 1024)
+ */
+export function resolveTier(
+  persona: string,
+  ticketCostUsd?: number,
+  tierHint?: LLMRoutingTierName,
+): LLMRoutingTier {
+  const normalized = normalizePersona(persona);
+  let tier: LLMRoutingTierName = tierHint ?? (normalized ? PERSONA_TIER[normalized] : "draft");
+  if (tier !== "draft" && tier !== "plan" && tier !== "verify" && tier !== "communicate") {
+    tier = "draft"; // defensive: unknown hint falls back to the cheap tier
+  }
+
+  const escalated = (ticketCostUsd ?? 0) > TIER_ESCALATION_COST_USD;
+  if (escalated) {
+    tier = "verify";
+  }
+
+  const strong = STRONG_TIERS.has(tier);
+  const model =
+    (strong
+      ? process.env.LLM_MODEL_VERIFY_TIER
+      : process.env.LLM_MODEL_DRAFT_TIER) ||
+    process.env.LLM_MODEL ||
+    (strong ? "gemini-2.0-flash" : "meta/llama-3.1-8b-instruct");
+  const maxTokens = Number(
+    strong
+      ? process.env.LLM_MAX_TOKENS_VERIFY_TIER
+      : process.env.LLM_MAX_TOKENS_DRAFT_TIER,
+  );
+  return {
+    tier,
+    model,
+    maxTokens: Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : strong ? 1024 : 512,
+  };
+}
+
+export interface CallLLMTieredOptions {
+  persona: string;
+  messages: LLMMessage[];
+  tools?: any[];
+  /**
+   * 1-line passthrough for A's personas (no persona file signature change):
+   * `callLLMTiered({ persona, messages, tools, tierHint: "draft" }, onChunk?)`.
+   * Overrides the persona→tier mapping when the persona name is ambiguous.
+   */
+  tierHint?: LLMRoutingTierName;
+  /** Cumulative ticket spend in USD; > 0.10 escalates to the strong tier. */
+  ticketCostUsd?: number;
+  userId?: string;
+  ticketId?: string;
+  temperature?: number;
+  max_tokens?: number;
+  retry?: RetryOptions;
+}
+
+/**
+ * Test-only hook: receives the AgentUsage row payload (incl. `tier`) BEFORE
+ * it is persisted, so stub tests can assert tier attribution without Mongo.
+ * Set to undefined to restore real behavior.
+ */
+export const __testTieredUsageHook = {
+  current: undefined as ((row: Record<string, unknown>) => void) | undefined,
+};
+
+/**
+ * D-S4.4 — tiered LLM call. Wraps `callLLM`/`callLLMStream`:
+ *  - resolves the tier (tierHint ?? persona, escalated by ticketCostUsd)
+ *  - forces the resolved model + max_tokens on the underlying call
+ *  - surfaces the tier in the pino log line (`options.tier`)
+ *  - bumps the AgentUsage row with the `tier` field (schema field added by
+ *    Agent C at the integration gate; D only consumes — the write is guarded
+ *    so it never crashes the hot path, and the row is persisted fire-and-forget)
+ *
+ * PII invariant: `callLLMTiered` never touches message content — the persona
+ * callers keep `redactPII` upstream of every LLM call, so tier routing cannot
+ * bypass redaction (verified: redact is applied in personas/memory before any
+ * LLM invocation; this wrapper passes messages through untouched).
+ */
+export async function callLLMTiered(
+  opts: CallLLMTieredOptions,
+  onChunk?: (delta: string) => void,
+): Promise<LLMResult> {
+  const tier = resolveTier(opts.persona, opts.ticketCostUsd, opts.tierHint);
+  const startedAt = Date.now();
+
+  const baseOptions: LLMOptions = {
+    persona: opts.persona,
+    model: tier.model,
+    max_tokens: opts.max_tokens ?? tier.maxTokens,
+    temperature: opts.temperature,
+    tools: opts.tools,
+    userId: opts.userId,
+    ticketId: opts.ticketId,
+    tier: tier.tier,
+  };
+
+  let result: LLMResult;
+  if (onChunk) {
+    result = await callLLMStream(
+      {
+        persona: opts.persona,
+        messages: opts.messages,
+        tools: opts.tools,
+        model: tier.model,
+        max_tokens: opts.max_tokens ?? tier.maxTokens,
+        temperature: opts.temperature,
+        userId: opts.userId,
+        ticketId: opts.ticketId,
+        retry: opts.retry,
+      },
+      onChunk,
+    );
+  } else {
+    result = await callLLM(opts.messages, baseOptions);
+  }
+
+  // Attribute the call to the tier in AgentUsage (fire-and-forget; never
+  // throws into the caller). `tier` field is C's schema add — if the field
+  // isn't in the schema yet, Mongoose strict mode drops it silently.
+  const usage = result?.usage;
+  if (usage && opts.userId && opts.ticketId) {
+    const row: Record<string, unknown> = {
+      ticketId: opts.ticketId,
+      userId: opts.userId,
+      persona: opts.persona,
+      model: usage.model || tier.model,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      costUsd: typeof result.costUsd === "number" ? result.costUsd : 0,
+      latencyMs: Date.now() - startedAt,
+      tier: tier.tier,
+    };
+    try {
+      __testTieredUsageHook.current?.(row);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const AgentUsage = require("@/models/agentUsageModel").default;
+      AgentUsage.create(row).catch((err: any) => {
+        logWarn("agent_usage_tier_persist_failed", { error: err?.message ?? String(err) });
+      });
+    } catch {
+      // telemetry/attribution must never break the LLM hot path
+    }
+  }
+
+  return result;
 }

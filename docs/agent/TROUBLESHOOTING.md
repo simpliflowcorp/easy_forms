@@ -31,6 +31,10 @@ symptom → check → fix ladder top-down.
 - Ensure redaction (`AGENT_REDACT_VALUES`) did not mangle the prompt contract.
 - Check `LLM_ALLOW_LEGACY_FALLBACK` is `"1"` (off by default) if the primary
   model cannot produce tool-calls.
+- If tiered calls (`callLLMTiered`, D-S4.4) fail: confirm the resolved tier's
+  model env (`LLM_MODEL_DRAFT_TIER` / `LLM_MODEL_VERIFY_TIER`) is reachable
+  with the configured key. The tier wrapper surfaces the model in the
+  `llm_call` log line's `model` field.
 
 ## 2. Streaming comm-link goes blank / hangs
 
@@ -82,10 +86,38 @@ written:
 ## 7. App Insights shows no data
 
 - `APPLICATIONINSIGHTS_CONNECTION_STRING` must be set in the deployed env.
+- The runtime deps are **optionalDependencies** (`@opentelemetry/api`,
+  `@azure/monitor-opentelemetry`). If a deploy environment skipped optional
+  deps (`npm ci --omit=optional`), the adapter silently no-ops — confirm with
+  `npm ls @opentelemetry/api @azure/monitor-opentelemetry`.
 - The adapter is lazy — first log call triggers `useAzureMonitor()`. If you
   see zero traces, confirm the SDK initialised (no stderr) and that logs flow
   to stdout (they always do).
+- Run the one-time verification (D-S4.1):
+  `APPLICATIONINSIGHTS_CONNECTION_STRING="<real>" node --experimental-strip-types
+  tests/agent/eval/otelTraceVerify.ts --expect-init` — must print PASS. The
+  `--expect-noop` / `--expect-missing-deps` modes assert the no-crash
+  fallbacks.
 - Deployment needs a restart after adding the env var.
+- First log call happens at boot; if a long-running process was started before
+  the connection string was set, `ensureAppInsights()` already ran as a no-op
+  (one-shot) — restart the process.
+
+### 7.1 Tier routing issues (D-S4.4)
+
+- **Wrong model serving a persona:** check `LLM_MODEL_DRAFT_TIER` /
+  `LLM_MODEL_VERIFY_TIER` are set; `resolveTier` falls back to `LLM_MODEL`
+  and then provider defaults. Escalation: any `ticketCostUsd > 0.10` forces
+  the "verify" (strong) tier — a cheap-looking call on a pricey ticket is
+  expected policy, not a bug.
+- **`AgentUsage.tier` missing:** the `tier` field is Agent C's schema add;
+  if the schema predates it, Mongoose strict mode silently drops the field —
+  the row still lands. After C's model lands, `npm run agent:eval`'s tier
+  rows assert attribution.
+- **Double-persisted usage rows:** the legacy `agentLoop.ts` persist path also
+  writes `AgentUsage` rows; tiered calls write via `callLLMTiered`. At the
+  integration gate personas route through `callLLMTiered` and the legacy
+  persist is the drain path — do not run both on the same ticket.
 
 ## 8. Eval problems
 
@@ -93,10 +125,14 @@ written:
 |---|---|
 | `agent:eval` fails in CI | Run `npm run agent:eval` locally — stub suite is deterministic; a failure means a code+tools contract break. Inspect `tests/agent/eval/reports/` |
 | `agent:eval:live` fails in CI | Needs `MONGODB_URI` + `NVIDIA_API_KEY` + Redis. Locally verify with `NODE_ENV=test`. Pass non-agent PRs with `-- --skip` |
+| Nightly `nightly-live-eval` fails "Fail on regressions" | The baseline diff (`diffReports.js`) found rows that PASSED last night and FAIL now — real drift (model/contract), not flake. Compare the two latest reports with `node tests/agent/eval/diffReports.js` and read the `regressions:` list |
+| Nightly diff gate shows `diff-clean=skip` | Fewer than two reports (first run) or the report set changed shape — expected on the first night |
 | Live eval writes no report | `tests/agent/eval/reports/` can't be written or `--skip` ran; check the `*-skip.json` marker |
 | Stub row skipped | `deferToIntegration: true` — the expected tool isn't registered yet (peer bundle lands at the integration gate) |
 | Load test fails `auth bypass` | A negative intent wasn't denied. Review role allow-lists (`policy/permissions.ts`) and intent fixture `tools` |
 | Load test fails `p99` | Real orchestrator + slow LLM: P99 must be < 30 s. Check budgets/locks causing serialisation |
+| Load test tier wave fails | `runTierRoutingLoad` asserts cheap-model-for-draft, tier="draft" attribution, and >$0.10 escalation. A fail means `resolveTier`/`callLLMTiered` policy drift |
+| Skill `assert` throws / misbehaves | Stage 4 removed `eval()` — asserts are constrained strings via `safeAssert.ts` or server-side functions. A `require(`/`process.` assert fails at validation with a parse-error reason; `npm run agent:validate-skills` exits non-zero |
 
 ## 9. Skills UI / API problems
 
