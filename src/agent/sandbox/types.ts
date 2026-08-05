@@ -36,7 +36,10 @@ export type MergeableKind =
   | "form_metadata"
   | "skill_create"
   | "skill_update"
-  | "skill_soft_delete";
+  | "skill_soft_delete"
+  | "form_version_snapshot"
+  | "resource_lock_acquire"
+  | "resource_lock_release";
 
 /**
  * B-S3.4: MergeRequest — passed from the orchestrator when user confirms merge.
