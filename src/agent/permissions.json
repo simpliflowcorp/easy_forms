@@ -3,6 +3,11 @@
     "form_management": true,
     "data_analytics": true,
     "destructive_actions": false,
+    "skill_authoring": false,
+    "bulk_operations": false,
+    "system_admin": false,
+    "integration_management": false,
+    "agent_audit": true,
     "allowed_tools": [
       "create_form",
       "update_form",
@@ -11,7 +16,24 @@
       "generate_analytics",
       "create_custom_view",
       "get_custom_views",
-      "update_custom_view"
+      "update_custom_view",
+      "delete_custom_view",
+      "add_form_element",
+      "update_form_element",
+      "remove_form_element",
+      "reorder_form_elements",
+      "set_form_status",
+      "update_form_metadata_settings",
+      "update_user_profile",
+      "update_user_preferences",
+      "update_notification_settings",
+      "list_notifications",
+      "mark_notification_read",
+      "clear_notification",
+      "dashboard_stats",
+      "list_agent_audit_events",
+      "list_agent_tickets",
+      "export_form"
     ]
   }
 }

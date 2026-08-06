@@ -3,8 +3,13 @@ import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { parsePersona, EvaluatorOutputSchema, EvaluatorOutput } from "../helper/validate";
 import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
+import { resolveSkill } from "./skillRouter.js";
+import { logWarn } from "@/lib/logger";
+import { evalNegativeTest, createNegEvalContext, type NegativeTestAssert } from "../skills/safeAssert.js";
 
 type EvaluatorVerdict = EvaluatorOutput;
+
+export type EvaluatorDecision = "retry" | "replan" | "ask_user" | "complete";
 
 /** True if any action in the plan mutates form/view state and therefore
  *  requires explicit human "Confirm & Merge" approval before touching prod. */
@@ -22,11 +27,15 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       .map((a) => `Action ${a.id} (${a.tool}) failed: ${a.error}`)
       .join("; ");
     if (state.iterationCount < state.maxIterations) {
+      // Determine decision: 1st retry = retry, 2nd = replan, 3rd = ask_user
+      const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+        state.iterationCount === 2 ? "replan" : "ask_user";
       return {
         ...state,
         iterationCount: state.iterationCount + 1,
-        activePersona: "EXECUTOR_SANDBOX",
+        activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
         evaluatorFeedback: feedback,
+        evaluatorDecision: decision,
       };
     }
     // Iterations exhausted: ask the human for plan adjustments.
@@ -40,7 +49,84 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
         `Last error: ${failedActions[0].error || "unknown"}. ` +
         `Could you rephrase the request or provide more detail so I can build a fresh plan?`,
       evaluatorFeedback: feedback,
+      evaluatorDecision: "ask_user",
     };
+  }
+
+  // A-S2.6: Negative-test mode — pre-execution deterministic checks from skill.negativeTests[]
+  // Run before LLM QA to catch structural issues early.
+  const firstAction = state.actionPlan[0];
+  const owningSkillName = firstAction?.owningSkill || state.requirements.skill;
+  if (owningSkillName) {
+    const skillResult = await resolveSkill(owningSkillName, state.userId);
+    if (skillResult.allowed && skillResult.skill && skillResult.skill.negativeTests) {
+      // Build safe evaluation context once per skill
+      const ctx = createNegEvalContext(state);
+      for (const test of skillResult.skill.negativeTests) {
+        // Support both string assertions and function assertions (B's Stage 4 union type)
+        const assert = test.assert as NegativeTestAssert;
+        const result = evalNegativeTest(assert, ctx);
+        
+        if (result.error) {
+          // Parse error or evaluation error - log and treat as test failure
+          logWarn(`[evaluator] Negative test evaluation error: ${test.assert}`, { error: result.error });
+          const failMsg = test.description
+            ? `Negative test failed: ${test.description} (assert: ${test.assert}) - ${result.error}`
+            : `Negative test failed: ${test.assert} - ${result.error}`;
+          if (state.iterationCount < state.maxIterations) {
+            const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+              state.iterationCount === 2 ? "replan" : "ask_user";
+            return {
+              ...state,
+              iterationCount: state.iterationCount + 1,
+              activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
+              evaluatorFeedback: failMsg,
+              evaluatorDecision: decision,
+              llmRawOutput: `Negative test failed: ${test.assert} - ${result.error}`,
+            };
+          }
+          return {
+            ...state,
+            activePersona: "COMMUNICATOR",
+            isQuestion: true,
+            isComplete: false,
+            reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+            evaluatorFeedback: failMsg,
+            evaluatorDecision: "ask_user",
+            llmRawOutput: `Negative test failed: ${test.assert} - ${result.error}`,
+          };
+        }
+        
+        if (!result.pass) {
+          const failMsg = test.description
+            ? `Negative test failed: ${test.description} (assert: ${test.assert})`
+            : `Negative test failed: ${test.assert}`;
+          if (state.iterationCount < state.maxIterations) {
+            const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+              state.iterationCount === 2 ? "replan" : "ask_user";
+            return {
+              ...state,
+              iterationCount: state.iterationCount + 1,
+              activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
+              evaluatorFeedback: failMsg,
+              evaluatorDecision: decision,
+              llmRawOutput: `Negative test failed: ${test.assert}`,
+            };
+          }
+          // Iterations exhausted
+          return {
+            ...state,
+            activePersona: "COMMUNICATOR",
+            isQuestion: true,
+            isComplete: false,
+            reply: `Validation failed: ${failMsg}. Please adjust your request.`,
+            evaluatorFeedback: failMsg,
+            evaluatorDecision: "ask_user",
+            llmRawOutput: `Negative test failed: ${test.assert}`,
+          };
+        }
+      }
+    }
   }
 
   // Pass 2: LLM-based semantic QA. Verify that the results actually satisfy
@@ -94,16 +180,20 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
         reply: "AI is offline right now. You can resume this ticket when the service is back.",
         evaluatorFeedback: `LLMOfflineError: ${err.message}`,
         llmRawOutput: rawContent,
+        evaluatorDecision: "ask_user",
       };
     }
     // Unknown envelope-type failure — route back to Executor with the failed
     // QA pass described, only if iterations remain.
     if (state.iterationCount < state.maxIterations) {
+      const decision: EvaluatorDecision = state.iterationCount === 1 ? "retry" :
+        state.iterationCount === 2 ? "replan" : "ask_user";
       return {
         ...state,
         iterationCount: state.iterationCount + 1,
-        activePersona: "EXECUTOR_SANDBOX",
+        activePersona: decision === "replan" ? "PLANNER" : "EXECUTOR_SANDBOX",
         evaluatorFeedback: `Evaluator QA pass failed unexpectedly: ${err.message}`,
+        evaluatorDecision: decision,
       };
     }
     return {
@@ -113,59 +203,65 @@ export async function runEvaluator(state: AgentState): Promise<AgentState> {
       reply: "I ran into trouble verifying the result and have run out of retry attempts. Please rephrase or try again.",
       evaluatorFeedback: `Evaluator QA pass failed: ${err.message}`,
       llmRawOutput: rawContent,
+      evaluatorDecision: "ask_user",
     };
   }
 
   const feedback = verdict.feedback?.trim() || "Execution looks good.";
 
-  // Retry request from the LLM with budget remaining → back to Executor with
-  // the LLM's specific feedback so the next execution actually knows what to
-  // fix. Previously the Executor never saw the Evaluator's diagnosis (#23).
-  if (verdict.shouldRetry && !verdict.isComplete && state.iterationCount < state.maxIterations) {
-    return {
-      ...state,
-      iterationCount: state.iterationCount + 1,
-      activePersona: "EXECUTOR_SANDBOX",
-      evaluatorFeedback: feedback,
-      llmRawOutput: rawContent,
-    };
-  }
+  // Determine the decision based on LLM verdict and iteration count
+  let decision: EvaluatorDecision;
+  let nextPersona: AgentState["activePersona"];
 
-  // LLM says it's NOT complete and budget is exhausted → human recovery.
-  if (!verdict.isComplete && state.iterationCount >= state.maxIterations) {
-    return {
-      ...state,
-      activePersona: "COMMUNICATOR",
-      isQuestion: true,
-      reply:
-        "I wasn't confident after several attempts that the result matches your request. " +
-        "Can you rephrase or add more detail? " +
-        `Reason: ${feedback}`,
-      evaluatorFeedback: feedback,
-      llmRawOutput: rawContent,
-    };
-  }
-
-  // LLM signs off. Per Agent.md, the Evaluator transitions to
-  // AWAITING_USER_APPROVAL when the plan mutated state — NOT the
-  // Communicator. Previously the Communicator stole this job (#1, #14).
   if (verdict.isComplete && planRequiresMergeApproval(state)) {
-    return {
-      ...state,
-      activePersona: "AWAITING_USER_APPROVAL",
-      isComplete: true,
-      evaluatorFeedback: feedback,
-      llmRawOutput: rawContent,
-    };
+    decision = "complete";
+    nextPersona = "AWAITING_USER_APPROVAL";
+  } else if (verdict.isComplete) {
+    decision = "complete";
+    nextPersona = "COMMUNICATOR";
+  } else if (verdict.shouldRetry && state.iterationCount < state.maxIterations) {
+    // 1st retry -> retry (EXECUTOR), 2nd -> replan (PLANNER), 3rd -> ask_user (COMMUNICATOR)
+    if (state.iterationCount === 1) {
+      decision = "retry";
+      nextPersona = "EXECUTOR_SANDBOX";
+    } else if (state.iterationCount === 2) {
+      decision = "replan";
+      nextPersona = "PLANNER";
+    } else {
+      decision = "ask_user";
+      nextPersona = "COMMUNICATOR";
+    }
+  } else if (!verdict.isComplete && state.iterationCount >= state.maxIterations) {
+    decision = "ask_user";
+    nextPersona = "COMMUNICATOR";
+  } else {
+    // Default: if not complete and no retry requested, ask user
+    decision = "ask_user";
+    nextPersona = "COMMUNICATOR";
   }
 
-  // Either completed with no mutations (pure read query) or LLM marked not
-  // complete without retry — hand to Communicator for the user-facing reply.
+  // Cache the failed plan for replan context
+  const priorPlans = state.priorPlans || [];
+  if (decision === "replan" || decision === "retry") {
+    priorPlans.push({
+      iteration: state.iterationCount,
+      actionPlan: state.actionPlan,
+      feedback: feedback,
+    });
+  }
+
   return {
     ...state,
-    activePersona: "COMMUNICATOR",
-    isComplete: Boolean(verdict.isComplete),
+    iterationCount: state.iterationCount + (decision !== "complete" ? 1 : 0),
+    activePersona: nextPersona,
     evaluatorFeedback: feedback,
+    evaluatorDecision: decision,
     llmRawOutput: rawContent,
+    priorPlans,
+    isComplete: decision === "complete",
+    isQuestion: decision === "ask_user",
+    reply: decision === "ask_user"
+      ? "I wasn't confident after several attempts that the result matches your request. Can you rephrase or add more detail? Reason: " + feedback
+      : undefined,
   };
 }

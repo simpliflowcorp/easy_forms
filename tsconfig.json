@@ -16,6 +16,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "plugins": [
       {
@@ -39,6 +40,7 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "tests"
   ]
 }

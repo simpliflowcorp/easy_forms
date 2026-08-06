@@ -2,6 +2,8 @@ import { AgentState } from "../types";
 import { retryLLM, LLMOfflineError } from "@/lib/llmClient";
 import { redactPII } from "../helper/redact";
 import { loadPersonaPrompt } from "../prompts/loader";
+import type { MergeStats } from "../sandbox/types.js";
+import { logError } from "@/lib/logger";
 
 /** Format read-only tool results for direct display without LLM call. */
 function formatReadOnlyResults(state: AgentState): string {
@@ -38,10 +40,77 @@ function formatReadOnlyResults(state: AgentState): string {
   }
 }
 
+/** Format MergeStats as 6 counters + checkbox summary for selective merge UI. */
+export function formatMergeStats(stats: MergeStats): string {
+  const lines = [
+    "**Merge Summary**",
+    "",
+    `✅ Forms created: ${stats.mergedForms}`,
+    `✅ Views created: ${stats.mergedViews}`,
+    `🔄 Updates applied: ${stats.updatesApplied}`,
+    `⚠️ Updates missed (concurrent edit): ${stats.updatesMissed}`,
+    `🗑️ Deletes applied: ${stats.deletesApplied}`,
+    `⚠️ Deletes missed (concurrent edit): ${stats.deletesMissed}`,
+    "",
+    "Select the actions you want to merge:"
+  ];
+  return lines.join("\n");
+}
+
+/** Build the selective merge checkbox list for the UI. */
+export function buildMergeCheckboxList(state: AgentState): Array<{ id: string; label: string; checked: boolean }> {
+  const items: Array<{ id: string; label: string; checked: boolean }> = [];
+  
+  state.actionPlan.forEach((action, idx) => {
+    if (action.status === "done" || action.status === "pending") {
+      items.push({
+        id: action.id,
+        label: action.description || `${action.tool} (${JSON.stringify(action.params).substring(0, 50)})`,
+        checked: true, // default to checked
+      });
+    }
+  });
+  
+  return items;
+}
+
 export async function runCommunicator(state: AgentState, latencyMs?: number): Promise<AgentState> {
   // R1: Read-only mode — format results directly without LLM call
   if (state.isReadOnly) {
     const reply = formatReadOnlyResults(state);
+    return {
+      ...state,
+      reply,
+      isComplete: true,
+    };
+  }
+
+  // A-S2.7: AWAITING_USER_APPROVAL — render selective merge preview with checkboxes
+  if (state.activePersona === "AWAITING_USER_APPROVAL") {
+    const checkboxList = buildMergeCheckboxList(state);
+    const checkboxLines = checkboxList.map((item, idx) => 
+      `${idx + 1}. [${item.checked ? "x" : " "}] ${item.label} (id: ${item.id})`
+    ).join("\n");
+    
+    const reply = 
+      `Your changes are ready to merge. Please review and confirm:
+
+${checkboxLines}
+
+` +
+      `Click **Confirm & Merge** to apply selected changes, or **Cancel** to discard.`;
+    
+    return {
+      ...state,
+      reply,
+      isComplete: false,
+      isQuestion: true,
+    };
+  }
+
+  // A-S2.7: Post-merge — render MergeStats as 6 counters
+  if (state.activePersona === "MERGED_TO_PRODUCTION" && state.mergeStats) {
+    const reply = formatMergeStats(state.mergeStats);
     return {
       ...state,
       reply,
@@ -105,7 +174,7 @@ export async function runCommunicator(state: AgentState, latencyMs?: number): Pr
       isComplete: state.isComplete ?? false,
     };
   } catch (error: any) {
-    console.error("Communicator LLM Error:", error.message);
+    logError("Communicator LLM Error:", { error: error.message });
     
     // Handle LLMOfflineError explicitly - set ticket status to LLM_ERROR
     // and clear isComplete so the loop's post-Communicator persistence

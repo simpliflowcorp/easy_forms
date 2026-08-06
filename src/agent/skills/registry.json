@@ -1,0 +1,114 @@
+[
+  {
+    "skillId": "build_form",
+    "name": "Build Form",
+    "version": "2.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "create_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "create_form without name parameter is rejected", "description": "Form name is required" },
+      { "assert": "create_form with invalid element type (e.g. 99) is rejected", "description": "Element type must be valid (1-5)" }
+    ],
+    "dryRunShape": { "form": { "isSandbox": true, "idempotencyKey": "string" } },
+    "requiredParams": ["name", "elements"],
+    "optionalParams": ["description", "expiryDays"]
+  },
+  {
+    "skillId": "edit_form",
+    "name": "Edit Form",
+    "version": "2.0.0",
+    "permissionScope": "form_management",
+    "tools": [
+      { "tool": "update_form", "paramsFrom": "requirements" },
+      { "tool": "add_form_element", "paramsFrom": "requirements" },
+      { "tool": "update_form_element", "paramsFrom": "requirements" },
+      { "tool": "remove_form_element", "paramsFrom": "requirements" },
+      { "tool": "reorder_form_elements", "paramsFrom": "requirements" },
+      { "tool": "set_form_status", "paramsFrom": "requirements" },
+      { "tool": "update_form_metadata_settings", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "edit_form on non-existent form returns error", "description": "Form must exist" },
+      { "assert": "remove_form_element without elementId or label is rejected", "description": "Element identifier required" }
+    ],
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true },
+    "requiredParams": ["formId"],
+    "optionalParams": ["updates", "elements"]
+  },
+  {
+    "skillId": "delete_form_skill",
+    "name": "Delete Form",
+    "version": "2.0.0",
+    "permissionScope": "destructive_actions",
+    "tools": [
+      { "tool": "delete_form", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 2,
+    "negativeTests": [
+      { "assert": "delete_form on another user's form is rejected", "description": "Tenant isolation enforced" },
+      { "assert": "double delete is idempotent and safe", "description": "Idempotency key prevents duplicate deletes" }
+    ],
+    "dryRunShape": { "status": "sandbox_mock_success", "isSandbox": true },
+    "requiredParams": ["formId"],
+    "optionalParams": []
+  },
+  {
+    "skillId": "filter_responses",
+    "name": "Filter Responses",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "query_responses", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "query_responses with missing formId is rejected", "description": "Form ID required for query" },
+      { "assert": "cross-tenant form access via different formId is blocked", "description": "Tenant isolation enforced" }
+    ],
+    "dryRunShape": { "results": [] },
+    "requiredParams": ["formId"],
+    "optionalParams": ["filters", "page", "limit"]
+  },
+  {
+    "skillId": "generate_analytics_skill",
+    "name": "Generate Analytics",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "generate_analytics", "paramsFrom": "requirements" },
+      { "tool": "dashboard_stats", "paramsFrom": "context" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "analytics on another user's form is blocked", "description": "Tenant isolation enforced" },
+      { "assert": "malformed metrics array returns schema error", "description": "Metrics must be valid array" }
+    ],
+    "dryRunShape": { "results": {} },
+    "requiredParams": ["formId"],
+    "optionalParams": ["metrics"]
+  },
+  {
+    "skillId": "manage_custom_views",
+    "name": "Manage Custom Views",
+    "version": "2.0.0",
+    "permissionScope": "data_analytics",
+    "tools": [
+      { "tool": "create_custom_view", "paramsFrom": "requirements" },
+      { "tool": "get_custom_views", "paramsFrom": "requirements" },
+      { "tool": "update_custom_view", "paramsFrom": "requirements" },
+      { "tool": "delete_custom_view", "paramsFrom": "requirements" }
+    ],
+    "maxIterations": 3,
+    "negativeTests": [
+      { "assert": "create_custom_view without formId is rejected", "description": "Form ID required" },
+      { "assert": "delete_custom_view for another user's form is blocked", "description": "Tenant isolation enforced" }
+    ],
+    "dryRunShape": { "view": { "isSandbox": true } },
+    "requiredParams": ["formId", "name"],
+    "optionalParams": ["filters", "sortField", "sortOrder"]
+  }
+]

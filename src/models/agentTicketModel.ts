@@ -8,7 +8,13 @@ const AgentTicketSchema = new mongoose.Schema(
     prompt: { type: String, required: true },
     stage: { type: String, required: true },
     title: { type: String, required: true },
-    status: { type: String, enum: ["OPEN", "PROCESSING", "RESOLVED", "REJECTED", "LLM_ERROR"], required: true },
+    status: { type: String, enum: ["OPEN", "PROCESSING", "RESOLVED", "REJECTED", "LLM_ERROR", "CANCELLED"], required: true },
+    errorKind: {
+      type: String,
+      enum: ["timeout", "rate_limit", "http_5xx", "offline", "cancelled", "oom", "unknown"],
+      index: true,
+      default: "unknown",
+    },
     activePersona: { type: String, required: true },
     iterationCount: { type: Number, default: 1 },
     maxIterations: { type: Number, default: 3 },
@@ -28,14 +34,14 @@ const AgentTicketSchema = new mongoose.Schema(
 );
 
 // TTL index for transient tickets (30 days).
-// Only expires tickets that are NOT RESOLVED and NOT AWAITING_USER_APPROVAL.
-// RESOLVED and AWAITING_USER_APPROVAL tickets are kept indefinitely for audit/resume.
+// Only expires tickets that are NOT RESOLVED, NOT CANCELLED, and NOT AWAITING_USER_APPROVAL.
+// RESOLVED, CANCELLED, and AWAITING_USER_APPROVAL tickets are kept indefinitely for audit/resume.
 AgentTicketSchema.index(
   { createdAt: 1 },
   {
     expireAfterSeconds: 30 * 24 * 3600,
     partialFilterExpression: {
-      status: { $nin: ["RESOLVED"] },
+      status: { $nin: ["RESOLVED", "CANCELLED"] },
       activePersona: { $nin: ["AWAITING_USER_APPROVAL"] },
     },
   }

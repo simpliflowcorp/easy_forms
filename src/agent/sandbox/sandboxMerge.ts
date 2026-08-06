@@ -27,18 +27,187 @@
  */
 import Form from "@/models/formModel";
 import CustomView from "@/models/customViewModel";
+import User from "@/models/userModel";
 import mongoose from "mongoose";
 import { sandboxRedisStore } from "./sandboxRedisStore.js";
 import AgentAuditEvent from "@/models/agentAuditEventModel";
 import PendingMerge from "@/models/PendingMerge";
+import type { MergeStats, MergeableKind } from "./types.js";
+import { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
 
-export interface MergeStats {
-  mergedForms: number;
-  mergedViews: number;
-  updatesApplied: number;
-  updatesMissed: number;
-  deletesApplied: number;
-  deletesMissed: number;
+// Re-export the frozen contract for existing importers of sandboxMerge.
+export type { MergeStats, MergeableKind } from "./types.js";
+export { USER_SAFE_FIELDS, UserUnsafeFieldError } from "./types.js";
+export type { MergeRequest } from "./types.js";
+
+/** Error thrown when a feature is not yet implemented. */
+export class NotImplementedError extends Error {
+  constructor(feature: string) {
+    super(`${feature} is not yet implemented.`);
+    this.name = "NotImplementedError";
+  }
+}
+
+/**
+ * B-S3.4: Apply a skill merge (create/update/soft-delete) to AgentSkillModel.
+ * Gated by skill_authoring scope. Uses $setOnInsert idempotency on (userId, name, version).
+ */
+async function applySkillMerge(
+  userId: string,
+  ticketId: string,
+  upd: { id: string; idempotencyKey: string; expectedUpdatedAt?: Date },
+  updates: Record<string, any>,
+  mergeKind: MergeableKind,
+  session: mongoose.ClientSession,
+  stats: MergeStats,
+): Promise<void> {
+  // B-S3.4: AgentSkillModel is owned by Agent C — not yet deployed.
+  // When Agent C ships it, replace this with the import and merge logic below.
+  // The try/catch pattern used in loader.ts allows runtime resolution.
+  let AgentSkillModel: any;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    AgentSkillModel = (await Function('return import("@/models/AgentSkillModel")')() as any).default;
+  } catch {
+    throw new NotImplementedError("AgentSkillModel (Agent C's model) is not yet available for skill merge.");
+  }
+
+  if (mergeKind === "skill_create") {
+    const filter: Record<string, any> = {
+      user: userId,
+      name: updates.name,
+      version: updates.version,
+    };
+    // $setOnInsert idempotency
+    await AgentSkillModel.findOneAndUpdate(
+      filter,
+      {
+        $setOnInsert: {
+          ...updates,
+          user: userId,
+          agentIdempotencyKey: upd.idempotencyKey,
+        },
+      },
+      { upsert: true, session, new: true },
+    );
+    stats.mergedForms++;
+    await AgentAuditEvent.create([{
+      ticketId, userId,
+      resourceId: upd.idempotencyKey,
+      action: "create_skill",
+      serverDiff: updates,
+      outcome: "success",
+    }], { session });
+  } else if (mergeKind === "skill_update") {
+    const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id), user: userId };
+    if (upd.expectedUpdatedAt) filter.updatedAt = upd.expectedUpdatedAt;
+    const res = await AgentSkillModel.updateOne(filter, { $set: updates }, { session });
+    if (res.matchedCount > 0) {
+      stats.updatesApplied++;
+      await AgentAuditEvent.create([{
+        ticketId, userId, resourceId: String(upd.id),
+        action: "update_skill", serverDiff: updates, outcome: "success",
+      }], { session });
+    } else {
+      stats.updatesMissed++;
+      await AgentAuditEvent.create([{
+        ticketId, userId, resourceId: String(upd.id),
+        action: "update_skill", serverDiff: updates, outcome: "concurrency_miss",
+      }], { session });
+    }
+  } else {
+    // skill_soft_delete
+    const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id), user: userId };
+    const res = await AgentSkillModel.updateOne(filter, { $set: { deleted: true, deletedAt: new Date() } }, { session });
+    if (res.matchedCount > 0) stats.deletesApplied++;
+    else stats.deletesMissed++;
+    await AgentAuditEvent.create([{
+      ticketId, userId, resourceId: String(upd.id),
+      action: "soft_delete_skill", serverDiff: null, outcome: res.matchedCount > 0 ? "success" : "concurrency_miss",
+    }], { session });
+  }
+}
+
+async function applyUserUpdate(
+  userId: string,
+  ticketId: string,
+  upd: { id: string; idempotencyKey: string; expectedUpdatedAt?: Date },
+  updates: Record<string, any>,
+  session: mongoose.ClientSession,
+  stats: MergeStats,
+): Promise<void> {
+  // Flatten dot-path keys from the updates to validate each leaf
+  const unsafeFields: string[] = [];
+  const topKeys = Object.keys(updates);
+  for (const k of topKeys) {
+    if (USER_SAFE_FIELDS.has(k)) continue;
+    // For nested objects (profile, preferences, notificationSettings), check sub-keys
+    if (typeof updates[k] === "object" && updates[k] !== null) {
+      const subObj = updates[k];
+      for (const sk of Object.keys(subObj)) {
+        const dotted = `${k}.${sk}`;
+        if (!USER_SAFE_FIELDS.has(dotted)) {
+          // Check one level deeper (e.g., notificationSettings.popup.formExpired)
+          if (typeof subObj[sk] === "object" && subObj[sk] !== null) {
+            for (const dk of Object.keys(subObj[sk])) {
+              const deepDotted = `${k}.${sk}.${dk}`;
+              if (!USER_SAFE_FIELDS.has(deepDotted)) {
+                unsafeFields.push(deepDotted);
+              }
+            }
+          } else {
+            unsafeFields.push(dotted);
+          }
+        }
+      }
+    } else {
+      // Direct unsafe field (e.g., password, isAdmin)
+      unsafeFields.push(k);
+    }
+  }
+
+  if (unsafeFields.length > 0) {
+    throw new UserUnsafeFieldError(unsafeFields);
+  }
+
+  // Apply the safe update to User
+  const filter: Record<string, any> = { _id: new mongoose.Types.ObjectId(upd.id) };
+  if (upd.expectedUpdatedAt) filter.updatedAt = upd.expectedUpdatedAt;
+
+  // Flatten nested updates into dot-notation for $set
+  const flatUpdates: Record<string, any> = {};
+  for (const k of topKeys) {
+    if (typeof updates[k] === "object" && updates[k] !== null && USER_SAFE_FIELDS.has(k)) {
+      for (const sk of Object.keys(updates[k])) {
+        flatUpdates[`${k}.${sk}`] = updates[k][sk];
+      }
+    } else {
+      flatUpdates[k] = updates[k];
+    }
+  }
+
+  const res = await User.updateOne(filter, { $set: flatUpdates }, { session });
+  if (res.matchedCount > 0) {
+    stats.updatesApplied++;
+    await AgentAuditEvent.create([{
+      ticketId,
+      userId,
+      resourceId: String(upd.id),
+      action: "update_user",
+      serverDiff: flatUpdates,
+      outcome: "success",
+    }], { session });
+  } else {
+    stats.updatesMissed++;
+    await AgentAuditEvent.create([{
+      ticketId,
+      userId,
+      resourceId: String(upd.id),
+      action: "update_user",
+      serverDiff: flatUpdates,
+      outcome: "concurrency_miss",
+    }], { session });
+  }
 }
 
 async function mergeFormsAndIntents(
@@ -84,8 +253,53 @@ async function mergeFormsAndIntents(
     }
   }
 
-  // 2. Updates — apply with optimistic concurrency.
+  // 2. Updates — apply with optimistic concurrency, routed by _mergeKind.
   for (const upd of store.updates) {
+    const mergeKind: MergeableKind = (upd.updates as any)?._mergeKind || "form_update";
+    const cleanUpdates = { ...upd.updates };
+    delete (cleanUpdates as any)._mergeKind;
+
+    // B-S2.8: Route by merge kind
+    if (mergeKind === "user_update") {
+      await applyUserUpdate(userId, ticketId, upd, cleanUpdates, session, stats);
+      continue;
+    }
+
+    // B-S4.4: Track B version-snapshot and resource-lock merge kinds.
+    // Each kind is a no-op-as-mutation but writes an audit row.
+    if (
+      mergeKind === "form_version_snapshot" ||
+      mergeKind === "resource_lock_acquire" ||
+      mergeKind === "resource_lock_release"
+    ) {
+      await AgentAuditEvent.create([{
+        ticketId,
+        userId,
+        resourceId: String(upd.id),
+        action: mergeKind,
+        serverDiff: cleanUpdates,
+        outcome: "success",
+      }], { session });
+      continue;
+    }
+// B-S3.4: Skill merge — gated by skill_authoring scope
+    if (mergeKind === "skill_create" || mergeKind === "skill_update" || mergeKind === "skill_soft_delete") {
+      await applySkillMerge(userId, ticketId, upd, cleanUpdates, mergeKind, session, stats);
+      continue;
+    }
+
+    let model: mongoose.Model<any>;
+    let actionLabel: string;
+    if (mergeKind === "view_update") {
+      model = CustomView;
+      actionLabel = "update_view";
+    } else {
+      model = Form;
+      actionLabel = mergeKind === "form_status" ? "set_form_status"
+        : mergeKind === "form_metadata" ? "update_form_metadata"
+        : "update_form";
+    }
+
     const filter: Record<string, any> = {
       _id: new mongoose.Types.ObjectId(upd.id),
       user: userId,
@@ -93,28 +307,26 @@ async function mergeFormsAndIntents(
     if (upd.expectedUpdatedAt) {
       filter.updatedAt = upd.expectedUpdatedAt;
     }
-    const updateOp = { $set: upd.updates };
-    const res = await Form.updateOne(filter, updateOp, { session });
+    const updateOp = { $set: cleanUpdates };
+    const res = await model.updateOne(filter, updateOp, { session });
     if (res.matchedCount > 0) {
       stats.updatesApplied++;
       await AgentAuditEvent.create([{
         ticketId,
         userId,
         resourceId: String(upd.id),
-        action: "update_form",
-        serverDiff: upd.updates,
+        action: actionLabel,
+        serverDiff: cleanUpdates,
         outcome: "success"
       }], { session });
     } else {
-      // Optimistic-concurrency check failed: form was modified between
-      // sandbox snapshot and merge. Track as missed and audit.
       stats.updatesMissed++;
       await AgentAuditEvent.create([{
         ticketId,
         userId,
         resourceId: String(upd.id),
-        action: "update_form",
-        serverDiff: upd.updates,
+        action: actionLabel,
+        serverDiff: cleanUpdates,
         outcome: "concurrency_miss"
       }], { session });
     }
@@ -320,7 +532,7 @@ async function mergeSandboxToProductionStandalone(
         $set: { 
           status: "COMPLETED",
           snapshot: {
-            mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+            mergedForms: stats.mergedForms,
             mergedViews: stats.mergedViews,
             updatesApplied: stats.updatesApplied,
             updatesMissed: stats.updatesMissed,
@@ -334,7 +546,7 @@ async function mergeSandboxToProductionStandalone(
     await sandboxRedisStore.resetStore(userId, ticketId);
     
     return {
-      mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+      mergedForms: stats.mergedForms,
       mergedViews: stats.mergedViews,
       updatesApplied: stats.updatesApplied,
       updatesMissed: stats.updatesMissed,
@@ -362,9 +574,9 @@ export async function mergeSandboxToProduction(
   const snapshot = await sandboxRedisStore.get(userId, ticketId);
 
   // Note: this is invoked directly in agentLoop's
-  // `mergeApproved` branch. We intentionally surface a richer stats object
-  // than the signature claims — agentLoop only reads mergedForms / mergedViews
-  // for its reply text, so the extra keys are informational and ignored.
+  // `mergeApproved` branch. The returned shape is exactly `MergeStats` —
+  // six raw counters with no cross-counter aggregation (D0.4). Unlike the
+  // previous shape, `mergedForms` does NOT include updates or deletes.
   
   // Try transactional merge first (requires replica set)
   const session = await mongoose.startSession();
@@ -377,7 +589,7 @@ export async function mergeSandboxToProduction(
     await sandboxRedisStore.resetStore(userId, ticketId);
 
     return {
-      mergedForms: stats.mergedForms + stats.updatesApplied + stats.deletesApplied,
+      mergedForms: stats.mergedForms,
       mergedViews: stats.mergedViews,
       updatesApplied: stats.updatesApplied,
       updatesMissed: stats.updatesMissed,

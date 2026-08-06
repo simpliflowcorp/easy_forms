@@ -167,6 +167,27 @@ Key loop invariants enforced in code:
 
 ---
 
+### Stage 1 Resolved
+
+Stage 1 (agent v3 defect-fix sprint) resolved the following P0 defects from `plans/agent_upgrade_v3.md`:
+
+| Defect | Description | Resolution |
+|---|---|---|
+| **D0.1** | Mongo↔Redis state drift | Write Mongo on every transition; Redis is rebuildable hot cache |
+| **D0.2** | Lock TTL shorter than worst-case loop | `LOOP_DEADLINE_MS` + `LOCK_TTL_MS` env-driven; lock heartbeat |
+| **D0.3** | Replan unreachable; 2nd retry wastes budget | 1st retry → Executor; 2nd → Planner with feedback; 3rd → ask user |
+| **D0.4** | Merge stats inflated | Split `mergedForms` into 6 raw counters (`{ mergedForms, mergedViews, updatesApplied, updatesMissed, deletesApplied, deletesMissed }`) |
+| **D0.5** | Simulated-offline check not hoisted out of branch logic | Single check at top of `while` loop, before persona dispatch |
+| **D0.6** | `llmRawOutput` stored un-redacted in trace | `redactTracePayload` recursive walker: key-based + value-based (email/phone/SSN/credit-card) redaction on `llmRawOutput` |
+| **D0.7** | No user-abort signal | `agent:abort:{ticketId}` Redis flag; `AgentCancelledError` → `CANCELLED` ticket status |
+| **D0.8** | Drafter prompt rule numbering jumps | JSON prompt renumbered contiguously 1..N |
+| **D0.9** | Communicator collapses typed errors to single branch | Branch on each domain error type; set `errorKind` field |
+| **D0.10** | Read-only shortcut bypasses trace | Minimal trace step pushed to `state.executionTrace` in Drafter's read shortcut |
+
+**Stage 1 Contracts Frozen:** `redactTracePayload` (Agent D), `stubRunner.registerRow` (Agent D), `MergeStats` (Agent B), `AgentCancelledError` / `CANCELLED` enum (Agent A → Agent C), `MemoryService` interface (Agent C).
+
+---
+
 ## Summary of recommended next steps (prioritised)
 
 **Quick wins (1-2 days each, high leverage, low risk):**
@@ -186,3 +207,54 @@ Key loop invariants enforced in code:
 - LLMOps #5 + #8: versioned prompt registry with per-version golden baselines + streaming Communicator.
 - Loop #3 + #4 + #9: loop deadline, lock renewal/heartbeat, user-abort signal.
 - Eval #4 + #5 + #6: structural assertions on params/sandbox/reply + negative tests + persisted report history.
+
+---
+
+## Stage 3 Status (reconciled against shipped code)
+
+### LLMOps — shipped
+
+| § gap | Shipped |
+|---|---|
+| LLMOps #1 (usage) | `LLMUsage` parsed per call; `AgentUsage` rows persist tokens; `costUsd` via `costCalculator` |
+| LLMOps #2 (per-persona latency) | `retryLLM` logs `{persona, attempt, ms, status, model}` via the structured logger |
+| LLMOps #3 (per-persona model) | `resolvePersonaLLMOptions` — `LLM_MODEL_<PERSONA>` + `PERSONA_TEMPERATURES` |
+| LLMOps #4 (health by provider) | `llmHealthMonitor` probes NVIDIA endpoint |
+| LLMOps #8 (streaming) | `callLLMStream` (D-S3.1): token deltas + fail-open non-stream fallback |
+| LLMOps #9 (structured logging) | `logger.ts` (D-S3.2): named child loggers + App Insights adapter |
+| LLMOps #10 (fallback model) | `callOnceWithFallback` secondary-provider failover |
+
+Still open: prompt registry/versioning (LLMOps #5).
+
+### Loop — shipped
+
+- Loop #3 (deadline): `LOOP_DEADLINE_MS` gating in `agentLoop.ts`.
+- Loop #7 (typed heartbeats): `{type:"turn", role, ts}` /
+  `{type:"complete", state}` rendered by `AgentVisualizer`'s heartbeat rail
+  (D-S3.7).
+- Loop #9 (abort): `agent:abort:{ticketId}` → `AgentCancelledError` →
+  `CANCELLED`.
+
+### Memory — Stage-3 files
+
+`memory/preferences.ts` (statistical preference inference from last 50
+traces), `memory/procedural.ts` (LLM skill proposals), `memory/vector.ts`
+(Atlas `$vectorSearch` adapter with keyword fallback) land under C-S3.5/6.
+
+### Eval — shipped
+
+- Eval #2 + #7 (split): PR-gating **stub** suite (`npm run agent:eval`) vs
+  nightly **live** suite (`npm run agent:eval:live`, `-- --skip` honors) —
+  D-S3.5. CI gates on the stub suite.
+- Eval #6 (reports): timestamped JSON reports + `diffReports.js` +
+  `nightlyDrift.ts`.
+- Multi-agent load: `tests/agent/multi-agent/load_test.ts` (D-S3.6) — 100
+  concurrent executions, P99 < 30 s / 0 data loss / 0 auth bypass.
+
+### New for Stage 3 (this stage)
+
+- `/api/agent/skills` CRUD + `AgentSkillsDrawer` (skill authoring DoD #5).
+- `src/lib/semanticCache.ts` (opt-in Redis semantic cache).
+- `src/lib/costCalculator.ts` `priceFor` / `usageSummary` (DoD #7).
+- Four companion docs: `ARCHITECTURE.md`, `API.md`, `RUNBOOK.md`,
+  `TROUBLESHOOTING.md`.

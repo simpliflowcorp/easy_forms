@@ -5,15 +5,24 @@ const AgentUsageSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   persona: { type: String, required: true, index: true },
   model: { type: String, required: true },
+  /**
+   * D-S4.4 LLMOps tier routing — `callLLMTiered` writes `tier` ("draft" |
+   * "plan" | "verify" | "communicate") on every tiered call. Previously
+   * Mongoose strict mode silently dropped this attribute, which lost
+   * per-tier cost attribution downstream. Index for cost-by-tier queries.
+   */
+  tier: { type: String, index: true },
   promptTokens: { type: Number, required: true, default: 0 },
   completionTokens: { type: Number, required: true, default: 0 },
   totalTokens: { type: Number, required: true, default: 0 },
   costUsd: { type: Number, default: 0 },
+  latencyMs: { type: Number, index: true, default: 0 },
   createdAt: { type: Date, default: Date.now, index: true },
 });
 
 AgentUsageSchema.index({ userId: 1, createdAt: -1 });
 AgentUsageSchema.index({ ticketId: 1, persona: 1 });
+AgentUsageSchema.index({ tier: 1, createdAt: -1 });
 
 const AgentUsage = mongoose.models?.AgentUsage || mongoose.model("AgentUsage", AgentUsageSchema);
 

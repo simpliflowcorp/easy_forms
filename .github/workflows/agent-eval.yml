@@ -16,14 +16,57 @@ on:
       - 'src/lib/agentTools.ts'
       - 'tests/agent/eval/**'
   schedule:
-    - cron: '0 2 * * *'  # Nightly at 2 AM UTC
+    - cron: '0 3 * * *'  # Nightly live eval at 3 AM UTC (D-S4.2)
 
 jobs:
+  # PR-gating suite (D-S3.5): fully mocked LLM, in-memory stores, < 30s,
+  # no Mongo / Redis / NVIDIA credentials required. A stubbed-suite failure
+  # fails the PR; a PR whose only live eval is `npm run agent:eval:live -- --skip`
+  # passes CI.
   agent-eval:
-    name: Agent Evaluation (Golden Prompts)
+    name: Agent Evaluation (Stubbed PR Gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Stubbed Agent Evaluation (PR gate)
+        run: npm run agent:eval
+
+      - name: Upload Evaluation Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-eval-stub-results
+          path: |
+            tests/agent/eval/reports/**
+          retention-days: 7
+
+  # Nightly live suite (D-S3.5, wired D-S4.2): real LLM against Mongo + Redis.
+  # Runs `npm run agent:eval:live` (runner.ts -> liveSuite.ts), which writes the
+  # report into tests/agent/eval/reports/<ISO>.json. Idempotent: identical
+  # inputs produce identical rows, so the baseline diff (diffReports.js) flags
+  # only REAL regressions (rows that passed before and fail now) — a flaky
+  # nightly run fails the job via the gate step below.
+  nightly-live-eval:
+    name: Agent Evaluation (Nightly Live)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+    if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/heads/main')
+
     env:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
       TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
@@ -31,30 +74,29 @@ jobs:
       REDIS_URL: ${{ secrets.REDIS_URL }}
       NODE_ENV: test
       LLM_ALLOW_LEGACY_FALLBACK: "0"
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Start Redis
         run: |
           docker run -d --name redis -p 6379:6379 redis:alpine
           sleep 2
-      
+
       - name: Wait for MongoDB
         run: |
-          # Wait for MongoDB to be ready
           for i in {1..30}; do
             if node -e "require('mongoose').connect(process.env.MONGODB_URI).then(() => process.exit(0)).catch(() => process.exit(1))"; then
               echo "MongoDB ready"
@@ -62,22 +104,45 @@ jobs:
             fi
             sleep 2
           done
-      
-      - name: Run Agent Evaluation
-        run: npm run agent:eval
+
+      - name: Run Live Agent Evaluation
+        run: npm run agent:eval:live
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           REDIS_URL: redis://localhost:6379
-      
+
+      # D-S4.2 — nightly baseline diff. diffs tonight's <ISO>.json report
+      # against the previous one (diffReports.js picks the two most recent
+      # ISO-named reports). The job FAILS only on real regressions; a first
+      # run with a single report (or a changed row set) skips the gate.
+      - name: Baseline diff vs previous nightly
+        id: diff
+        run: |
+          node tests/agent/eval/diffReports.js > /tmp/agent-diff.txt 2>&1 || true
+          cat /tmp/agent-diff.txt
+          if grep -q "No regressions — diff is clean" /tmp/agent-diff.txt; then
+            echo "diff-clean=true" >> "$GITHUB_OUTPUT"
+          elif grep -q "failing row(s) detected" /tmp/agent-diff.txt; then
+            echo "diff-clean=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "diff-clean=skip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fail on regressions
+        if: steps.diff.outputs.diff-clean == 'false'
+        run: |
+          echo "❌ Nightly eval regressed vs the previous run. See 'Baseline diff' step."
+          exit 1
+
       - name: Upload Evaluation Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agent-eval-results
+          name: agent-eval-live-results
           path: |
-            tests/agent/eval/results.json
+            tests/agent/eval/reports/**
           retention-days: 7
 
   agent-typecheck:
