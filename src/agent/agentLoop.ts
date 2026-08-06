@@ -16,6 +16,7 @@ import { LLMBudgetExceededError, LLMRateLimitError, LLMTimeoutError, LLMHTTPErro
 import { READ_ONLY_SKILLS } from "./policy/permissions";
 import { resolveSkill, resolveSkills } from "./personas/skillRouter.js";
 import { logWarn, child } from "@/lib/logger";
+import { redactTracePayload } from "./helper/redact";
 
 export async function runAgentLoop(
   userId: string,
@@ -93,7 +94,12 @@ export async function runAgentLoop(
     let tracedPayload = payload;
     if (payload !== undefined) {
       try {
-        const json = JSON.stringify(payload);
+        // D0.6: redact PII-bearing payloads BEFORE the truncation check,
+        // so llmRawOutput + tool params/results land masked in Mongo + Redis
+        // + the SSE stream. Non-mutating tree walker; key-based redaction
+        // everywhere, plus value-based regex on `llmRawOutput` strings.
+        tracedPayload = redactTracePayload(payload);
+        const json = JSON.stringify(tracedPayload);
         if (json.length > MAX_PAYLOAD_BYTES) {
           tracedPayload = { _truncated: true, originalSize: json.length, preview: json.slice(0, 500) };
         }
