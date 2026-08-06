@@ -167,7 +167,7 @@ function sandboxTest(skill: SkillEntry): { valid: boolean; reason?: string } {
       const nt = skill.negativeTests[i];
       if (typeof nt.assert === "string") {
         const result = evalNegativeTest(
-          { assert: nt.assert } as any,
+          nt.assert,
           ctx,
         );
         // Only reject PARSE errors (structural issues like unmatched brackets).
