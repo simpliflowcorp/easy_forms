@@ -11,49 +11,64 @@
  */
 
 import { Checkpoint, ExecutionPlan, TaskNode, TaskState, ExecutionStatus } from "../types";
+import type { MemoryService } from "../memory/types.js";
+import type { IOrchestratorCheckpointDocument } from "@/models/OrchestratorCheckpointModel";
+import type {
+  FormVersionSnapshot as FormVersionSnapshotRow,
+  IFormVersionDocument,
+} from "@/models/FormVersionModel";
 
-/** Interface for the checkpoint model (Agent C's OrchestratorCheckpointModel). */
-export interface OrchestratorCheckpointModel {
-  findOne(filter: any): Promise<any>;
-  find(filter: any): Promise<any[]>;
-}
-
-/** Interface for the sandbox store (Redis). */
+/**
+ * Sandbox store — Redis. Local interface (no canonical export across the agent
+ * tree); kept here because the sandbox store is passed in by callers, not
+ * imported by replay code.
+ */
 export interface SandboxStore {
   get(userId: string, executionId: string): Promise<any>;
   set(userId: string, executionId: string, data: any): Promise<void>;
 }
 
-/** Interface for the memory service (Agent C). */
-export interface MemoryService {
-  assembleContext(userId: string, scope: any): Promise<any>;
+/**
+ * Checkpoint model — adapter view over C's OrchestratorCheckpointModel.
+ * The canonical Mongoose model (default-exported from
+ * `@/models/OrchestratorCheckpointModel`) implements all of
+ * `findOne`/`find`. Using `IOrchestratorCheckpointDocument` keeps the row
+ * shape synced to C's schema instead of an untyped `any`.
+ */
+export interface OrchestratorCheckpointModel {
+  findOne(filter: any): Promise<(IOrchestratorCheckpointDocument & { taskStates?: Record<string, TaskState>; plan?: ExecutionPlan; sandboxSnapshot?: any; memoryPointers?: string[]; userId?: string; ts?: number }) | null>;
+  find(filter: any): Promise<(IOrchestratorCheckpointDocument & { taskStates?: Record<string, TaskState>; plan?: ExecutionPlan; ts?: number })[]>;
 }
 
-/** 
- * A-S4.5: Optional FormVersionModel interface (Agent C).
- * Provides atomic form version snapshot/restore for replay rollback.
- * Gracefully handles model not being available yet.
+/**
+ * FormVersionModel — adapter view over C's `@/models/FormVersionModel`.
+ * C-S4.3 added the model; A-S4.5 consumes it. The methods below are the
+ * subset A's replay uses; they're implemented as statics on the Mongoose
+ * model (see `src/models/FormVersionModel.ts`). The `reason` enum matches
+ * C's authoritative `agent_merge | user_edit | rollback_target` — the
+ * prior local `changeType: "create"|"update"|"delete"` was un-canonical drift.
  */
 export interface FormVersionModel {
-  /** Find the form version at or before a given timestamp for a formId */
-  findVersionAtOrBefore(formId: string, timestamp: Date): Promise<FormVersionSnapshot | null>;
-  /** Restore a form to a specific version snapshot */
-  restoreVersion(formId: string, versionId: string, userId: string): Promise<{ success: boolean; error?: string }>;
-  /** List versions for a form */
+  findVersionAtOrBefore(
+    formId: string,
+    timestamp: Date,
+  ): Promise<FormVersionSnapshot | null>;
+  restoreVersion(
+    formId: string,
+    versionId: string,
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }>;
   listVersions(formId: string): Promise<FormVersionSnapshot[]>;
 }
 
-/** Form version snapshot structure. */
-export interface FormVersionSnapshot {
-  versionId: string;
-  formId: string;
-  userId: string;
-  snapshot: any; // Full form document at this version
-  createdAt: Date;
-  changeType: "create" | "update" | "delete";
-  executionId?: string;
-  checkpointId?: string;
-}
+/**
+ * Form version snapshot — re-exports C's canonical shape so all callers
+ * (replay.ts, OrchestratorExecutionModel.formVersionPointers, the API route)
+ * read/write against the SAME definition. The prior local declaration with
+ * `changeType: "create" | "update" | "delete"` was drift from C's
+ * `reason: "agent_merge" | "user_edit" | "rollback_target"`.
+ */
+export type FormVersionSnapshot = FormVersionSnapshotRow;
 
 /** Extended replay options including form version rollback. */
 export interface ReplayOptions {
@@ -134,7 +149,21 @@ export async function replayFromCheckpoint(
     }
 
     // 2. Restore sandbox state from Redis (namespaced by executionId)
-    const userId = checkpoint.userId; // Stored in checkpoint
+    // NOTE: Checkpoint (per the frozen agent/types.ts::Checkpoint) does not
+    // currently carry `userId`. C's OrchestratorCheckpointModel schema also
+    // does not store it. Return an explicit error instead of silently
+    // passing `undefined` through to downstream APIs (latent bug surfaced
+    // by tightening the replay typing in this cleanup pass).
+    const userId = checkpoint.userId;
+    if (!userId) {
+      return {
+        success: false,
+        executionId,
+        checkpointId,
+        restoredState: null as any,
+        error: `Checkpoint ${checkpointId} for execution ${executionId} has no userId; cannot replay (Checkpoint schema needs userId — tracked as a separate fixup).`,
+      };
+    }
     const sandbox = await sandboxStore.get(userId, executionId);
     
     // If sandbox doesn't exist in Redis, try to reconstruct from checkpoint
@@ -295,32 +324,37 @@ export async function verifyReplay(
 /**
  * A-S4.5: Create a form version snapshot from current state.
  * Useful for creating explicit checkpoints before risky operations.
+ *
+ * Note: this helper constructs an in-memory snapshot row (canonical
+ * FormVersionSnapshot shape owned by C). Persistence is handled by the
+ * FormVersionModel implementation when the rollout merges it. The fields
+ * below match `src/models/FormVersionModel.ts::FormVersionSnapshot`.
  */
 export async function createFormVersionSnapshot(
   formId: string,
   userId: string,
-  formData: any,
+  formData: Record<string, any>,
   formVersionModel: FormVersionModel,
   metadata: {
     executionId?: string;
     checkpointId?: string;
-    changeType?: "create" | "update" | "delete";
+    reason?: IFormVersionDocument["reason"];
+    version?: number;
+    createdAt?: Date;
   } = {}
 ): Promise<FormVersionSnapshot> {
-  const versionId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  
+  const version = metadata.version ?? 0;
   const snapshot: FormVersionSnapshot = {
-    versionId,
+    versionId: `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     formId,
-    userId,
+    ownerId: userId,
+    version,
     snapshot: formData,
-    createdAt: new Date(),
-    changeType: metadata.changeType || "update",
-    executionId: metadata.executionId,
-    checkpointId: metadata.checkpointId,
+    reason: metadata.reason || "agent_merge",
+    createdAt: metadata.createdAt || new Date(),
   };
 
-  // The actual persistence is handled by FormVersionModel implementation
-  // This is a helper to construct the snapshot object
+  // The actual persistence is handled by FormVersionModel implementation.
+  // This is a helper to construct the snapshot object.
   return snapshot;
 }

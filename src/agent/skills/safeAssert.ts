@@ -10,17 +10,12 @@
  */
 
 import type { AgentState, AgentAction } from "../types";
+import type { NegEvalContext } from "../memory/types.js";
 
-export interface NegEvalContext {
-  readonly actionPlan: ReadonlyArray<AgentAction>;
-  readonly state: Readonly<AgentState>;
-  /** Helper to get a value from actionPlan by index */
-  getAction: (index: number) => Readonly<AgentAction> | undefined;
-  /** Helper to check if any action matches a tool */
-  hasTool: (tool: string) => boolean;
-  /** Helper to get results from completed actions */
-  getResults: (tool: string) => ReadonlyArray<any>;
-}
+// Re-export so existing callers that imported NegEvalContext from safeAssert
+// (e.g. skills/types.ts, evaluator.ts) keep resolving against the canonical
+// C-owned declaration without a breaking import churn.
+export type { NegEvalContext };
 
 /**
  * Type for negative test assertion - string expression or function.

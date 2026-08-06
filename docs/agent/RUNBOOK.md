@@ -221,8 +221,9 @@ only to drain in-flight tickets. Procedure:
    `createdAt < <v3 ship-tag date>` (see Agent A's Stage 4 log for the exact
    query + expected counts).
 2. If **zero** rows: the drain is complete — schedule the follow-up PR that
-   deletes `legacyShim.ts` + the `AGENT_V3_ENABLED` switch in the execute
-   route.
+   route (`src/app/api/agent/execute/route.ts` does not gate on
+   `AGENT_V3_ENABLED` itself — the switch is centralized in
+   `src/agent/orchestrator/legacyShim.ts:262 getAgentRunner()`).
 3. If rows remain: keep the shim; do NOT delete while
    `AWAITING_USER_APPROVAL`/`EXECUTOR_SANDBOX` tickets exist (their sandbox
    namespaces are legacy-keyed).

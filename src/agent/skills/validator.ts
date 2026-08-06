@@ -18,6 +18,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { ALLOWED_TOOLS } from "../policy/permissions";
 import { evalNegativeTest } from "./safeAssert";
+import type { NegativeTest } from "./types";
 
 const REGISTRY_PATH = path.join(process.cwd(), "src", "agent", "skills", "registry.json");
 
@@ -28,7 +29,7 @@ interface SkillEntry {
   permissionScope: string;
   tools: { tool: string; paramsFrom: string }[];
   maxIterations: number;
-  negativeTests: { assert: string }[];
+  negativeTests: NegativeTest[];
   dryRunShape: Record<string, unknown>;
   requiredTools?: string[];
 }
@@ -167,7 +168,7 @@ function sandboxTest(skill: SkillEntry): { valid: boolean; reason?: string } {
       const nt = skill.negativeTests[i];
       if (typeof nt.assert === "string") {
         const result = evalNegativeTest(
-          { assert: nt.assert } as any,
+          nt.assert,
           ctx,
         );
         // Only reject PARSE errors (structural issues like unmatched brackets).
