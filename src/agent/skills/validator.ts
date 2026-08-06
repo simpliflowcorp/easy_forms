@@ -18,6 +18,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { ALLOWED_TOOLS } from "../policy/permissions";
 import { evalNegativeTest } from "./safeAssert";
+import type { NegativeTest } from "./types";
 
 const REGISTRY_PATH = path.join(process.cwd(), "src", "agent", "skills", "registry.json");
 
@@ -28,7 +29,7 @@ interface SkillEntry {
   permissionScope: string;
   tools: { tool: string; paramsFrom: string }[];
   maxIterations: number;
-  negativeTests: { assert: string }[];
+  negativeTests: NegativeTest[];
   dryRunShape: Record<string, unknown>;
   requiredTools?: string[];
 }

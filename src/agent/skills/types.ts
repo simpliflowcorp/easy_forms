@@ -29,7 +29,7 @@ export type ToolRef = {
   paramsFrom: "requirements" | "memory" | "context";
 };
 
-import type { NegEvalContext } from "./safeAssert.js";
+import type { NegEvalContext } from "../memory/types.js";
 
 export interface NegativeTest {
   assert: string | ((ctx: NegEvalContext) => boolean);

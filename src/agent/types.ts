@@ -267,6 +267,16 @@ export interface Checkpoint {
   sandboxSnapshotSha256: string;
   memoryPointers: string[];
   ts: number;
+  /**
+   * Optional owner of the execution this checkpoint belongs to.
+   * `replay.ts::replayFromCheckpoint` reads this to namespace the sandbox
+   * restore; treat as required-at-restore-time. C's
+   * `OrchestratorCheckpointModel` schema is scheduled to add this as a
+   * persisted index (Stage 4 cleanup follow-up — file a separate ticket).
+   */
+  userId?: string;
+  /** Optional sandbox snapshot copy carried into the checkpoint row. */
+  sandboxSnapshot?: Record<string, any>;
 }
 
 export interface TaskState {
@@ -393,31 +403,19 @@ export interface UserPreferences {
   viewConfigs: Record<string, any>;
 }
 
-export interface SkillDefinition {
-  skillId: string;
-  name: string;
-  version: string;
-  permissionScope: string;
-  tools: ToolRef[];
-  maxIterations: number;
-  negativeTests: NegativeTest[];
-  dryRunShape: Record<string, any>;
-  requiredParams: string[];
-  optionalParams: string[];
-}
-
-export interface ToolRef {
-  tool: string;
-  paramsFrom: "requirements" | "memory" | "context";
-}
-
-// NegativeTest is canonical from skills/types.ts — kept here for backward compat via the SkillDefinition cross-ref.
-// A-S4.2: assert is now a union (string | safe function) to close the eval() security gap (B-S4.1 safeAssert).
-export interface NegativeTest {
-  assert: string | ((ctx: any) => boolean);
-  id?: string;
-  description: string;
-}
+// SkillDefinition / ToolRef / NegativeTest are CANONICAL in skills/types.ts
+// (per Stage 4 §3 file ownership). Import the canonical types and re-export
+// them so `@/agent/types` consumers keep resolving to ONE frozen definition
+// instead of a drifted local copy.
+// A-S4.2: NegativeTest.assert is now the union
+//   string | ((ctx: NegEvalContext) => boolean)
+// to close the eval() security gap (B-S4.1 safeAssert).
+import type {
+  SkillDefinition,
+  ToolRef,
+  NegativeTest,
+} from "./skills/types.js";
+export type { SkillDefinition, ToolRef, NegativeTest };
 
 export interface ProceduralMemory {
   pattern: string;
